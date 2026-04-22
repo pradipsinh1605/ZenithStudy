@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.env.local
+.env.*.local
+.DS_Store
+*.log
+/build
+/.pnp
+.pnp.js
+.env
+.env.example
