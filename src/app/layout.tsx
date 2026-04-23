@@ -4,11 +4,11 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
-const sora = Sora({ subsets:["latin"], variable:"--font-sora", display:"swap" });
-const lora = Lora({ subsets:["latin"], variable:"--font-lora", display:"swap" });
+const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
+const lora = Lora({ subsets: ["latin"], variable: "--font-lora", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default:"StudyBuddy AI", template:"%s | StudyBuddy AI" },
+  title: { default: "StudyBuddy AI", template: "%s | StudyBuddy AI" },
   description: "Your AI-powered academic success hub",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media:"(prefers-color-scheme: dark)",  color:"#060D1B" },
-    { media:"(prefers-color-scheme: light)", color:"#4F8EF7" },
+    { media: "(prefers-color-scheme: dark)", color: "#060D1B" },
+    { media: "(prefers-color-scheme: light)", color: "#4F8EF7" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -29,21 +29,42 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning className="dark">
       <head>
-        <link rel="manifest" href="/manifest.json"/>
-        <meta name="apple-mobile-web-app-capable" content="yes"/>
-        <meta name="apple-mobile-web-app-title" content="StudyBuddy AI"/>
-        <link rel="apple-touch-icon" href="/icon-192.png"/>
-        <meta name="mobile-web-app-capable" content="yes"/>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="StudyBuddy AI" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className={}
-        style={{ background:"var(--bg)", color:"var(--text)", minHeight:"100vh" }}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+      <body
+        className={`${sora.variable} ${lora.variable} font-sora antialiased`}
+        style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh" }}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
           {children}
-          <Toaster position="top-right" toastOptions={{ duration:4000, style:{ borderRadius:"12px", fontFamily:"var(--font-sora)", fontSize:"13px" } }}/>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                borderRadius: "12px",
+                fontFamily: "var(--font-sora)",
+                fontSize: "13px",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>
