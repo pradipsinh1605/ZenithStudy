@@ -1,0 +1,30 @@
+{
+  "name": "StudyBuddy AI",
+  "short_name": "StudyBuddy",
+  "description": "Your AI-powered academic success hub",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060D1B",
+  "theme_color": "#4F8EF7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    { "name": "Dashboard", "url": "/dashboard" },
+    { "name": "AI Tutor",  "url": "/ai" },
+    { "name": "Planner",   "url": "/planner" }
+  ]
+}
