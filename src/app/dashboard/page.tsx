@@ -1,4 +1,6 @@
 "use client";
+
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CheckSquare, FileText, Flame, Zap, Check, ArrowRight } from "lucide-react";
