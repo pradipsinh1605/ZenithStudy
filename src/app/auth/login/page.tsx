@@ -1,271 +1,216 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { BookOpen, Eye, EyeOff, Moon, Sun } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useTheme } from "next-themes";
 import toast from "react-hot-toast";
 
 export default function LoginPage() {
-  const router   = useRouter();
+  const router = useRouter();
   const supabase = createClient();
-  const { theme, setTheme } = useTheme();
-  const [mounted,  setMounted]  = useState(false);
-  const [email,    setEmail]    = useState("");
+  const [mode, setMode] = useState<"login"|"signup"|"forgot">("login");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPw,   setShowPw]   = useState(false);
-  const [loading,  setLoading]  = useState(false);
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-    setLoading(true);
+  // Google Login
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/dashboard",
+        },
       });
-      if (error) {
-        toast.error(error.message);
-        setLoading(false);
-        return;
-      }
-      if (data.session) {
-        toast.success("Welcome back! 👋");
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 500);
-      }
-    } catch (err) {
-      toast.error("Something went wrong. Please try again.");
-      setLoading(false);
+      if (error) toast.error(error.message);
+    } catch {
+      toast.error("Google login failed");
     }
+    setGoogleLoading(false);
   };
 
-  const handleGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+  // Email Login
+  const handleLogin = async () => {
+    if (!email || !password) { toast.error("Fill all fields!"); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) toast.error(error.message);
+    else { toast.success("Welcome back! 🎉"); router.push("/dashboard"); }
+    setLoading(false);
+  };
+
+  // Signup
+  const handleSignup = async () => {
+    if (!email || !password || !name) { toast.error("Fill all fields!"); return; }
+    if (password.length < 6) { toast.error("Password min 6 characters!"); return; }
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) { toast.error(error.message); setLoading(false); return; }
+    if (data.user) {
+      await supabase.from("profiles").upsert({ user_id: data.user.id, name, edu_level: "Student" });
+      await supabase.from("user_xp").upsert({ user_id: data.user.id, total_xp: 0, level: 1, streak: 0 });
+      toast.success("Account created! Welcome! 🎉");
+      router.push("/dashboard");
+    }
+    setLoading(false);
+  };
+
+  // Forgot Password
+  const handleForgot = async () => {
+    if (!email) { toast.error("Enter your email!"); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/auth/reset-password",
     });
+    if (error) toast.error(error.message);
+    else { setForgotSent(true); toast.success("Reset link sent! Check email 📧"); }
+    setLoading(false);
+  };
+
+  const inputStyle = {
+    width: "100%", borderRadius: 12, padding: "12px 16px",
+    border: "1px solid rgba(79,142,247,.25)",
+    background: "rgba(255,255,255,.05)",
+    color: "var(--text)", fontSize: 14,
+    fontFamily: "var(--font-sora),sans-serif",
+    outline: "none", transition: "border-color .2s",
   };
 
   return (
-    <div style={{
-      minHeight: "100vh", display: "flex",
-      fontFamily: "var(--font-sora), sans-serif",
-    }}>
-      {/* Left Hero */}
-      <div style={{
-        flex: 1,
-        background: "linear-gradient(145deg,#0A1628 0%,#0E2448 50%,#152C5A 100%)",
-        padding: 48, display: "flex", flexDirection: "column",
-        justifyContent: "space-between", position: "relative",
-        overflow: "hidden",
-      }}
-        className="hidden lg:flex">
-        <div style={{
-          position: "absolute", top: -80, right: -80,
-          width: 300, height: 300, borderRadius: "50%",
-          background: "radial-gradient(circle,rgba(79,142,247,.15) 0%,transparent 70%)",
-        }}/>
-        <div>
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:60 }}>
-            <div style={{
-              width:40, height:40, borderRadius:12,
-              background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",
-              display:"flex", alignItems:"center", justifyContent:"center",
-            }}>
-              <BookOpen size={22} color="#fff"/>
-            </div>
-            <span style={{ color:"#fff", fontSize:22, fontWeight:800 }}>
-              StudyBuddy AI
-            </span>
-          </div>
-          <h1 style={{
-            fontFamily:"var(--font-lora),serif",
-            fontSize:42, color:"#fff", lineHeight:1.2, marginBottom:20,
-          }}>
-            Your Academic<br/>
-            <em style={{ color:"#4F8EF7", fontStyle:"normal" }}>Success Hub</em>
-          </h1>
-          <p style={{ color:"rgba(255,255,255,.6)", fontSize:15, lineHeight:1.7, maxWidth:380 }}>
-            AI-powered study platform. Organize, track, collaborate and get 24/7 AI tutoring.
-          </p>
-        </div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-          {[
-            ["📚","Smart Notes","Rich editor + AI summaries"],
-            ["⏱️","Focus Timer","Pomodoro & tracking"],
-            ["📊","Progress","Visual analytics"],
-            ["🤖","AI Tutor","Dify-powered 24/7"],
-          ].map(([icon,title,desc]) => (
-            <div key={title} style={{
-              background:"rgba(255,255,255,.06)", borderRadius:14,
-              padding:16, border:"1px solid rgba(255,255,255,.1)",
-            }}>
-              <div style={{ fontSize:22, marginBottom:6 }}>{icon}</div>
-              <div style={{ color:"#fff", fontWeight:600, fontSize:13, marginBottom:4 }}>
-                {title}
-              </div>
-              <div style={{ color:"rgba(255,255,255,.5)", fontSize:11 }}>{desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div style={{ minHeight:"100vh", background:"#060D1B", display:"flex", alignItems:"center", justifyContent:"center", padding:20, fontFamily:"var(--font-sora),sans-serif" }}>
+      <style>{`
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        .login-card { animation: fadeUp .4s ease; }
+        input:focus { border-color: #4F8EF7 !important; box-shadow: 0 0 0 3px rgba(79,142,247,.1); }
+        .g-btn:hover { background: rgba(255,255,255,.12) !important; transform: translateY(-1px); }
+        .submit-btn:hover { transform: translateY(-2px) !important; filter: brightness(1.1); }
+        .tab:hover { color: #4F8EF7 !important; }
+      `}</style>
 
-      {/* Right Form */}
-      <div style={{
-        width: "100%", maxWidth: 460,
-        background: "var(--surface)",
-        padding: "48px 40px",
-        display: "flex", flexDirection: "column", justifyContent: "center",
-      }}>
-        <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:40 }}>
-          {mounted && (
-            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              style={{
-                display:"flex", alignItems:"center", gap:6,
-                padding:"8px 12px", borderRadius:10, cursor:"pointer",
-                border:"1px solid var(--border)", background:"var(--border)",
-                color:"var(--muted)", fontSize:13, fontFamily:"inherit",
+      <div className="login-card" style={{ width:"100%", maxWidth:420, background:"linear-gradient(145deg,rgba(14,22,48,.95),rgba(8,14,32,.95))", borderRadius:24, padding:36, border:"1px solid rgba(79,142,247,.2)", boxShadow:"0 24px 80px rgba(0,0,0,.5)" }}>
+
+        {/* Logo */}
+        <div style={{ textAlign:"center", marginBottom:28 }}>
+          <img src="/icon-192.png" alt="logo" style={{ width:64, height:64, borderRadius:16, marginBottom:12, boxShadow:"0 8px 24px rgba(79,142,247,.3)" }}/>
+          <h1 style={{ fontFamily:"var(--font-lora),serif", fontSize:24, color:"#fff", fontWeight:700, marginBottom:4 }}>StudyBuddy AI</h1>
+          <p style={{ fontSize:13, color:"rgba(232,240,254,.4)" }}>Smarter Study. Better You.</p>
+        </div>
+
+        {/* Tabs — only for login/signup */}
+        {mode !== "forgot" && (
+          <div style={{ display:"flex", background:"rgba(255,255,255,.05)", borderRadius:12, padding:4, marginBottom:24 }}>
+            {(["login","signup"] as const).map(m => (
+              <button key={m} className="tab" onClick={() => setMode(m)} style={{
+                flex:1, padding:"9px", borderRadius:10, border:"none", cursor:"pointer",
+                fontFamily:"var(--font-sora),sans-serif", fontSize:13, fontWeight:700,
+                background: mode===m ? "linear-gradient(135deg,#4F8EF7,#6366F1)" : "transparent",
+                color: mode===m ? "#fff" : "rgba(232,240,254,.4)",
+                boxShadow: mode===m ? "0 4px 12px rgba(79,142,247,.3)" : "none",
+                transition: "all .2s",
+                textTransform: "capitalize",
               }}>
-              {theme === "dark" ? <Sun size={15}/> : <Moon size={15}/>}
-              {theme === "dark" ? "Light" : "Dark"}
-            </button>
-          )}
-        </div>
-
-        <div>
-          {/* Mobile logo */}
-          <div style={{
-            display:"flex", alignItems:"center", gap:10, marginBottom:24,
-          }}
-            className="lg:hidden">
-            <div style={{
-              width:36, height:36, borderRadius:10,
-              background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",
-              display:"flex", alignItems:"center", justifyContent:"center",
-            }}>
-              <BookOpen size={18} color="#fff"/>
-            </div>
-            <span style={{ fontWeight:800, fontSize:18, color:"var(--text)" }}>
-              StudyBuddy AI
-            </span>
-          </div>
-
-          <h2 style={{
-            fontFamily:"var(--font-lora),serif",
-            fontSize:30, marginBottom:8, color:"var(--text)",
-          }}>
-            Welcome back!
-          </h2>
-          <p style={{ color:"var(--muted)", fontSize:14, marginBottom:32 }}>
-            Sign in to continue your journey
-          </p>
-
-          <form onSubmit={handleLogin}>
-            {/* Email */}
-            <div style={{ marginBottom:16 }}>
-              <label style={{
-                display:"block", fontSize:12, fontWeight:600,
-                textTransform:"uppercase", letterSpacing:".05em",
-                color:"var(--muted)", marginBottom:6,
-              }}>Email</label>
-              <input
-                type="email" value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@email.com" required
-                style={{
-                  width:"100%", borderRadius:12, padding:"11px 14px",
-                  fontSize:14, fontFamily:"inherit", outline:"none",
-                  border:"1px solid var(--border)",
-                  background:"var(--bg)", color:"var(--text)",
-                }}/>
-            </div>
-
-            {/* Password */}
-            <div style={{ marginBottom:8, position:"relative" }}>
-              <label style={{
-                display:"block", fontSize:12, fontWeight:600,
-                textTransform:"uppercase", letterSpacing:".05em",
-                color:"var(--muted)", marginBottom:6,
-              }}>Password</label>
-              <input
-                type={showPw ? "text" : "password"} value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••" required
-                style={{
-                  width:"100%", borderRadius:12, padding:"11px 44px 11px 14px",
-                  fontSize:14, fontFamily:"inherit", outline:"none",
-                  border:"1px solid var(--border)",
-                  background:"var(--bg)", color:"var(--text)",
-                }}/>
-              <button type="button" onClick={() => setShowPw(!showPw)}
-                style={{
-                  position:"absolute", right:12, top:38,
-                  background:"none", border:"none", cursor:"pointer",
-                  color:"var(--muted)", display:"flex",
-                }}>
-                {showPw ? <EyeOff size={16}/> : <Eye size={16}/>}
+                {m === "login" ? "Sign In" : "Sign Up"}
               </button>
-            </div>
-
-            <div style={{ textAlign:"right", marginBottom:24 }}>
-              <span style={{ color:"#4F8EF7", fontSize:13, cursor:"pointer", fontWeight:600 }}>
-                Forgot password?
-              </span>
-            </div>
-
-            <button type="submit" disabled={loading}
-              style={{
-                width:"100%", padding:"13px 0", borderRadius:12,
-                border:"none", cursor: loading ? "not-allowed" : "pointer",
-                background:"linear-gradient(135deg,#4F8EF7,#6366F1)",
-                color:"#fff", fontWeight:700, fontSize:15,
-                fontFamily:"inherit", opacity: loading ? .8 : 1,
-                marginBottom:16, transition:"all .2s",
-              }}>
-              {loading ? "Signing in…" : "Sign In →"}
-            </button>
-          </form>
-
-          <div style={{ position:"relative", textAlign:"center", marginBottom:16 }}>
-            <div style={{ height:1, background:"var(--border)" }}/>
-            <span style={{
-              position:"absolute", top:-9, left:"50%",
-              transform:"translateX(-50%)",
-              background:"var(--surface)", padding:"0 12px",
-              color:"var(--muted)", fontSize:12,
-            }}>or</span>
+            ))}
           </div>
+        )}
 
-          <button onClick={handleGoogle}
-            style={{
-              width:"100%", padding:"11px 0", borderRadius:12,
-              border:"1px solid var(--border)", cursor:"pointer",
-              background:"var(--bg)", color:"var(--text)",
-              fontWeight:600, fontSize:14, fontFamily:"inherit",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              gap:8, marginBottom:28,
-            }}>
-            <span style={{ fontSize:18 }}>G</span> Continue with Google
+        {/* Forgot Password Mode */}
+        {mode === "forgot" && (
+          <div>
+            <button onClick={() => { setMode("login"); setForgotSent(false); }} style={{ background:"none", border:"none", color:"#4F8EF7", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"inherit", marginBottom:16, display:"flex", alignItems:"center", gap:5 }}>
+              ← Back to Sign In
+            </button>
+            <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:20, color:"#fff", fontWeight:700, marginBottom:8 }}>Reset Password</h2>
+            <p style={{ fontSize:13, color:"rgba(232,240,254,.4)", marginBottom:20 }}>Enter your email and we'll send a reset link</p>
+
+            {forgotSent ? (
+              <div style={{ textAlign:"center", padding:24 }}>
+                <div style={{ fontSize:40, marginBottom:12 }}>📧</div>
+                <h3 style={{ color:"#34D399", fontWeight:700, marginBottom:8 }}>Email Sent!</h3>
+                <p style={{ fontSize:13, color:"rgba(232,240,254,.4)", lineHeight:1.7 }}>Check your inbox and click the reset link</p>
+                <button onClick={() => { setMode("login"); setForgotSent(false); }} style={{ marginTop:20, padding:"10px 24px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:"pointer", fontFamily:"inherit", fontWeight:700 }}>
+                  Back to Sign In
+                </button>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                <input type="email" placeholder="Your email address" value={email} onChange={e=>setEmail(e.target.value)}
+                  style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
+                <button className="submit-btn" onClick={handleForgot} disabled={loading}
+                  style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:loading?"not-allowed":"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all .2s", opacity:loading?.7:1 }}>
+                  {loading ? "Sending..." : "📧 Send Reset Link"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Login / Signup Form */}
+        {mode !== "forgot" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+
+            {/* Google Button */}
+            <button className="g-btn" onClick={handleGoogle} disabled={googleLoading}
+              style={{ width:"100%", padding:"12px", borderRadius:12, border:"1px solid rgba(255,255,255,.15)", background:"rgba(255,255,255,.05)", color:"#E2EAF8", cursor:"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all .2s" }}>
+              <svg width="18" height="18" viewBox="0 0 18 18">
+                <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+                <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
+                <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/>
+                <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/>
+              </svg>
+              {googleLoading ? "Connecting..." : "Continue with Google"}
+            </button>
+
+            {/* Divider */}
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)" }}/>
+              <span style={{ fontSize:12, color:"rgba(232,240,254,.3)" }}>or</span>
+              <div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)" }}/>
+            </div>
+
+            {/* Name field (signup only) */}
+            {mode === "signup" && (
+              <input type="text" placeholder="Full Name" value={name} onChange={e=>setName(e.target.value)}
+                style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
+            )}
+
+            <input type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)}
+              style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
+
+            <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter") mode==="login"?handleLogin():handleSignup(); }}
+              style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
+
+            {/* Forgot Password link */}
+            {mode === "login" && (
+              <button onClick={() => setMode("forgot")} style={{ background:"none", border:"none", color:"#4F8EF7", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"inherit", textAlign:"right", padding:0 }}>
+                Forgot Password?
+              </button>
+            )}
+
+            {/* Submit */}
+            <button className="submit-btn" onClick={mode==="login"?handleLogin:handleSignup} disabled={loading}
+              style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:loading?"not-allowed":"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all .2s", opacity:loading?.7:1, marginTop:4, boxShadow:"0 4px 16px rgba(79,142,247,.35)" }}>
+              {loading ? "Please wait..." : mode==="login" ? "Sign In →" : "Create Account →"}
+            </button>
+
+            {mode === "signup" && (
+              <p style={{ fontSize:11, color:"rgba(232,240,254,.25)", textAlign:"center" }}>
+                By signing up, you agree to our Terms & Privacy Policy
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Back to home */}
+        <div style={{ textAlign:"center", marginTop:20 }}>
+          <button onClick={() => router.push("/")} style={{ background:"none", border:"none", color:"rgba(232,240,254,.3)", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
+            ← Back to home
           </button>
-
-          <p style={{ textAlign:"center", color:"var(--muted)", fontSize:14 }}>
-            No account?{" "}
-            <Link href="/auth/signup"
-              style={{ color:"#4F8EF7", fontWeight:700, textDecoration:"none" }}>
-              Sign up free
-            </Link>
-          </p>
         </div>
       </div>
     </div>
