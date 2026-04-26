@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code  = searchParams.get("code");
-  const next  = searchParams.get("next") ?? "/dashboard";
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/dashboard";
 
   if (code) {
     const supabase = await createClient();
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
-    console.error("Auth callback error:", error.message);
+    console.error("[Auth Callback Error]", error.message);
   }
 
   return NextResponse.redirect(`${origin}/auth/login?error=callback_error`);

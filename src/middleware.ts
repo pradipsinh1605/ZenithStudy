@@ -2,15 +2,18 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const AUTH_ROUTES    = ["/auth/login", "/auth/signup", "/auth/reset-password"];
-const PROTECTED_ROUTES = ["/dashboard", "/planner", "/notes", "/timetable", "/flashcards", "/timer", "/progress", "/ai", "/achievements", "/profile", "/settings"];
+const AUTH_ROUTES = ["/auth/login", "/auth/signup", "/auth/reset-password"];
+const PROTECTED_ROUTES = [
+  "/dashboard", "/planner", "/notes", "/timetable",
+  "/flashcards", "/timer", "/progress", "/ai",
+  "/achievements", "/profile", "/settings"
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Create a response that we can modify (cookies must be set on THIS response)
-  let response = NextResponse.next({
-    request: { headers: request.headers },
+  let supabaseResponse = NextResponse.next({
+    request,
   });
 
   const supabase = createServerClient(
@@ -18,46 +21,51 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          // Must set on both request AND response
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          });
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options)
           );
         },
       },
     }
   );
 
-  // IMPORTANT: always call getUser() — this refreshes the session cookie
-  const { data: { user } } = await supabase.auth.getUser();
+  // DO NOT use getSession() — always use getUser() for security
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const isProtected = PROTECTED_ROUTES.some(r => pathname.startsWith(r));
-  const isAuthPage  = AUTH_ROUTES.some(r => pathname.startsWith(r));
+  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+  const isAuthPage  = AUTH_ROUTES.some((r) => pathname.startsWith(r));
 
-  // Not logged in → send to login
+  // Not logged in & trying to access protected page → go to login
   if (isProtected && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/auth/login";
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // Logged in → don't show login/signup pages
+  // Logged in & on auth page → go to dashboard
   if (isAuthPage && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/dashboard";
+    return NextResponse.redirect(redirectUrl);
   }
 
-  return response;
+  // IMPORTANT: return supabaseResponse (not NextResponse.next())
+  // so cookies are properly forwarded
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon-|manifest|api).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon-|manifest|.*\\.png$|.*\\.jpg$|.*\\.svg$).*)",
+  ],
 };
