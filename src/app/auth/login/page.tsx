@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
 
-  // Google Login — FIX: use dynamic origin + /auth/callback route
+  // Google Login
   const handleGoogle = async () => {
     setGoogleLoading(true);
     try {
@@ -32,22 +32,17 @@ export default function LoginPage() {
     setGoogleLoading(false);
   };
 
-  // Email Login — FIX: router.refresh() added so middleware re-reads session
+  // Email Login
   const handleLogin = async () => {
     if (!email || !password) { toast.error("Fill all fields!"); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Welcome back! 🎉");
-      router.refresh();
-      router.push("/dashboard");
-    }
+    if (error) toast.error(error.message);
+    else { toast.success("Welcome back! 🎉"); router.refresh(); router.push("/dashboard"); }
     setLoading(false);
   };
 
-  // Signup — FIX: router.refresh() added so middleware re-reads session
+  // Signup
   const handleSignup = async () => {
     if (!email || !password || !name) { toast.error("Fill all fields!"); return; }
     if (password.length < 6) { toast.error("Password min 6 characters!"); return; }
