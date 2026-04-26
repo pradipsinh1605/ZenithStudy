@@ -15,14 +15,14 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
 
-  // Google Login
+  // Google Login — FIX: use dynamic origin + /auth/callback route
   const handleGoogle = async () => {
     setGoogleLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: "https://study-buddy-ai-lake.vercel.app/dashboard",
+          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         },
       });
       if (error) toast.error(error.message);
@@ -32,17 +32,22 @@ export default function LoginPage() {
     setGoogleLoading(false);
   };
 
-  // Email Login
+  // Email Login — FIX: router.refresh() added so middleware re-reads session
   const handleLogin = async () => {
     if (!email || !password) { toast.error("Fill all fields!"); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error(error.message);
-    else { toast.success("Welcome back! 🎉"); router.push("/dashboard"); }
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Welcome back! 🎉");
+      router.refresh();
+      router.push("/dashboard");
+    }
     setLoading(false);
   };
 
-  // Signup
+  // Signup — FIX: router.refresh() added so middleware re-reads session
   const handleSignup = async () => {
     if (!email || !password || !name) { toast.error("Fill all fields!"); return; }
     if (password.length < 6) { toast.error("Password min 6 characters!"); return; }
@@ -53,6 +58,7 @@ export default function LoginPage() {
       await supabase.from("profiles").upsert({ user_id: data.user.id, name, edu_level: "Student" });
       await supabase.from("user_xp").upsert({ user_id: data.user.id, total_xp: 0, level: 1, streak: 0 });
       toast.success("Account created! Welcome! 🎉");
+      router.refresh();
       router.push("/dashboard");
     }
     setLoading(false);
