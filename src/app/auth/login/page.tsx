@@ -6,8 +6,7 @@ import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
-  const [mode, setMode] = useState<"login"|"signup"|"forgot">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -15,77 +14,79 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
 
-  // Google Login
-  const handleGoogle = async () => {
-    setGoogleLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-          queryParams: { access_type: "offline", prompt: "consent" },
-        },
-      });
-      if (error) toast.error(error.message);
-    } catch {
-      toast.error("Google login failed");
+  // ─── STEP 1+2: SIGNUP ───────────────────────────────────────────────────────
+  // New user signup → show success → switch to Sign In tab
+  const handleSignup = async () => {
+    if (!name || !email || !password) { toast.error("Fill all fields!"); return; }
+    if (password.length < 6) { toast.error("Password must be at least 6 characters!"); return; }
+    setLoading(true);
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
     }
-    setGoogleLoading(false);
+    if (data.user) {
+      // Save name to profiles table
+      await supabase.from("profiles").upsert({ user_id: data.user.id, name, edu_level: "Student" });
+      await supabase.from("user_xp").upsert({ user_id: data.user.id, total_xp: 0, level: 1, streak: 0 });
+    }
+    // Step 2: Show success then redirect to Sign In tab
+    toast.success("Account created! Now sign in 🎉");
+    setPassword("");
+    setName("");
+    setMode("login"); // Switch to Sign In tab
+    setLoading(false);
   };
 
-  // Email Login - uses server API route for reliable cookie setting
+  // ─── STEP 3+4: LOGIN ────────────────────────────────────────────────────────
+  // Check credentials → if right go to dashboard → if wrong show message
   const handleLogin = async () => {
     if (!email || !password) { toast.error("Fill all fields!"); return; }
     setLoading(true);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Login failed");
-      } else {
-        toast.success("Welcome back! 🎉");
-        window.location.href = "/dashboard";
-      }
-    } catch {
-      toast.error("Network error. Try again.");
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      // Step 4: Wrong credentials
+      toast.error("Invalid credentials. Please try again.");
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    // Step 3: Correct → go to dashboard
+    toast.success("Welcome back! 🎉");
+    // Small delay to let cookie set before redirect
+    setTimeout(() => {
+      window.location.replace("/dashboard");
+    }, 300);
   };
 
-  // Signup - uses server API route for reliable cookie setting
-  const handleSignup = async () => {
-    if (!email || !password || !name) { toast.error("Fill all fields!"); return; }
-    if (password.length < 6) { toast.error("Password min 6 characters!"); return; }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Signup failed");
-      } else {
-        toast.success("Account created! Welcome! 🎉");
-        window.location.href = "/dashboard";
-      }
-    } catch {
-      toast.error("Network error. Try again.");
+  // ─── STEP 5: GOOGLE LOGIN ───────────────────────────────────────────────────
+  // Works for both new and existing Google users
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: { access_type: "offline", prompt: "consent" },
+      },
+    });
+    if (error) {
+      toast.error(error.message);
+      setGoogleLoading(false);
     }
-    setLoading(false);
+    // Browser will redirect to Google — no need to setLoading(false)
   };
 
-  // Forgot Password
+  // ─── FORGOT PASSWORD ────────────────────────────────────────────────────────
   const handleForgot = async () => {
     if (!email) { toast.error("Enter your email!"); return; }
     setLoading(true);
+    const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/auth/reset-password",
+      redirectTo: `${window.location.origin}/auth/reset-password`,
     });
     if (error) toast.error(error.message);
     else { setForgotSent(true); toast.success("Reset link sent! Check email 📧"); }
@@ -96,9 +97,10 @@ export default function LoginPage() {
     width: "100%", borderRadius: 12, padding: "12px 16px",
     border: "1px solid rgba(79,142,247,.25)",
     background: "rgba(255,255,255,.05)",
-    color: "var(--text)", fontSize: 14,
+    color: "white", fontSize: 14,
     fontFamily: "var(--font-sora),sans-serif",
     outline: "none", transition: "border-color .2s",
+    boxSizing: "border-box" as const,
   };
 
   return (
@@ -108,8 +110,7 @@ export default function LoginPage() {
         .login-card { animation: fadeUp .4s ease; }
         input:focus { border-color: #4F8EF7 !important; box-shadow: 0 0 0 3px rgba(79,142,247,.1); }
         .g-btn:hover { background: rgba(255,255,255,.12) !important; transform: translateY(-1px); }
-        .submit-btn:hover { transform: translateY(-2px) !important; filter: brightness(1.1); }
-        .tab:hover { color: #4F8EF7 !important; }
+        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
       `}</style>
 
       <div className="login-card" style={{ width:"100%", maxWidth:420, background:"linear-gradient(145deg,rgba(14,22,48,.95),rgba(8,14,32,.95))", borderRadius:24, padding:36, border:"1px solid rgba(79,142,247,.2)", boxShadow:"0 24px 80px rgba(0,0,0,.5)" }}>
@@ -121,18 +122,17 @@ export default function LoginPage() {
           <p style={{ fontSize:13, color:"rgba(232,240,254,.4)" }}>Smarter Study. Better You.</p>
         </div>
 
-        {/* Tabs — only for login/signup */}
+        {/* Tabs */}
         {mode !== "forgot" && (
           <div style={{ display:"flex", background:"rgba(255,255,255,.05)", borderRadius:12, padding:4, marginBottom:24 }}>
             {(["login","signup"] as const).map(m => (
-              <button key={m} className="tab" onClick={() => setMode(m)} style={{
+              <button key={m} onClick={() => { setMode(m); setEmail(""); setPassword(""); setName(""); }} style={{
                 flex:1, padding:"9px", borderRadius:10, border:"none", cursor:"pointer",
                 fontFamily:"var(--font-sora),sans-serif", fontSize:13, fontWeight:700,
                 background: mode===m ? "linear-gradient(135deg,#4F8EF7,#6366F1)" : "transparent",
                 color: mode===m ? "#fff" : "rgba(232,240,254,.4)",
                 boxShadow: mode===m ? "0 4px 12px rgba(79,142,247,.3)" : "none",
-                transition: "all .2s",
-                textTransform: "capitalize",
+                transition:"all .2s",
               }}>
                 {m === "login" ? "Sign In" : "Sign Up"}
               </button>
@@ -140,15 +140,14 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Forgot Password Mode */}
+        {/* Forgot Password */}
         {mode === "forgot" && (
           <div>
-            <button onClick={() => { setMode("login"); setForgotSent(false); }} style={{ background:"none", border:"none", color:"#4F8EF7", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"inherit", marginBottom:16, display:"flex", alignItems:"center", gap:5 }}>
+            <button onClick={() => { setMode("login"); setForgotSent(false); }} style={{ background:"none", border:"none", color:"#4F8EF7", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"inherit", marginBottom:16 }}>
               ← Back to Sign In
             </button>
             <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:20, color:"#fff", fontWeight:700, marginBottom:8 }}>Reset Password</h2>
-            <p style={{ fontSize:13, color:"rgba(232,240,254,.4)", marginBottom:20 }}>Enter your email and we'll send a reset link</p>
-
+            <p style={{ fontSize:13, color:"rgba(232,240,254,.4)", marginBottom:20 }}>Enter your email to receive a reset link</p>
             {forgotSent ? (
               <div style={{ textAlign:"center", padding:24 }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>📧</div>
@@ -160,10 +159,8 @@ export default function LoginPage() {
               </div>
             ) : (
               <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                <input type="email" placeholder="Your email address" value={email} onChange={e=>setEmail(e.target.value)}
-                  style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
-                <button className="submit-btn" onClick={handleForgot} disabled={loading}
-                  style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:loading?"not-allowed":"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all .2s", opacity:loading?.7:1 }}>
+                <input type="email" placeholder="Your email address" value={email} onChange={e=>setEmail(e.target.value)} style={inputStyle}/>
+                <button onClick={handleForgot} disabled={loading} style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:loading?"not-allowed":"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, opacity:loading?.7:1 }}>
                   {loading ? "Sending..." : "📧 Send Reset Link"}
                 </button>
               </div>
@@ -171,64 +168,45 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Login / Signup Form */}
+        {/* Main Form */}
         {mode !== "forgot" && (
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
 
             {/* Google Button */}
-            <button className="g-btn" onClick={handleGoogle} disabled={googleLoading}
-              style={{ width:"100%", padding:"12px", borderRadius:12, border:"1px solid rgba(255,255,255,.15)", background:"rgba(255,255,255,.05)", color:"#E2EAF8", cursor:"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all .2s" }}>
+            <button className="g-btn" onClick={handleGoogle} disabled={googleLoading} style={{ width:"100%", padding:"12px", borderRadius:12, border:"1px solid rgba(255,255,255,.15)", background:"rgba(255,255,255,.05)", color:"#E2EAF8", cursor:"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all .2s" }}>
               <svg width="18" height="18" viewBox="0 0 18 18">
                 <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
                 <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
                 <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/>
                 <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/>
               </svg>
-              {googleLoading ? "Connecting..." : "Continue with Google"}
+              {googleLoading ? "Connecting..." : `Continue with Google`}
             </button>
 
-            {/* Divider */}
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)" }}/>
-              <span style={{ fontSize:12, color:"rgba(232,240,254,.3)" }}>or</span>
-              <div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)" }}/>
+              <div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)"}}/><span style={{ fontSize:12, color:"rgba(232,240,254,.3)" }}>or</span><div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)"}}/>
             </div>
 
-            {/* Name field (signup only) */}
             {mode === "signup" && (
-              <input type="text" placeholder="Full Name" value={name} onChange={e=>setName(e.target.value)}
-                style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
+              <input type="text" placeholder="Full Name" value={name} onChange={e=>setName(e.target.value)} style={inputStyle}/>
             )}
-
-            <input type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)}
-              style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
-
+            <input type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} style={inputStyle}/>
             <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)}
-              onKeyDown={e=>{ if(e.key==="Enter") mode==="login"?handleLogin():handleSignup(); }}
-              style={inputStyle} onFocus={e=>{e.target.style.borderColor="#4F8EF7"}} onBlur={e=>{e.target.style.borderColor="rgba(79,142,247,.25)"}}/>
+              onKeyDown={e=>{ if(e.key==="Enter") mode==="login"?handleLogin():handleSignup(); }} style={inputStyle}/>
 
-            {/* Forgot Password link */}
             {mode === "login" && (
               <button onClick={() => setMode("forgot")} style={{ background:"none", border:"none", color:"#4F8EF7", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"inherit", textAlign:"right", padding:0 }}>
                 Forgot Password?
               </button>
             )}
 
-            {/* Submit */}
             <button className="submit-btn" onClick={mode==="login"?handleLogin:handleSignup} disabled={loading}
               style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:loading?"not-allowed":"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all .2s", opacity:loading?.7:1, marginTop:4, boxShadow:"0 4px 16px rgba(79,142,247,.35)" }}>
               {loading ? "Please wait..." : mode==="login" ? "Sign In →" : "Create Account →"}
             </button>
-
-            {mode === "signup" && (
-              <p style={{ fontSize:11, color:"rgba(232,240,254,.25)", textAlign:"center" }}>
-                By signing up, you agree to our Terms & Privacy Policy
-              </p>
-            )}
           </div>
         )}
 
-        {/* Back to home */}
         <div style={{ textAlign:"center", marginTop:20 }}>
           <button onClick={() => router.push("/")} style={{ background:"none", border:"none", color:"rgba(232,240,254,.3)", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
             ← Back to home
