@@ -2,6 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip API routes completely - don't interfere with them
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -23,10 +30,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session - IMPORTANT!
   const { data: { user } } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
 
   const PROTECTED = [
     "/dashboard", "/planner", "/notes", "/timetable",
@@ -35,6 +39,7 @@ export async function middleware(request: NextRequest) {
   ];
 
   const isProtected = PROTECTED.some(p => pathname.startsWith(p));
+  const isAuthPage = pathname.startsWith("/auth/");
 
   // Not logged in → redirect to login
   if (isProtected && !user) {
@@ -44,7 +49,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Logged in + on auth page → redirect to dashboard
-  if (user && pathname.startsWith("/auth/login")) {
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -55,6 +60,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon-|manifest|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon-|manifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
