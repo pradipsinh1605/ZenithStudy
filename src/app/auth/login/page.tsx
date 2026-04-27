@@ -23,6 +23,7 @@ export default function LoginPage() {
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          queryParams: { access_type: "offline", prompt: "consent" },
         },
       });
       if (error) toast.error(error.message);
@@ -32,29 +33,49 @@ export default function LoginPage() {
     setGoogleLoading(false);
   };
 
-  // Email Login
+  // Email Login - uses server API route for reliable cookie setting
   const handleLogin = async () => {
     if (!email || !password) { toast.error("Fill all fields!"); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) toast.error(error.message);
-    else { toast.success("Welcome back! 🎉"); router.refresh(); router.push("/dashboard"); }
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Login failed");
+      } else {
+        toast.success("Welcome back! 🎉");
+        window.location.href = "/dashboard";
+      }
+    } catch {
+      toast.error("Network error. Try again.");
+    }
     setLoading(false);
   };
 
-  // Signup
+  // Signup - uses server API route for reliable cookie setting
   const handleSignup = async () => {
     if (!email || !password || !name) { toast.error("Fill all fields!"); return; }
     if (password.length < 6) { toast.error("Password min 6 characters!"); return; }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) { toast.error(error.message); setLoading(false); return; }
-    if (data.user) {
-      await supabase.from("profiles").upsert({ user_id: data.user.id, name, edu_level: "Student" });
-      await supabase.from("user_xp").upsert({ user_id: data.user.id, total_xp: 0, level: 1, streak: 0 });
-      toast.success("Account created! Welcome! 🎉");
-      router.refresh();
-      router.push("/dashboard");
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Signup failed");
+      } else {
+        toast.success("Account created! Welcome! 🎉");
+        window.location.href = "/dashboard";
+      }
+    } catch {
+      toast.error("Network error. Try again.");
     }
     setLoading(false);
   };
