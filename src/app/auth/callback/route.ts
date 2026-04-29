@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
 
@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   }
 
   const cookieStore = await cookies();
+  const response = NextResponse.redirect(`${origin}/dashboard`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,11 +19,16 @@ export async function GET(request: Request) {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
+            response.cookies.set(name, value, {
+              ...options,
+              sameSite: "lax",
+              secure: false,
+              path: "/",
+            });
           });
         },
       },
@@ -36,5 +42,5 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/auth/login?error=oauth_failed`);
   }
 
-  return NextResponse.redirect(`${origin}/dashboard`);
+  return response;
 }

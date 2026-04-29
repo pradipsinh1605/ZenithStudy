@@ -9,6 +9,10 @@ const TYPES = ["class","lab","study","exam"];
 const TYPE_COLORS: Record<string,string> = {
   class: "#4F8EF7", lab: "#34D399", study: "#A78BFA", exam: "#F87171"
 };
+const SUBJECT_COLORS = [
+  "#4F8EF7","#34D399","#A78BFA","#F87171","#FBBF24",
+  "#EC4899","#14B8A6","#F97316","#6366F1","#84CC16"
+];
 
 export default function TimetablePage() {
   const supabase = createClient();
@@ -21,20 +25,26 @@ export default function TimetablePage() {
     end_time: "10:30", room: "", type: "class",
   });
 
+  // New Subject Modal
+  const [showNewSubject, setShowNewSubject] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubjectColor, setNewSubjectColor] = useState(SUBJECT_COLORS[0]);
+  const [savingSubject, setSavingSubject] = useState(false);
+
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) { setLoading(false); return; }
-    const [{ data: e }, { data: s }] = await Promise.all([
-      supabase.from("timetable").select("*").eq("user_id", user.id).order("start_time"),
-      supabase.from("subjects").select("*").eq("user_id", user.id),
-    ]);
-    setEntries(e || []);
-    setSubjects(s || []);
-    if (s && s.length > 0) setForm(f => ({ ...f, subject: s[0].name }));
-    setLoading(false);
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) { setLoading(false); return; }
+      const [{ data: e }, { data: s }] = await Promise.all([
+        supabase.from("timetable").select("*").eq("user_id", user.id).order("start_time"),
+        supabase.from("subjects").select("*").eq("user_id", user.id),
+      ]);
+      setEntries(e || []);
+      setSubjects(s || []);
+      if (s && s.length > 0) setForm(f => ({ ...f, subject: s[0].name }));
+      setLoading(false);
     } catch(e) { console.warn("Fetch error:", e); setLoading(false); }
   };
 
@@ -58,12 +68,37 @@ export default function TimetablePage() {
     toast.success("Removed from timetable");
   };
 
+  // Add new subject directly from timetable
+  const addNewSubject = async () => {
+    if (!newSubjectName.trim()) { toast.error("Subject name enter karo!"); return; }
+    setSavingSubject(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await supabase.from("subjects")
+      .insert({ user_id: user.id, name: newSubjectName.trim(), color: newSubjectColor })
+      .select().single();
+    if (error) { toast.error("Subject add nahi thayo"); setSavingSubject(false); return; }
+    setSubjects(prev => [...prev, data]);
+    setForm(f => ({ ...f, subject: data.name }));
+    setNewSubjectName("");
+    setNewSubjectColor(SUBJECT_COLORS[0]);
+    setShowNewSubject(false);
+    setSavingSubject(false);
+    toast.success(`"${data.name}" subject add thayu! 🎉`);
+  };
+
   const subjectColor = (name: string) =>
     subjects.find(s => s.name === name)?.color || "#4F8EF7";
 
-  // Today highlight
   const todayIndex = new Date().getDay();
   const todayName  = DAYS[todayIndex === 0 ? 6 : todayIndex - 1];
+
+  const inputStyle = {
+    width:"100%", borderRadius:10, padding:"9px 12px", fontSize:13,
+    border:"1px solid var(--border)", background:"var(--bg)",
+    color:"var(--text)", outline:"none", fontFamily:"inherit",
+    boxSizing:"border-box" as const,
+  };
 
   if (loading) return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:300, color:"var(--muted)" }}>Loading…</div>
@@ -71,6 +106,99 @@ export default function TimetablePage() {
 
   return (
     <div>
+      {/* New Subject Modal */}
+      {showNewSubject && (
+        <div style={{
+          position:"fixed", inset:0, background:"rgba(0,0,0,.6)", zIndex:1000,
+          display:"flex", alignItems:"center", justifyContent:"center", padding:20
+        }}>
+          <div style={{
+            background:"var(--card)", borderRadius:20, padding:28,
+            border:"1px solid var(--border)", width:"100%", maxWidth:380,
+            boxShadow:"0 24px 60px rgba(0,0,0,.4)"
+          }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <h3 style={{ color:"var(--text)", fontSize:16, fontWeight:700, margin:0 }}>
+                📚 New Subject Add Karo
+              </h3>
+              <button onClick={() => setShowNewSubject(false)}
+                style={{ background:"none", border:"none", cursor:"pointer", color:"var(--muted)" }}>
+                <X size={18}/>
+              </button>
+            </div>
+
+            {/* Subject Name */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>
+                Subject Name
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Mathematics, Physics..."
+                value={newSubjectName}
+                onChange={e => setNewSubjectName(e.target.value)}
+                onKeyDown={e => { if(e.key === "Enter") addNewSubject(); }}
+                style={inputStyle}
+                autoFocus
+              />
+            </div>
+
+            {/* Color Picker */}
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:10 }}>
+                Color Select Karo
+              </label>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {SUBJECT_COLORS.map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setNewSubjectColor(color)}
+                    style={{
+                      width:30, height:30, borderRadius:"50%", background:color,
+                      border: newSubjectColor === color ? "3px solid white" : "3px solid transparent",
+                      cursor:"pointer", outline: newSubjectColor === color ? `2px solid ${color}` : "none",
+                      transition:"all .15s"
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div style={{
+              marginBottom:20, padding:"10px 14px", borderRadius:10,
+              background:`${newSubjectColor}18`, border:`1px solid ${newSubjectColor}44`,
+              borderLeft:`3px solid ${newSubjectColor}`
+            }}>
+              <span style={{ fontSize:13, fontWeight:700, color:newSubjectColor }}>
+                {newSubjectName || "Subject Preview"}
+              </span>
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={addNewSubject} disabled={savingSubject}
+                style={{
+                  flex:1, padding:"10px", borderRadius:10, border:"none",
+                  background:"#4F8EF7", color:"#fff", cursor:"pointer",
+                  fontWeight:700, fontSize:13, fontFamily:"inherit",
+                  opacity: savingSubject ? .7 : 1
+                }}>
+                {savingSubject ? "Adding..." : "✅ Add Subject"}
+              </button>
+              <button onClick={() => setShowNewSubject(false)}
+                style={{
+                  padding:"10px 16px", borderRadius:10,
+                  border:"1px solid var(--border)", background:"transparent",
+                  color:"var(--muted)", cursor:"pointer", fontSize:13, fontFamily:"inherit"
+                }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
         <p style={{ color:"var(--muted)", fontSize:14 }}>
@@ -89,45 +217,52 @@ export default function TimetablePage() {
             {/* Subject */}
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>Subject</label>
-              <select value={form.subject} onChange={e => setForm({...form, subject:e.target.value})}
-                style={{ width:"100%", borderRadius:10, padding:"9px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none", fontFamily:"inherit" }}>
-                <option value="">Select subject</option>
-                {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-              </select>
+              <div style={{ display:"flex", gap:6 }}>
+                <select value={form.subject} onChange={e => setForm({...form, subject:e.target.value})}
+                  style={{ ...inputStyle, flex:1 }}>
+                  <option value="">Select subject</option>
+                  {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                </select>
+                <button
+                  onClick={() => setShowNewSubject(true)}
+                  title="New Subject Add Karo"
+                  style={{
+                    padding:"9px 10px", borderRadius:10, border:"1px dashed #4F8EF7",
+                    background:"#4F8EF711", color:"#4F8EF7", cursor:"pointer",
+                    fontSize:16, lineHeight:1, fontWeight:700, flexShrink:0
+                  }}>
+                  +
+                </button>
+              </div>
             </div>
             {/* Day */}
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>Day</label>
-              <select value={form.day} onChange={e => setForm({...form, day:e.target.value})}
-                style={{ width:"100%", borderRadius:10, padding:"9px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none", fontFamily:"inherit" }}>
+              <select value={form.day} onChange={e => setForm({...form, day:e.target.value})} style={inputStyle}>
                 {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
             {/* Type */}
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>Type</label>
-              <select value={form.type} onChange={e => setForm({...form, type:e.target.value})}
-                style={{ width:"100%", borderRadius:10, padding:"9px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none", fontFamily:"inherit" }}>
+              <select value={form.type} onChange={e => setForm({...form, type:e.target.value})} style={inputStyle}>
                 {TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
               </select>
             </div>
             {/* Start */}
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>Start Time</label>
-              <input type="time" value={form.start_time} onChange={e => setForm({...form, start_time:e.target.value})}
-                style={{ width:"100%", borderRadius:10, padding:"9px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none", fontFamily:"inherit" }}/>
+              <input type="time" value={form.start_time} onChange={e => setForm({...form, start_time:e.target.value})} style={inputStyle}/>
             </div>
             {/* End */}
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>End Time</label>
-              <input type="time" value={form.end_time} onChange={e => setForm({...form, end_time:e.target.value})}
-                style={{ width:"100%", borderRadius:10, padding:"9px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none", fontFamily:"inherit" }}/>
+              <input type="time" value={form.end_time} onChange={e => setForm({...form, end_time:e.target.value})} style={inputStyle}/>
             </div>
             {/* Room */}
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>Room (Optional)</label>
-              <input type="text" value={form.room} onChange={e => setForm({...form, room:e.target.value})} placeholder="e.g. Room 201"
-                style={{ width:"100%", borderRadius:10, padding:"9px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none", fontFamily:"inherit" }}/>
+              <input type="text" value={form.room} onChange={e => setForm({...form, room:e.target.value})} placeholder="e.g. Room 201" style={inputStyle}/>
             </div>
           </div>
           <div style={{ display:"flex", gap:10 }}>
@@ -150,7 +285,6 @@ export default function TimetablePage() {
           const dayEntries = entries.filter(e => e.day === day);
           return (
             <div key={day}>
-              {/* Day header */}
               <div style={{
                 textAlign:"center", fontSize:12, fontWeight:700,
                 textTransform:"uppercase" as const, letterSpacing:".08em",
@@ -162,8 +296,6 @@ export default function TimetablePage() {
                 {day}
                 {isToday && <div style={{ fontSize:9, marginTop:2, color:"#4F8EF7" }}>TODAY</div>}
               </div>
-
-              {/* Entries */}
               <div style={{ display:"flex", flexDirection:"column", gap:8, minHeight:160 }}>
                 {dayEntries.map(entry => {
                   const col = subjectColor(entry.subject);
@@ -171,29 +303,17 @@ export default function TimetablePage() {
                   return (
                     <div key={entry.id} style={{
                       borderRadius:12, padding:"10px 10px 8px", transition:"all .2s cubic-bezier(.34,1.4,.64,1)",
-                      background: `${col}18`,
-                      border: `1px solid ${col}33`,
-                      borderLeft: `3px solid ${col}`,
-                      position:"relative",
+                      background:`${col}18`, border:`1px solid ${col}33`,
+                      borderLeft:`3px solid ${col}`, position:"relative",
                     }}>
-                      <div style={{ fontSize:12, fontWeight:700, color:col, marginBottom:3 }}>
-                        {entry.subject}
-                      </div>
-                      <div style={{ fontSize:10, color:"var(--muted)" }}>
-                        {entry.start_time} – {entry.end_time}
-                      </div>
-                      {entry.room && (
-                        <div style={{ fontSize:10, color:"var(--muted)", marginTop:2 }}>
-                          📍 {entry.room}
-                        </div>
-                      )}
+                      <div style={{ fontSize:12, fontWeight:700, color:col, marginBottom:3 }}>{entry.subject}</div>
+                      <div style={{ fontSize:10, color:"var(--muted)" }}>{entry.start_time} – {entry.end_time}</div>
+                      {entry.room && <div style={{ fontSize:10, color:"var(--muted)", marginTop:2 }}>📍 {entry.room}</div>}
                       <span style={{
                         display:"inline-block", marginTop:6, fontSize:9, padding:"2px 7px",
                         borderRadius:20, fontWeight:700, textTransform:"uppercase" as const,
                         background:`${typeCol}22`, color:typeCol,
-                      }}>
-                        {entry.type}
-                      </span>
+                      }}>{entry.type}</span>
                       <button onClick={() => deleteEntry(entry.id)}
                         style={{ position:"absolute", top:6, right:6, background:"none", border:"none", cursor:"pointer", color:"var(--muted)", opacity:.5, display:"flex", padding:2 }}>
                         <X size={11}/>
@@ -202,9 +322,7 @@ export default function TimetablePage() {
                   );
                 })}
                 {dayEntries.length === 0 && (
-                  <div style={{ textAlign:"center", padding:"20px 4px", border:"1px dashed var(--border)", borderRadius:12, color:"var(--muted)", fontSize:10 }}>
-                    Free
-                  </div>
+                  <div style={{ textAlign:"center", padding:"20px 4px", border:"1px dashed var(--border)", borderRadius:12, color:"var(--muted)", fontSize:10 }}>Free</div>
                 )}
               </div>
             </div>
