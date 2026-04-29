@@ -49,10 +49,11 @@ Format every answer:
 8. ## 💡 Key Takeaway at end
 Be thorough, clear, use real examples. Explain like teaching a 16-year-old.`;
 
-const CK="sb-ai-v3";
+// CK is now dynamic per user
 
 export default function AITutorPage() {
   const supabase=createClient();
+  const [userId,setUserId]=useState<string|null>(null);
   const [msgs,setMsgs]=useState<Message[]>([]);
   const [input,setInput]=useState("");
   const [loading,setLoading]=useState(false);
@@ -94,17 +95,19 @@ export default function AITutorPage() {
       try{
         const {data:{user}}=await supabase.auth.getUser();
         if(!user) return;
+        setUserId(user.id);
+        const CK=`sb-ai-v3-${user.id}`;
         const {data:s}=await supabase.from("subjects").select("*").eq("user_id",user.id);
         setSubjects(s||[]);
-      }catch{}
-      try{
-        const m=localStorage.getItem(CK); if(m) setMsgs(JSON.parse(m));
-        const h=localStorage.getItem(CK+"-h"); if(h) setHistory(JSON.parse(h));
+        try{
+          const m=localStorage.getItem(CK); if(m) setMsgs(JSON.parse(m));
+          const h=localStorage.getItem(CK+"-h"); if(h) setHistory(JSON.parse(h));
+        }catch{}
       }catch{}
     })();
   },[]);
 
-  useEffect(()=>{ if(msgs.length) try{localStorage.setItem(CK,JSON.stringify(msgs));}catch{} },[msgs]);
+  useEffect(()=>{ if(msgs.length&&userId) try{localStorage.setItem(`sb-ai-v3-${userId}`,JSON.stringify(msgs));}catch{} },[msgs,userId]);
   useEffect(()=>{ bottom.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
 
   const render=async(id:string,code:string)=>{
@@ -168,7 +171,7 @@ export default function AITutorPage() {
     const nc={id:Date.now(),title:msgs.find(m=>m.role==="user")?.content.slice(0,45)||"Chat",messages:msgs,date:new Date().toLocaleDateString("en-IN"),subject:sub};
     const up=[nc,...history.slice(0,9)];
     setHistory(up);
-    try{localStorage.setItem(CK+"-h",JSON.stringify(up));}catch{}
+    try{localStorage.setItem(`sb-ai-v3-${userId}-h`,JSON.stringify(up));}catch{}
     toast.success("Chat saved! 💾");
   };
 
@@ -178,7 +181,7 @@ export default function AITutorPage() {
     setTimeout(()=>c.messages.forEach((m:Message)=>{if(m.mermaid)render(m.id,m.mermaid);}),200);
   };
 
-  const clearChat=()=>{setMsgs([]);try{localStorage.removeItem(CK);}catch{}toast.success("Cleared!");};
+  const clearChat=()=>{setMsgs([]);try{if(userId)localStorage.removeItem(`sb-ai-v3-${userId}`);}catch{}toast.success("Cleared!");};
 
   const dlPNG=(id:string)=>{
     const el=dRefs.current[id];if(!el)return;
