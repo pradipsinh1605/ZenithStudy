@@ -49,8 +49,6 @@ Format every answer:
 8. ## 💡 Key Takeaway at end
 Be thorough, clear, use real examples. Explain like teaching a 16-year-old.`;
 
-// CK is now dynamic per user
-
 export default function AITutorPage() {
   const supabase=createClient();
   const [userId,setUserId]=useState<string|null>(null);
@@ -96,18 +94,34 @@ export default function AITutorPage() {
         const {data:{user}}=await supabase.auth.getUser();
         if(!user) return;
         setUserId(user.id);
-        const CK=`sb-ai-v3-${user.id}`;
         const {data:s}=await supabase.from("subjects").select("*").eq("user_id",user.id);
         setSubjects(s||[]);
+        // Load current chat from localStorage (user specific)
         try{
-          const m=localStorage.getItem(CK); if(m) setMsgs(JSON.parse(m));
-          const h=localStorage.getItem(CK+"-h"); if(h) setHistory(JSON.parse(h));
+          const m=localStorage.getItem(`sb-ai-v3-${user.id}`);
+          if(m) setMsgs(JSON.parse(m));
         }catch{}
+        // Load history from Supabase
+        await loadHistoryFromDB(user.id);
       }catch{}
     })();
   },[]);
 
-  useEffect(()=>{ if(msgs.length&&userId) try{localStorage.setItem(`sb-ai-v3-${userId}`,JSON.stringify(msgs));}catch{} },[msgs,userId]);
+  const loadHistoryFromDB=async(uid:string)=>{
+    const {data}=await supabase
+      .from("ai_chat_history")
+      .select("*")
+      .eq("user_id",uid)
+      .order("created_at",{ascending:false})
+      .limit(10);
+    if(data) setHistory(data);
+  };
+
+  useEffect(()=>{
+    if(msgs.length&&userId)
+      try{localStorage.setItem(`sb-ai-v3-${userId}`,JSON.stringify(msgs));}catch{}
+  },[msgs,userId]);
+
   useEffect(()=>{ bottom.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
 
   const render=async(id:string,code:string)=>{
@@ -115,7 +129,8 @@ export default function AITutorPage() {
     if(!el||(window as any).mermaid==null) return;
     try{
       el.innerHTML="";
-      const numId = parseInt(id.slice(-6)) || Math.floor(Math.random()*99999); const {svg}=await (window as any).mermaid.render(`maid${numId}`,code);
+      const numId=parseInt(id.slice(-6))||Math.floor(Math.random()*99999);
+      const {svg}=await (window as any).mermaid.render(`maid${numId}`,code);
       el.innerHTML=svg;
     }catch{
       el.innerHTML=`<p style="color:#F87171;padding:12px;font-size:12px">⚠️ Diagram render failed</p>`;
@@ -166,29 +181,44 @@ export default function AITutorPage() {
     setLoading(false);
   };
 
-  const saveChat=()=>{
+  // Save chat to Supabase DB
+  const saveChat=async()=>{
     if(!msgs.length){toast.error("Nothing to save!");return;}
-    const nc={id:Date.now(),title:msgs.find(m=>m.role==="user")?.content.slice(0,45)||"Chat",messages:msgs,date:new Date().toLocaleDateString("en-IN"),subject:sub};
-    const up=[nc,...history.slice(0,9)];
-    setHistory(up);
-    try{localStorage.setItem(`sb-ai-v3-${userId}-h`,JSON.stringify(up));}catch{}
+    if(!userId){toast.error("Login required!");return;}
+    const title=msgs.find(m=>m.role==="user")?.content.slice(0,45)||"Chat";
+    // Save loading msgs hata ke — clean messages
+    const cleanMsgs=msgs.map(({loading:_,diagLoading:__,...rest})=>rest);
+    const {error}=await supabase.from("ai_chat_history").insert({
+      user_id:userId,
+      title,
+      messages:cleanMsgs,
+      subject:sub,
+    });
+    if(error){toast.error("Save failed!");return;}
     toast.success("Chat saved! 💾");
+    await loadHistoryFromDB(userId);
   };
 
-  const loadChat=(c:any)=>{
-    setMsgs(c.messages);setSub(c.subject||"");setShowHist(false);
+  const loadChat=async(c:any)=>{
+    setMsgs(c.messages);
+    setSub(c.subject||"");
+    setShowHist(false);
     toast.success("Loaded!");
     setTimeout(()=>c.messages.forEach((m:Message)=>{if(m.mermaid)render(m.id,m.mermaid);}),200);
   };
 
-  const deleteChat=(id:number)=>{
-    const up=history.filter(c=>c.id!==id);
-    setHistory(up);
-    try{localStorage.setItem(`sb-ai-v3-${userId}-h`,JSON.stringify(up));}catch{}
+  const deleteChat=async(id:string)=>{
+    const {error}=await supabase.from("ai_chat_history").delete().eq("id",id);
+    if(error){toast.error("Delete failed!");return;}
+    setHistory(prev=>prev.filter(c=>c.id!==id));
     toast.success("Chat deleted! 🗑️");
   };
 
-  const clearChat=()=>{setMsgs([]);try{if(userId)localStorage.removeItem(`sb-ai-v3-${userId}`);}catch{}toast.success("Cleared!");};
+  const clearChat=()=>{
+    setMsgs([]);
+    try{if(userId)localStorage.removeItem(`sb-ai-v3-${userId}`);}catch{}
+    toast.success("Cleared!");
+  };
 
   const dlPNG=(id:string)=>{
     const el=dRefs.current[id];if(!el)return;
@@ -255,8 +285,7 @@ export default function AITutorPage() {
             )}
             <button onClick={()=>setShowHist(!showHist)}
               style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid var(--border)",background:"var(--card)",color:"var(--muted)",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit",transition:"all .2s"}}>
-              <BookOpen size={13}/> History{history.length>0?` (${history.length})`:""}
-              {showHist?<ChevronUp size={11}/>:<ChevronDown size={11}/>}
+              <BookOpen size={13}/> History{history.length>0?` (${history.length})`:""}{showHist?<ChevronUp size={11}/>:<ChevronDown size={11}/>}
             </button>
             {msgs.length>0&&(
               <button onClick={saveChat}
@@ -300,10 +329,13 @@ export default function AITutorPage() {
                     <span style={{fontSize:16}}>💬</span>
                     <div style={{flex:1,minWidth:0,cursor:"pointer"}} onClick={()=>loadChat(c)}>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.title}...</div>
-                      <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{c.date}{c.subject?` · ${c.subject}`:""} · {c.messages.length} msgs</div>
+                      <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>
+                        {new Date(c.created_at).toLocaleDateString("en-IN")}
+                        {c.subject?` · ${c.subject}`:""} · {c.messages.length} msgs
+                      </div>
                     </div>
                     <span style={{fontSize:11,color:"#4F8EF7",fontWeight:600,flexShrink:0,cursor:"pointer"}} onClick={()=>loadChat(c)}>Load →</span>
-                    <button onClick={(e)=>{e.stopPropagation();deleteChat(c.id);}}
+                    <button onClick={()=>deleteChat(c.id)}
                       style={{padding:"4px 8px",borderRadius:8,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0,transition:"all .15s"}}
                       onMouseEnter={e=>{e.currentTarget.style.background="rgba(248,113,113,.2)"}}
                       onMouseLeave={e=>{e.currentTarget.style.background="rgba(248,113,113,.08)"}}>
@@ -378,9 +410,6 @@ export default function AITutorPage() {
                         <div style={{marginTop:10,display:"flex",alignItems:"center",gap:9,padding:"10px 16px",borderRadius:12,background:"var(--bg)",border:"1px solid var(--border)",width:"fit-content"}}>
                           <Sparkles size={14} color="#A78BFA" style={{animation:"spin 1.5s linear infinite"}}/>
                           <span style={{fontSize:12,color:"#A78BFA",fontWeight:600}}>Generating diagram...</span>
-                          <div style={{width:90,height:3,borderRadius:2,background:"var(--border)",overflow:"hidden"}}>
-                            <div style={{height:"100%",background:"linear-gradient(90deg,#4F8EF7,#A78BFA)",backgroundSize:"200%",animation:"shimmer 1s linear infinite",borderRadius:2}}/>
-                          </div>
                         </div>
                       )}
                       {msg.mermaid&&(
@@ -391,23 +420,17 @@ export default function AITutorPage() {
                             <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(167,139,250,.1)",color:"#A78BFA"}}>Mermaid.js</span>
                             <div style={{marginLeft:"auto",display:"flex",gap:6}}>
                               <button onClick={()=>setFullDiag(msg.mermaid!)}
-                                style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(167,139,250,.3)",background:"rgba(167,139,250,.1)",color:"#A78BFA",cursor:"pointer",fontFamily:"inherit",fontWeight:600,transition:"all .2s"}}
-                                onMouseEnter={e=>{e.currentTarget.style.background="rgba(167,139,250,.22)"}}
-                                onMouseLeave={e=>{e.currentTarget.style.background="rgba(167,139,250,.1)"}}>
+                                style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(167,139,250,.3)",background:"rgba(167,139,250,.1)",color:"#A78BFA",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>
                                 🔍 Full
                               </button>
                               <button onClick={()=>dlPNG(msg.id)}
-                                style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontFamily:"inherit",fontWeight:600,transition:"all .2s"}}
-                                onMouseEnter={e=>{e.currentTarget.style.background="rgba(52,211,153,.18)"}}
-                                onMouseLeave={e=>{e.currentTarget.style.background="rgba(52,211,153,.08)"}}>
+                                style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>
                                 <Download size={11}/> PNG
                               </button>
                             </div>
                           </div>
-                          <div style={{borderRadius:16,overflow:"hidden",border:"1px solid rgba(167,139,250,.2)",background:"#0B1628",padding:16,cursor:"pointer",transition:"box-shadow .2s"}}
-                            onClick={()=>setFullDiag(msg.mermaid!)}
-                            onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.boxShadow="0 8px 40px rgba(167,139,250,.2)"}}
-                            onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.boxShadow="none"}}>
+                          <div style={{borderRadius:16,overflow:"hidden",border:"1px solid rgba(167,139,250,.2)",background:"#0B1628",padding:16,cursor:"pointer"}}
+                            onClick={()=>setFullDiag(msg.mermaid!)}>
                             <div className="mw" ref={el=>{dRefs.current[msg.id]=el;if(el&&mLoaded&&msg.mermaid)render(msg.id,msg.mermaid);}}/>
                           </div>
                           <p style={{fontSize:11,color:"var(--muted)",marginTop:5,textAlign:"center"}}>Click to expand · ⬇ PNG</p>
@@ -440,7 +463,7 @@ export default function AITutorPage() {
         <p style={{fontSize:11,color:"var(--muted)",textAlign:"center",marginTop:7}}>Enter ↵ send · Shift+Enter new line · 💾 Save · ⬇ Download diagrams</p>
       </div>
 
-      {/* Full Screen */}
+      {/* Full Screen Diagram */}
       {fullDiag&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.9)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(8px)"}}
           onClick={()=>setFullDiag(null)}>
