@@ -26,6 +26,21 @@ export default function TimerPage() {
   const intervalRef = useRef<NodeJS.Timeout>();
   const current = MODES[mode];
 
+  // Fix: sync custom duration to timeLeft when not running
+  useEffect(() => {
+    if (!running && mode === "work") {
+      setTimeLeft(custom * 60);
+    }
+  }, [custom]);
+
+  // Fix: sync mode change to timeLeft when not running
+  useEffect(() => {
+    if (!running) {
+      if (mode === "work") setTimeLeft(custom * 60);
+      else setTimeLeft(MODES[mode].duration);
+    }
+  }, [mode]);
+
   useEffect(() => {
     (async () => {
       const { data: { user }, error } = await supabase.auth.getUser().catch(()=>({data:{user:null},error:new Error("auth")}));
@@ -67,6 +82,15 @@ export default function TimerPage() {
     }
     return () => clearInterval(intervalRef.current);
   }, [running, mode]);
+
+  const saveSessionToDB = async (mins: number, subj: string) => {
+    if (!userId) return;
+    await supabase.from("study_sessions").insert({
+      user_id: userId,
+      subject: subj,
+      duration_mins: mins,
+    });
+  };
 
   const handleSessionComplete = async () => {
     if (!userId) return;

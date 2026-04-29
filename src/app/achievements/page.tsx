@@ -75,6 +75,29 @@ export default function AchievementsPage() {
   const level     = Math.floor(xp/500)+1;
   const xpInLevel = xp%500;
   const badges    = calculateBadges({ xp, streak, tasksDone, notesCount, sessions, level, flashcards });
+
+  // Award XP for newly earned badges (run once on load)
+  useEffect(() => {
+    if (!userId || !badges.length) return;
+    const awardedKey = `sb-badges-awarded-${userId}`;
+    let awarded: string[] = [];
+    try { awarded = JSON.parse(localStorage.getItem(awardedKey) || "[]"); } catch {}
+    const newlyEarned = badges.filter(b => b.earned && b.xpReward > 0 && !awarded.includes(b.id));
+    if (!newlyEarned.length) return;
+    (async () => {
+      let totalBonus = 0;
+      newlyEarned.forEach(b => { totalBonus += b.xpReward; });
+      if (totalBonus > 0) {
+        const { data: xpData } = await supabase.from("user_xp").select("total_xp").eq("user_id", userId).single();
+        const newXp = (xpData?.total_xp || 0) + totalBonus;
+        await supabase.from("user_xp").update({ total_xp: newXp, level: Math.floor(newXp/500)+1 }).eq("user_id", userId);
+        setXp(newXp);
+        toast.success(`🏆 Badge bonus! +${totalBonus} XP`);
+      }
+      const newAwarded = [...awarded, ...newlyEarned.map(b => b.id)];
+      try { localStorage.setItem(awardedKey, JSON.stringify(newAwarded)); } catch {}
+    })();
+  }, [userId, tasksDone, notesCount, streak, sessions, flashcards]);
   const filtered  = catFilter==="All" ? badges : badges.filter(b=>b.category===catFilter);
   const earned    = badges.filter(b=>b.earned).length;
   const fadeUp = (d=0) => ({ opacity:visible?1:0, transform:visible?"translateY(0)":"translateY(16px)", transition:`opacity .3s ease ${d}ms, transform .3s cubic-bezier(.34,1.3,.64,1) ${d}ms` });

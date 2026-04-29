@@ -14,6 +14,13 @@ export default function FlashcardsPage() {
   const [score,    setScore]    = useState({ correct:0, incorrect:0 });
   const [showNew,  setShowNew]  = useState(false);
   const [filterSub,setFilterSub]= useState("");
+
+  // Reset score when filter changes
+  useEffect(() => {
+    setScore({ correct: 0, incorrect: 0 });
+    setIdx(0);
+    setFlipped(false);
+  }, [filterSub]);
   const [loading,  setLoading]  = useState(true);
 
   // New card form

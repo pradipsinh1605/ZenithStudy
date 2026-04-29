@@ -278,8 +278,9 @@ export default function TimetablePage() {
         </div>
       )}
 
-      {/* Weekly Grid */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:10 }}>
+      {/* Weekly Grid — mobile scrollable */}
+      <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" as any }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:10, minWidth:700 }}>
         {DAYS.map(day => {
           const isToday = day === todayName;
           const dayEntries = entries.filter(e => e.day === day);
@@ -329,6 +330,8 @@ export default function TimetablePage() {
           );
         })}
       </div>
+
+      </div>{/* end scroll wrapper */}
 
       {/* Summary bar */}
       {entries.length > 0 && (

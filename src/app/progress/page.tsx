@@ -7,21 +7,12 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
 
-const weeklyData = [
-  { day:"Mon", hours:3.5, tasks:4 },
-  { day:"Tue", hours:2,   tasks:3 },
-  { day:"Wed", hours:4.5, tasks:6 },
-  { day:"Thu", hours:1.5, tasks:2 },
-  { day:"Fri", hours:5,   tasks:7 },
-  { day:"Sat", hours:3,   tasks:4 },
-  { day:"Sun", hours:2.5, tasks:3 },
-];
-
 export default function ProgressPage() {
   const supabase  = createClient();
   const [tasks,    setTasks]    = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -30,19 +21,69 @@ export default function ProgressPage() {
       const [{ data: t }, { data: s }, { data: ss }] = await Promise.all([
         supabase.from("tasks").select("*").eq("user_id", user.id),
         supabase.from("subjects").select("*").eq("user_id", user.id),
-        supabase.from("study_sessions").select("*").eq("user_id", user.id),
+        supabase.from("study_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       ]);
       setTasks(t || []);
       setSubjects(s || []);
       setSessions(ss || []);
+      setLoading(false);
     })();
   }, []);
 
   const done  = tasks.filter(t => t.done).length;
   const total = tasks.length;
   const rate  = total > 0 ? Math.round((done / total) * 100) : 0;
-  const totalMins = sessions.reduce((acc, s) => acc + (s.duration_mins || 0), 0);
+  const totalMins  = sessions.reduce((acc, s) => acc + (s.duration_mins || 0), 0);
   const totalHours = (totalMins / 60).toFixed(1);
+
+  // ── Build real weekly chart data from sessions ──
+  const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const weeklyMap: Record<string, { hours: number; tasks: number }> = {};
+  DAYS.forEach(d => { weeklyMap[d] = { hours: 0, tasks: 0 }; });
+
+  // Last 7 days sessions
+  const now = new Date();
+  sessions.forEach(s => {
+    const d = new Date(s.created_at);
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 7) {
+      const dayName = DAYS[d.getDay() === 0 ? 6 : d.getDay() - 1];
+      weeklyMap[dayName].hours += (s.duration_mins || 0) / 60;
+    }
+  });
+
+  // Last 7 days tasks
+  tasks.filter(t => t.done).forEach(t => {
+    const d = new Date(t.created_at);
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 7) {
+      const dayName = DAYS[d.getDay() === 0 ? 6 : d.getDay() - 1];
+      weeklyMap[dayName].tasks += 1;
+    }
+  });
+
+  const weeklyData = DAYS.map(d => ({
+    day: d,
+    hours: parseFloat(weeklyMap[d].hours.toFixed(1)),
+    tasks: weeklyMap[d].tasks,
+  }));
+
+  // ── Subject breakdown from sessions ──
+  const subjectMap: Record<string, number> = {};
+  sessions.forEach(s => {
+    if (s.subject) {
+      subjectMap[s.subject] = (subjectMap[s.subject] || 0) + (s.duration_mins || 0);
+    }
+  });
+  const subjectData = Object.entries(subjectMap).map(([name, mins]) => ({
+    name,
+    hours: parseFloat((mins / 60).toFixed(1)),
+    color: subjects.find(s => s.name === name)?.color || "#4F8EF7",
+  })).sort((a, b) => b.hours - a.hours);
+
+  if (loading) return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:300, color:"var(--muted)" }}>Loading...</div>
+  );
 
   return (
     <div style={{ maxWidth: 900, display: "flex", flexDirection: "column", gap: 20 }}>
@@ -50,9 +91,9 @@ export default function ProgressPage() {
       {/* Stats */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
         {[
-          { icon:CheckSquare, label:"Tasks Done",       value:done,         sub:`of ${total} total`,  color:"#34D399" },
-          { icon:TrendingUp,  label:"Completion Rate",  value:`${rate}%`,   sub:"Overall progress",   color:"#4F8EF7" },
-          { icon:Clock,       label:"Total Study Time", value:`${totalHours}h`, sub:"All sessions",   color:"#F5A623" },
+          { icon:CheckSquare, label:"Tasks Done",       value:done,             sub:`of ${total} total`,  color:"#34D399" },
+          { icon:TrendingUp,  label:"Completion Rate",  value:`${rate}%`,       sub:"Overall progress",   color:"#4F8EF7" },
+          { icon:Clock,       label:"Total Study Time", value:`${totalHours}h`, sub:`${sessions.length} sessions`, color:"#F5A623" },
         ].map(({ icon:Icon, label, value, sub, color }) => (
           <div key={label} style={{ borderRadius:20, padding:20, border:"1px solid var(--border)", background:"var(--card)" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
@@ -72,68 +113,76 @@ export default function ProgressPage() {
       {/* Charts */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
         <div style={{ borderRadius:20, padding:20, border:"1px solid var(--border)", background:"var(--card)" }}>
-          <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)", marginBottom:20 }}>Daily Study Hours</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
-              <XAxis dataKey="day" stroke="var(--muted)" tick={{ fontSize:11 }}/>
-              <YAxis stroke="var(--muted)" tick={{ fontSize:11 }}/>
-              <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }}/>
-              <Bar dataKey="hours" fill="#4F8EF7" radius={[6,6,0,0]}/>
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)", marginBottom:4 }}>Daily Study Hours</h3>
+          <p style={{ fontSize:12, color:"var(--muted)", marginBottom:16 }}>Last 7 days · Real data</p>
+          {sessions.length === 0 ? (
+            <div style={{ height:220, display:"flex", alignItems:"center", justifyContent:"center", color:"var(--muted)", fontSize:13 }}>
+              No study sessions yet. Start the Focus Timer! 🍅
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
+                <XAxis dataKey="day" stroke="var(--muted)" tick={{ fontSize:11 }}/>
+                <YAxis stroke="var(--muted)" tick={{ fontSize:11 }}/>
+                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} formatter={(v:any) => [`${v}h`, "Hours"]}/>
+                <Bar dataKey="hours" fill="#4F8EF7" radius={[6,6,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div style={{ borderRadius:20, padding:20, border:"1px solid var(--border)", background:"var(--card)" }}>
-          <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)", marginBottom:20 }}>Tasks Completed</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={weeklyData}>
-              <defs>
-                <linearGradient id="tgrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#34D399" stopOpacity={.3}/>
-                  <stop offset="95%" stopColor="#34D399" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
-              <XAxis dataKey="day" stroke="var(--muted)" tick={{ fontSize:11 }}/>
-              <YAxis stroke="var(--muted)" tick={{ fontSize:11 }}/>
-              <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }}/>
-              <Area type="monotone" dataKey="tasks" stroke="#34D399" fill="url(#tgrad)" strokeWidth={2.5}/>
-            </AreaChart>
-          </ResponsiveContainer>
+          <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)", marginBottom:4 }}>Tasks Completed</h3>
+          <p style={{ fontSize:12, color:"var(--muted)", marginBottom:16 }}>Last 7 days · Real data</p>
+          {tasks.length === 0 ? (
+            <div style={{ height:220, display:"flex", alignItems:"center", justifyContent:"center", color:"var(--muted)", fontSize:13 }}>
+              No tasks yet. Add tasks in Planner! 📋
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
+                <XAxis dataKey="day" stroke="var(--muted)" tick={{ fontSize:11 }}/>
+                <YAxis stroke="var(--muted)" tick={{ fontSize:11 }}/>
+                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} formatter={(v:any) => [v, "Tasks"]}/>
+                <Area type="monotone" dataKey="tasks" stroke="#34D399" fill="#34D39922"/>
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
-      {/* Subject progress bars */}
-      <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
-        <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)", marginBottom:20 }}>Subject Progress</h3>
-        {subjects.length === 0 ? (
-          <p style={{ color:"var(--muted)", textAlign:"center", padding:20 }}>Add subjects in My Profile to track progress</p>
-        ) : (
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-            {subjects.map((s, i) => {
-              const pct = Math.round(20 + (i * 13) % 60);
-              const subjectTasks = tasks.filter(t => t.subject === s.name);
-              const subjectDone  = subjectTasks.filter(t => t.done).length;
-              const subjectRate  = subjectTasks.length > 0 ? Math.round((subjectDone / subjectTasks.length) * 100) : pct;
-              return (
-                <div key={s.id}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                      <div style={{ width:10, height:10, borderRadius:"50%", background:s.color }}/>
-                      <span style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>{s.name}</span>
-                    </div>
-                    <span style={{ fontSize:13, color:"var(--muted)" }}>{subjectRate}%</span>
-                  </div>
-                  <div style={{ background:"var(--border)", borderRadius:6, height:8, overflow:"hidden" }}>
-                    <div style={{ height:"100%", background:`linear-gradient(90deg,${s.color},${s.color}88)`, width:`${subjectRate}%`, borderRadius:6, transition:"width 1s ease" }}/>
-                  </div>
+      {/* Subject Breakdown */}
+      {subjectData.length > 0 && (
+        <div style={{ borderRadius:20, padding:20, border:"1px solid var(--border)", background:"var(--card)" }}>
+          <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)", marginBottom:16 }}>Time by Subject</h3>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {subjectData.map(s => (
+              <div key={s.name} style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <span style={{ fontSize:13, fontWeight:600, color:"var(--text)", minWidth:100 }}>{s.name}</span>
+                <div style={{ flex:1, height:8, borderRadius:4, background:"var(--border)", overflow:"hidden" }}>
+                  <div style={{
+                    height:"100%", borderRadius:4, background:s.color,
+                    width:`${Math.min((s.hours / parseFloat(totalHours)) * 100, 100)}%`,
+                    transition:"width .5s ease"
+                  }}/>
                 </div>
-              );
-            })}
+                <span style={{ fontSize:12, color:"var(--muted)", minWidth:40, textAlign:"right" }}>{s.hours}h</span>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {sessions.length === 0 && tasks.length === 0 && (
+        <div style={{ borderRadius:20, padding:40, border:"1px dashed var(--border)", background:"var(--card)", textAlign:"center" }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>📊</div>
+          <h3 style={{ color:"var(--text)", fontWeight:700, marginBottom:8 }}>No Data Yet</h3>
+          <p style={{ color:"var(--muted)", fontSize:14 }}>Start using Focus Timer and Planner to see your real progress here!</p>
+        </div>
+      )}
     </div>
   );
 }

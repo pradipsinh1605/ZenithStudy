@@ -71,8 +71,10 @@ export default function PlannerPage() {
   };
 
   const deleteTask = async (id: string) => {
-    await supabase.from("tasks").delete().eq("id",id);
+    const { error } = await supabase.from("tasks").delete().eq("id",id);
+    if (error) { toast.error("Failed to delete task"); return; }
     setTasks(prev => prev.filter(t => t.id!==id));
+    toast.success("Task deleted!");
   };
 
   const subjectColor = (n: string) => subjects.find(s=>s.name===n)?.color||"#4F8EF7";

@@ -196,7 +196,7 @@ export default function ProfilePage() {
       roll_no: rollNo, year_sem: yearSem,
       board,   awards,
       updated_at: new Date().toISOString(),
-    });
+    }, { onConflict: "user_id" });
     if (error) { toast.error("Failed to save"); }
     else { toast.success("Profile saved! ✅"); setEdit(false); }
     setLoading(false);
