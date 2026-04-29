@@ -181,6 +181,13 @@ export default function AITutorPage() {
     setTimeout(()=>c.messages.forEach((m:Message)=>{if(m.mermaid)render(m.id,m.mermaid);}),200);
   };
 
+  const deleteChat=(id:number)=>{
+    const up=history.filter(c=>c.id!==id);
+    setHistory(up);
+    try{localStorage.setItem(`sb-ai-v3-${userId}-h`,JSON.stringify(up));}catch{}
+    toast.success("Chat deleted! 🗑️");
+  };
+
   const clearChat=()=>{setMsgs([]);try{if(userId)localStorage.removeItem(`sb-ai-v3-${userId}`);}catch{}toast.success("Cleared!");};
 
   const dlPNG=(id:string)=>{
@@ -287,16 +294,21 @@ export default function AITutorPage() {
             ):(
               <div style={{display:"flex",flexDirection:"column",gap:7}}>
                 {history.map(c=>(
-                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:"var(--bg)",border:"1px solid var(--border)",cursor:"pointer",transition:"all .15s"}}
-                    onClick={()=>loadChat(c)}
+                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:"var(--bg)",border:"1px solid var(--border)",transition:"all .15s"}}
                     onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor="#4F8EF7"}}
                     onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor="var(--border)"}}>
                     <span style={{fontSize:16}}>💬</span>
-                    <div style={{flex:1,minWidth:0}}>
+                    <div style={{flex:1,minWidth:0,cursor:"pointer"}} onClick={()=>loadChat(c)}>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.title}...</div>
                       <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{c.date}{c.subject?` · ${c.subject}`:""} · {c.messages.length} msgs</div>
                     </div>
-                    <span style={{fontSize:11,color:"#4F8EF7",fontWeight:600,flexShrink:0}}>Load →</span>
+                    <span style={{fontSize:11,color:"#4F8EF7",fontWeight:600,flexShrink:0,cursor:"pointer"}} onClick={()=>loadChat(c)}>Load →</span>
+                    <button onClick={(e)=>{e.stopPropagation();deleteChat(c.id);}}
+                      style={{padding:"4px 8px",borderRadius:8,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0,transition:"all .15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="rgba(248,113,113,.2)"}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="rgba(248,113,113,.08)"}}>
+                      🗑️
+                    </button>
                   </div>
                 ))}
               </div>
