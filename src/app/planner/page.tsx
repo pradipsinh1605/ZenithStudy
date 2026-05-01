@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Check, CheckSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { validate } from "@/lib/validation";
 import toast from "react-hot-toast";
 
 const XP_EVENT = "studybuddy:xp-updated";
@@ -71,10 +72,8 @@ export default function PlannerPage() {
   };
 
   const deleteTask = async (id: string) => {
-    const { error } = await supabase.from("tasks").delete().eq("id",id);
-    if (error) { toast.error("Failed to delete task"); return; }
+    await supabase.from("tasks").delete().eq("id",id);
     setTasks(prev => prev.filter(t => t.id!==id));
-    toast.success("Task deleted!");
   };
 
   const subjectColor = (n: string) => subjects.find(s=>s.name===n)?.color||"#4F8EF7";

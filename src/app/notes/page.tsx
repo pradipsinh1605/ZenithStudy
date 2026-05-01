@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Trash2, Star, Edit3, Save, Search, FileText, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { debounce } from "@/lib/validation";
 import { addXP } from "@/lib/xp-utils";
 import toast from "react-hot-toast";
 

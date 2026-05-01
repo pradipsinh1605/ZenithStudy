@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { TimerProvider, useTimer, MODES } from "@/lib/TimerContext";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -12,6 +13,24 @@ import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
 import { onXPUpdate } from "@/lib/xp-utils";
 import PageTransition from "@/components/ui/PageTransition";
+
+// Cache user data for 5 minutes
+const USER_CACHE_KEY = "sb-user-cache";
+const CACHE_TTL = 5 * 60 * 1000;
+
+function getCachedUser() {
+  try {
+    const c = localStorage.getItem(USER_CACHE_KEY);
+    if (!c) return null;
+    const { data, ts } = JSON.parse(c);
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return data;
+  } catch { return null; }
+}
+
+function setCachedUser(data: any) {
+  try { localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch {}
+}
 
 const NAV = [
   { href:"/dashboard",    icon:Home,        label:"Dashboard"    },
@@ -81,22 +100,38 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     );
   }, [uid]);
 
-  const fetchUser = async () => {
+  const fetchUser = async (forceRefresh = false) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/auth/login"); return; }
       setUid(user.id);
+      // Use cache if available and not force refresh
+      if (!forceRefresh) {
+        const cached = getCachedUser();
+        if (cached && cached.uid === user.id) {
+          setName(cached.name); setEduLevel(cached.eduLevel);
+          setXp(cached.xp); setStreak(cached.streak);
+          setTasks(cached.tasks); setTt(cached.tt);
+          return;
+        }
+      }
       const [{ data:p },{ data:x },{ data:t },{ data:tbl }] = await Promise.all([
         supabase.from("profiles").select("name,edu_level").eq("user_id",user.id).single(),
         supabase.from("user_xp").select("total_xp,streak").eq("user_id",user.id).single(),
         supabase.from("tasks").select("*").eq("user_id",user.id).eq("done",false),
         supabase.from("timetable").select("*").eq("user_id",user.id),
       ]);
-      setName(p?.name||user.email?.split("@")[0]||"Student");
-      setEduLevel(p?.edu_level||"");
-      setXp(x?.total_xp||0); setStreak(x?.streak||0);
-      setTasks(t||[]); setTt(tbl||[]);
-    } catch(e) { console.error(e); }
+      const name_ = p?.name||user.email?.split("@")[0]||"Student";
+      const edu_  = p?.edu_level||"";
+      const xp_   = x?.total_xp||0;
+      const str_  = x?.streak||0;
+      const tasks_= t||[];
+      const tt_   = tbl||[];
+      setName(name_); setEduLevel(edu_);
+      setXp(xp_); setStreak(str_);
+      setTasks(tasks_); setTt(tt_);
+      setCachedUser({ uid:user.id, name:name_, eduLevel:edu_, xp:xp_, streak:str_, tasks:tasks_, tt:tt_ });
+    } catch(e) { /* silent */ }
   };
 
   const level    = Math.floor(xp/500)+1;
@@ -112,9 +147,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const logout   = async () => { await supabase.auth.signOut(); window.location.href="/auth/login"; };
 
   return (
+    <TimerProvider>
     <>
       <style>{`
         @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        @media (max-width: 768px) {
+          .mobile-overlay { display: block !important; }
+          aside { position: fixed !important; z-index: 50 !important; }
+        }
         @keyframes nprogress { 0%{width:0%;opacity:1} 80%{width:90%;opacity:1} 100%{width:100%;opacity:0} }
         .nprogress-bar { position:fixed;top:0;left:0;height:3px;z-index:9999;background:linear-gradient(90deg,#4F8EF7,#A78BFA,#34D399);animation:nprogress .6s ease-out forwards;border-radius:0 2px 2px 0; }
         @keyframes badgePop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
@@ -159,6 +199,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━
             SIDEBAR — fully theme-aware
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        {/* Mobile overlay */}
+        {open && (
+          <div
+            className="mobile-overlay"
+            onClick={() => setOpen(false)}
+            style={{ display:"none", position:"fixed", inset:0, background:"rgba(0,0,0,.5)", zIndex:40 }}
+          />
+        )}
         <aside style={{
           width: open ? 240 : 68,
           display:"flex", flexDirection:"column", flexShrink:0,
@@ -166,6 +214,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           borderRight: "1px solid var(--sidebar-border)",
           transition: "width .3s cubic-bezier(.4,0,.2,1)",
           overflow:"hidden", height:"100vh", position:"sticky", top:0,
+          zIndex: 50,
         }}>
 
           {/* Logo */}
@@ -410,5 +459,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         </div>
       </div>
     </>
+    </TimerProvider>
   );
 }

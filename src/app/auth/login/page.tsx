@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { validate } from "@/lib/validation";
 import toast from "react-hot-toast";
 
 export default function LoginPage() {
@@ -17,8 +18,12 @@ export default function LoginPage() {
   // ─── STEP 1+2: SIGNUP ───────────────────────────────────────────────────────
   // New user signup → show success → switch to Sign In tab
   const handleSignup = async () => {
-    if (!name || !email || !password) { toast.error("Fill all fields!"); return; }
-    if (password.length < 6) { toast.error("Password must be at least 6 characters!"); return; }
+    const nameErr = validate.name(name);
+    const emailErr = validate.email(email);
+    const passErr = validate.password(password);
+    if (nameErr) { toast.error(nameErr); return; }
+    if (emailErr) { toast.error(emailErr); return; }
+    if (passErr) { toast.error(passErr); return; }
     setLoading(true);
     const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({ email, password });
@@ -43,7 +48,9 @@ export default function LoginPage() {
   // ─── STEP 3+4: LOGIN ────────────────────────────────────────────────────────
   // Check credentials → if right go to dashboard → if wrong show message
   const handleLogin = async () => {
-    if (!email || !password) { toast.error("Fill all fields!"); return; }
+    const emailErr = validate.email(email);
+    if (emailErr) { toast.error(emailErr); return; }
+    if (!password) { toast.error("Password is required"); return; }
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -82,7 +89,8 @@ export default function LoginPage() {
 
   // ─── FORGOT PASSWORD ────────────────────────────────────────────────────────
   const handleForgot = async () => {
-    if (!email) { toast.error("Enter your email!"); return; }
+    const emailErr = validate.email(email);
+    if (emailErr) { toast.error(emailErr); return; }
     setLoading(true);
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
