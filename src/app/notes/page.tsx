@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, Star, Edit3, Save, Search, FileText, X } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Plus, Trash2, Star, Edit3, Save, Search, FileText, X, Upload, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { debounce } from "@/lib/validation";
 import { addXP } from "@/lib/xp-utils";
+import { validate, debounce } from "@/lib/validation";
 import toast from "react-hot-toast";
 
 export default function NotesPage() {
@@ -22,26 +22,32 @@ export default function NotesPage() {
   const [newSubject,  setNewSubject]  = useState("");
   const [newContent,  setNewContent]  = useState("");
   const [editContent, setEditContent] = useState("");
+  const [autoSaving,  setAutoSaving]  = useState(false);
+  const [lastSaved,   setLastSaved]   = useState<Date|null>(null);
+  // PDF states
+  const [uploading,   setUploading]   = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchData(); setTimeout(() => setVisible(true), 50); }, []);
 
   const fetchData = async () => {
     try {
-    const { data: { user }, error: ae } = await supabase.auth.getUser();
-    if (ae || !user) { setLoading(false); return; }
-    setUserId(user.id);
-    const [{ data:n },{ data:s }] = await Promise.all([
-      supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),
-      supabase.from("subjects").select("*").eq("user_id",user.id),
-    ]);
-    setNotes(n||[]); setSubjects(s||[]);
-    if (s&&s.length>0) setNewSubject(s[0].name);
-    setLoading(false);
-    } catch(e){ console.warn(e); setLoading(false); }
+      const { data: { user }, error: ae } = await supabase.auth.getUser();
+      if (ae || !user) { setLoading(false); return; }
+      setUserId(user.id);
+      const [{ data:n },{ data:s }] = await Promise.all([
+        supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),
+        supabase.from("subjects").select("*").eq("user_id",user.id),
+      ]);
+      setNotes(n||[]); setSubjects(s||[]);
+      if (s&&s.length>0) setNewSubject(s[0].name);
+      setLoading(false);
+    } catch(e){ setLoading(false); }
   };
 
   const saveNew = async () => {
-    if (!newTitle.trim()) { toast.error("Please enter a title"); return; }
+    const titleErr = validate.noteTitle(newTitle);
+    if (titleErr) { toast.error(titleErr); return; }
     const { data, error } = await supabase.from("notes").insert({
       user_id:userId, title:newTitle.trim(), subject:newSubject, content:newContent, starred:false,
     }).select().single();
@@ -54,15 +60,33 @@ export default function NotesPage() {
 
   const saveEdit = async () => {
     if (!selected) return;
-    await supabase.from("notes").update({ content:editContent, updated_at:new Date().toISOString() }).eq("id",selected.id);
+    const { error } = await supabase.from("notes").update({ content:editContent, updated_at:new Date().toISOString() }).eq("id",selected.id);
+    if (error) { toast.error("Save failed"); return; }
     const updated = { ...selected, content:editContent };
     setNotes(prev => prev.map(n => n.id===selected.id?updated:n));
     setSelected(updated); setEditing(false);
     toast.success("Saved! ✅");
   };
 
+  // Auto-save debounced
+  const autoSave = useCallback(
+    debounce(async (noteId: string, body: string) => {
+      setAutoSaving(true);
+      const { error } = await supabase.from("notes").update({ content:body, updated_at:new Date().toISOString() }).eq("id",noteId);
+      setAutoSaving(false);
+      if (!error) { setLastSaved(new Date()); setNotes(prev => prev.map(n => n.id===noteId?{...n,content:body}:n)); }
+    }, 1500), []
+  );
+
   const deleteNote = async (id: string) => {
-    await supabase.from("notes").delete().eq("id",id);
+    // Delete PDF from storage if exists
+    const note = notes.find(n => n.id === id);
+    if (note?.pdf_url) {
+      const path = `${userId}/${id}.pdf`;
+      await supabase.storage.from("note-pdfs").remove([path]);
+    }
+    const { error } = await supabase.from("notes").delete().eq("id",id);
+    if (error) { toast.error("Delete failed"); return; }
     setNotes(prev => prev.filter(n => n.id!==id));
     if (selected?.id===id) setSelected(null);
     toast.success("Deleted");
@@ -73,6 +97,36 @@ export default function NotesPage() {
     const updated = {...note,starred:!note.starred};
     setNotes(prev => prev.map(n => n.id===note.id?updated:n));
     if (selected?.id===note.id) setSelected(updated);
+  };
+
+  // PDF Upload
+  const uploadPDF = async (file: File) => {
+    if (!selected) { toast.error("Pehla note select karo"); return; }
+    if (file.type !== "application/pdf") { toast.error("Only PDF files allowed!"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Max 10MB PDF allowed"); return; }
+    setUploading(true);
+    const path = `${userId}/${selected.id}.pdf`;
+    const { error: upErr } = await supabase.storage.from("note-pdfs").upload(path, file, { upsert:true });
+    if (upErr) { toast.error("Upload failed: " + upErr.message); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("note-pdfs").getPublicUrl(path);
+    const pdfUrl = urlData.publicUrl;
+    await supabase.from("notes").update({ pdf_url:pdfUrl, pdf_name:file.name }).eq("id",selected.id);
+    const updated = { ...selected, pdf_url:pdfUrl, pdf_name:file.name };
+    setNotes(prev => prev.map(n => n.id===selected.id?updated:n));
+    setSelected(updated);
+    setUploading(false);
+    toast.success("PDF uploaded! 📄");
+  };
+
+  const removePDF = async () => {
+    if (!selected?.pdf_url) return;
+    const path = `${userId}/${selected.id}.pdf`;
+    await supabase.storage.from("note-pdfs").remove([path]);
+    await supabase.from("notes").update({ pdf_url:null, pdf_name:null }).eq("id",selected.id);
+    const updated = { ...selected, pdf_url:null, pdf_name:null };
+    setNotes(prev => prev.map(n => n.id===selected.id?updated:n));
+    setSelected(updated);
+    toast.success("PDF removed");
   };
 
   const subjectColor = (n: string) => subjects.find(s=>s.name===n)?.color||"#4F8EF7";
@@ -94,69 +148,52 @@ export default function NotesPage() {
         .note-list-item { transition:all .18s !important; }
       `}</style>
 
+      <input ref={fileRef} type="file" accept=".pdf" style={{ display:"none" }}
+        onChange={e => { if(e.target.files?.[0]) uploadPDF(e.target.files[0]); e.target.value=""; }}/>
+
       <div style={{ display:"flex", gap:18, height:"calc(100vh - 130px)" }}>
 
-        {/* ── Left Panel ── */}
+        {/* Left Panel */}
         <div style={{ ...fadeUp(0), width:290, display:"flex", flexDirection:"column", gap:10, flexShrink:0 }}>
-
-          {/* Search + Add */}
           <div style={{ display:"flex", gap:8 }}>
-            <div style={{ flex:1, display:"flex", alignItems:"center", gap:8, borderRadius:12, border:"1px solid var(--border)", background:"var(--bg)", padding:"8px 12px", backdropFilter:"blur(8px)", transition:"border-color .2s" }}
-              onFocus={()=>{}} onBlur={()=>{}}>
+            <div style={{ flex:1, display:"flex", alignItems:"center", gap:8, borderRadius:12, border:"1px solid var(--border)", background:"var(--bg)", padding:"8px 12px" }}>
               <Search size={14} color="var(--muted)"/>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search notes…"
                 style={{ background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:13,fontFamily:"inherit",width:"100%" }}/>
             </div>
-            <button onClick={()=>setShowNew(!showNew)} style={{
-              width:40,height:40,borderRadius:12,border:"none",
-              background:"linear-gradient(135deg,#4F8EF7,#6366F1)",
-              color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
-              flexShrink:0,boxShadow:"0 4px 16px rgba(79,142,247,.4)",
-              transition:"all .2s",
-            }}
+            <button onClick={()=>setShowNew(!showNew)} style={{ width:40,height:40,borderRadius:12,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 16px rgba(79,142,247,.4)",transition:"all .2s" }}
               onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.1) rotate(8deg)"}}
               onMouseLeave={e=>{e.currentTarget.style.transform="scale(1) rotate(0)"}}>
               <Plus size={17}/>
             </button>
           </div>
 
-          {/* Subject filter */}
           {subjects.length > 0 && (
             <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-              <button onClick={()=>setFilterSub("")} style={{ padding:"3px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit", border:`1px solid ${!filterSub?"#4F8EF7":"rgba(255,255,255,.08)"}`, background:!filterSub?"rgba(79,142,247,.15)":"transparent", color:!filterSub?"#4F8EF7":"var(--muted)", transition:"all .15s" }}>
-                All
-              </button>
+              <button onClick={()=>setFilterSub("")} style={{ padding:"3px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${!filterSub?"#4F8EF7":"rgba(255,255,255,.08)"}`,background:!filterSub?"rgba(79,142,247,.15)":"transparent",color:!filterSub?"#4F8EF7":"var(--muted)",transition:"all .15s" }}>All</button>
               {subjects.map(s => (
-                <button key={s.id} onClick={()=>setFilterSub(filterSub===s.name?"":s.name)} style={{ padding:"3px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit", border:`1px solid ${filterSub===s.name?s.color+"66":"rgba(255,255,255,.08)"}`, background:filterSub===s.name?s.color+"18":"transparent", color:filterSub===s.name?s.color:"var(--muted)", transition:"all .15s" }}>
-                  {s.name}
-                </button>
+                <button key={s.id} onClick={()=>setFilterSub(filterSub===s.name?"":s.name)} style={{ padding:"3px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${filterSub===s.name?s.color+"66":"rgba(255,255,255,.08)"}`,background:filterSub===s.name?s.color+"18":"transparent",color:filterSub===s.name?s.color:"var(--muted)",transition:"all .15s" }}>{s.name}</button>
               ))}
             </div>
           )}
 
-          {/* New note form */}
           {showNew && (
-            <div style={{ padding:14,borderRadius:16,border:"1px solid rgba(79,142,247,.3)",background:"var(--card)",boxShadow:"0 4px 16px rgba(0,0,0,.08)", animation:"popIn .25s ease" }}>
+            <div style={{ padding:14,borderRadius:16,border:"1px solid rgba(79,142,247,.3)",background:"var(--card)",animation:"popIn .25s ease" }}>
               <input value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="Note title…" autoFocus
-                style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",marginBottom:8, transition:"border-color .2s" }}
-                onFocus={e=>e.target.style.borderColor="#4F8EF7"} onBlur={e=>e.target.style.borderColor="rgba(79,142,247,.2)"}/>
+                style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",marginBottom:8,boxSizing:"border-box" }}/>
               <select value={newSubject} onChange={e=>setNewSubject(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",marginBottom:8 }}>
                 <option value="">No subject</option>
                 {subjects.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
               </select>
               <textarea value={newContent} onChange={e=>setNewContent(e.target.value)} rows={3} placeholder="Start writing…"
-                style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",resize:"none",marginBottom:8, transition:"border-color .2s" }}
-                onFocus={e=>e.target.style.borderColor="#4F8EF7"} onBlur={e=>e.target.style.borderColor="rgba(255,255,255,.08)"}/>
+                style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",resize:"none",marginBottom:8,boxSizing:"border-box" }}/>
               <div style={{ display:"flex",gap:8 }}>
-                <button onClick={saveNew} style={{ flex:1,padding:"8px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,fontFamily:"inherit",boxShadow:"0 4px 14px rgba(79,142,247,.4)" }}>
-                  Save +10 XP ⚡
-                </button>
+                <button onClick={saveNew} style={{ flex:1,padding:"8px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,fontFamily:"inherit" }}>Save +10 XP ⚡</button>
                 <button onClick={()=>setShowNew(false)} style={{ padding:"8px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,.08)",background:"transparent",color:"var(--muted)",cursor:"pointer",fontSize:12,fontFamily:"inherit" }}>✕</button>
               </div>
             </div>
           )}
 
-          {/* Notes list */}
           <div style={{ flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:7 }}>
             {filtered.length === 0 && (
               <div style={{ textAlign:"center",padding:40,color:"var(--muted)" }}>
@@ -164,62 +201,87 @@ export default function NotesPage() {
                 <p style={{ fontSize:13 }}>{search?"No results":"No notes yet"}</p>
               </div>
             )}
-            {filtered.map((note, i) => (
-              <div key={note.id} className="note-list-item" onClick={()=>{setSelected(note);setEditContent(note.content||"");setEditing(false);}}
-                style={{ padding:"11px 14px",borderRadius:14, border:`1px solid ${selected?.id===note.id?"rgba(79,142,247,.4)":"rgba(255,255,255,.06)"}`, background:selected?.id===note.id?"rgba(79,142,247,.1)":"var(--bg)", cursor:"pointer", borderLeft:`3px solid ${subjectColor(note.subject)}`, animation:`popIn .25s ease ${i*30}ms both` }}>
+            {filtered.map((note,i) => (
+              <div key={note.id} className="note-list-item" onClick={()=>{setSelected(note);setEditContent(note.content||"");setEditing(false);setLastSaved(null);}}
+                style={{ padding:"11px 14px",borderRadius:14,border:`1px solid ${selected?.id===note.id?"rgba(79,142,247,.4)":"rgba(255,255,255,.06)"}`,background:selected?.id===note.id?"rgba(79,142,247,.1)":"var(--bg)",cursor:"pointer",borderLeft:`3px solid ${subjectColor(note.subject)}`,animation:`popIn .25s ease ${i*30}ms both` }}>
                 <div style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
                   {note.subject && <span style={{ fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,background:`${subjectColor(note.subject)}22`,color:subjectColor(note.subject) }}>{note.subject}</span>}
-                  {note.starred && <Star size={12} color="#F5A623" fill="#F5A623"/>}
+                  <div style={{ display:"flex",gap:4,alignItems:"center" }}>
+                    {note.pdf_url && <span style={{ fontSize:9,padding:"1px 5px",borderRadius:10,background:"rgba(248,113,113,.15)",color:"#F87171",fontWeight:700 }}>PDF</span>}
+                    {note.starred && <Star size={12} color="#F5A623" fill="#F5A623"/>}
+                  </div>
                 </div>
                 <h4 style={{ fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:3 }}>{note.title}</h4>
-                <p style={{ fontSize:11,color:"var(--muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{note.content||"Empty note"}</p>
+                <p style={{ fontSize:11,color:"var(--muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{note.pdf_name || note.content||"Empty note"}</p>
                 <p style={{ fontSize:10,color:"var(--muted)",marginTop:4,opacity:.6 }}>{new Date(note.created_at).toLocaleDateString("en-IN")}</p>
               </div>
             ))}
           </div>
-
-          <div style={{ fontSize:11,color:"var(--muted)",textAlign:"center",padding:"6px 0",borderTop:"1px solid rgba(255,255,255,.06)" }}>
-            📝 {notes.length} notes · +10 XP each
-          </div>
+          <div style={{ fontSize:11,color:"var(--muted)",textAlign:"center",padding:"6px 0",borderTop:"1px solid rgba(255,255,255,.06)" }}>📝 {notes.length} notes · +10 XP each</div>
         </div>
 
-        {/* ── Viewer ── */}
+        {/* Viewer */}
         <div style={{ ...fadeUp(80), flex:1, borderRadius:20, border:"1px solid rgba(79,142,247,.12)", background:"var(--card)", display:"flex", flexDirection:"column", overflow:"hidden", boxShadow:"0 4px 30px rgba(0,0,0,.3)" }}>
           {selected ? (
             <>
-              <div style={{ padding:"18px 22px",borderBottom:"1px solid rgba(255,255,255,.06)",display:"flex",justifyContent:"space-between",alignItems:"flex-start", background:"rgba(79,142,247,.04)" }}>
+              <div style={{ padding:"18px 22px",borderBottom:"1px solid rgba(255,255,255,.06)",display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:"rgba(79,142,247,.04)" }}>
                 <div>
                   {selected.subject && <span style={{ fontSize:11,padding:"3px 10px",borderRadius:20,fontWeight:700,background:`${subjectColor(selected.subject)}22`,color:subjectColor(selected.subject),display:"inline-block",marginBottom:8 }}>{selected.subject}</span>}
-                  <h2 style={{ fontFamily:"var(--font-lora),serif",fontSize:24,color:"var(--text)",fontWeight:700 }}>{selected.title}</h2>
-                  <p style={{ fontSize:12,color:"var(--muted)",marginTop:4 }}>{new Date(selected.created_at).toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p>
+                  <h2 style={{ fontFamily:"var(--font-lora),serif",fontSize:22,color:"var(--text)",fontWeight:700 }}>{selected.title}</h2>
+                  <div style={{ display:"flex",alignItems:"center",gap:10,marginTop:4 }}>
+                    <p style={{ fontSize:12,color:"var(--muted)" }}>{new Date(selected.created_at).toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p>
+                    {autoSaving && <span style={{ fontSize:11,color:"var(--muted)" }}>💾 Saving...</span>}
+                    {!autoSaving && lastSaved && <span style={{ fontSize:11,color:"#34D399" }}>✓ Auto-saved {lastSaved.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>}
+                  </div>
                 </div>
-                <div style={{ display:"flex",gap:8,flexShrink:0 }}>
-                  <button onClick={()=>toggleStar(selected)} style={{padding:8,borderRadius:10,border:"1px solid rgba(245,166,35,.3)",background:"rgba(245,166,35,.15)",color:"var(--text)",cursor:"pointer",display:"flex",transition:"all .18s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.1)"}} onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)"}}>
+                <div style={{ display:"flex",gap:8,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end" }}>
+                  {/* PDF Upload Button */}
+                  <button onClick={()=>fileRef.current?.click()} disabled={uploading}
+                    style={{ padding:"6px 10px",borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.1)",color:"#F87171",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"inherit",fontWeight:700 }}>
+                    <Upload size={13}/>{uploading?"Uploading...":"Upload PDF"}
+                  </button>
+                  <button onClick={()=>toggleStar(selected)} style={{ padding:8,borderRadius:10,border:"1px solid rgba(245,166,35,.3)",background:"rgba(245,166,35,.15)",color:"var(--text)",cursor:"pointer",display:"flex",transition:"all .18s" }}>
                     <Star size={16} color="#F5A623" fill={selected.starred?"#F5A623":"none"}/>
                   </button>
                   {editing ? (
-                    <button onClick={saveEdit} style={{padding:8,borderRadius:10,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.15)",color:"var(--text)",cursor:"pointer",display:"flex",transition:"all .18s"}}>
+                    <button onClick={saveEdit} style={{ padding:8,borderRadius:10,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.15)",color:"var(--text)",cursor:"pointer",display:"flex" }}>
                       <Save size={16}/>
                     </button>
                   ) : (
-                    <button onClick={()=>{setEditContent(selected.content||"");setEditing(true);}} style={{padding:8,borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.15)",color:"var(--text)",cursor:"pointer",display:"flex",transition:"all .18s"}}>
+                    <button onClick={()=>{setEditContent(selected.content||"");setEditing(true);}} style={{ padding:8,borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.15)",color:"var(--text)",cursor:"pointer",display:"flex" }}>
                       <Edit3 size={16}/>
                     </button>
                   )}
-                  {editing && (
-                    <button onClick={()=>setEditing(false)} style={{padding:8,borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.05)",color:"var(--text)",cursor:"pointer",display:"flex",transition:"all .18s"}}>
-                      <X size={16}/>
-                    </button>
-                  )}
-                  <button onClick={()=>deleteNote(selected.id)} style={{padding:8,borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.12)",color:"var(--text)",cursor:"pointer",display:"flex",transition:"all .18s"}}>
+                  {editing && <button onClick={()=>setEditing(false)} style={{ padding:8,borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.05)",color:"var(--text)",cursor:"pointer",display:"flex" }}><X size={16}/></button>}
+                  <button onClick={()=>deleteNote(selected.id)} style={{ padding:8,borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.12)",color:"var(--text)",cursor:"pointer",display:"flex" }}>
                     <Trash2 size={16}/>
                   </button>
                 </div>
               </div>
+
+              {/* PDF Section */}
+              {selected.pdf_url && (
+                <div style={{ margin:"12px 22px 0",padding:"10px 14px",borderRadius:12,border:"1px solid rgba(248,113,113,.25)",background:"rgba(248,113,113,.06)",display:"flex",alignItems:"center",gap:10 }}>
+                  <span style={{ fontSize:18 }}>📄</span>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    <div style={{ fontSize:13,fontWeight:700,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{selected.pdf_name}</div>
+                    <div style={{ fontSize:11,color:"var(--muted)" }}>PDF attached to this note</div>
+                  </div>
+                  <a href={selected.pdf_url} target="_blank" rel="noopener noreferrer"
+                    style={{ padding:"5px 10px",borderRadius:8,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:11,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:4 }}>
+                    <ExternalLink size={11}/> Open
+                  </a>
+                  <button onClick={removePDF} style={{ padding:"5px 10px",borderRadius:8,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit" }}>
+                    Remove
+                  </button>
+                </div>
+              )}
+
               <div style={{ flex:1,padding:24,overflowY:"auto" }}>
                 {editing ? (
-                  <textarea value={editContent} onChange={e=>setEditContent(e.target.value)} autoFocus
+                  <textarea value={editContent}
+                    onChange={e=>{setEditContent(e.target.value); autoSave(selected.id, e.target.value);}}
+                    autoFocus
                     style={{ width:"100%",height:"100%",background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.9 }}
                     placeholder="Write your note here…"/>
                 ) : (

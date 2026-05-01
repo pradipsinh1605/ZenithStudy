@@ -1,12 +1,13 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { Send, Trash2, Brain, Sparkles, X, Loader, Copy, Check, Download, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Send, Trash2, Brain, Sparkles, X, Loader, Copy, Check, Download, BookOpen, ChevronDown, ChevronUp, Upload, FileText, Image as ImageIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
 interface Message {
   id:string; role:"user"|"assistant"; content:string;
   mermaid?:string; diagLoading?:boolean; loading?:boolean; timestamp:number;
+  attachment?: { type:"pdf"|"image"; name:string; data:string; };
 }
 
 function md(t:string):string {
@@ -29,25 +30,19 @@ Summary: ${a.slice(0,400)}
 RULES: Output ONLY Mermaid syntax. No backticks, no explanation.
 Choose: flowchart TD/LR, mindmap, timeline, sequenceDiagram, pie
 Keep max 12 nodes. Use clear labels.
-Example:
-flowchart TD
-    A[Sunlight] --> B[Chlorophyll]
-    B --> C[Glucose + O2]
 Output Mermaid code only:`;
 
 const SYS=(s:string)=>
-`You are StudyBuddy AI — expert educational tutor.
+`You are StudyBuddy AI — expert educational tutor. You ONLY answer study-related questions.
 ${s?`Student studies: ${s}.`:""}
+If a question is NOT study-related, politely decline and ask for a study topic.
 Format every answer:
 1. 📌 One-line summary
 2. ## Main sections with emojis
-3. **bold** key terms
-4. Numbered steps for processes
-5. - bullets for lists
-6. \`code\` for formulas
-7. --- between sections
-8. ## 💡 Key Takeaway at end
-Be thorough, clear, use real examples. Explain like teaching a 16-year-old.`;
+3. **bold** key terms, \`code\` for formulas
+4. --- between sections
+5. ## 💡 Key Takeaway at end
+Be thorough, clear, use real examples.`;
 
 export default function AITutorPage() {
   const supabase=createClient();
@@ -63,6 +58,10 @@ export default function AITutorPage() {
   const [showHist,setShowHist]=useState(false);
   const [history,setHistory]=useState<any[]>([]);
   const [mLoaded,setMLoaded]=useState(false);
+  // File attachment
+  const [attachment,setAttachment]=useState<{type:"pdf"|"image";name:string;data:string;}|null>(null);
+  const [attLoading,setAttLoading]=useState(false);
+  const fileRef=useRef<HTMLInputElement>(null);
   const bottom=useRef<HTMLDivElement>(null);
   const dRefs=useRef<Record<string,HTMLDivElement|null>>({});
 
@@ -70,18 +69,7 @@ export default function AITutorPage() {
     const s=document.createElement("script");
     s.src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
     s.onload=()=>{
-      (window as any).mermaid?.initialize({
-        startOnLoad:false,theme:"dark",
-        themeVariables:{
-          primaryColor:"#4F8EF7",primaryTextColor:"#E2EAF8",
-          primaryBorderColor:"#1A2E4A",lineColor:"#5A7A9E",
-          secondaryColor:"#0E1E38",tertiaryColor:"#0B1628",
-          background:"#0B1628",mainBkg:"#0E1E38",
-          nodeBorder:"#4F8EF7",titleColor:"#E2EAF8",
-          fontFamily:"Arial,sans-serif",
-        },
-        flowchart:{curve:"basis",padding:20},
-      });
+      (window as any).mermaid?.initialize({startOnLoad:false,theme:"dark",themeVariables:{primaryColor:"#4F8EF7",primaryTextColor:"#E2EAF8",primaryBorderColor:"#1A2E4A",lineColor:"#5A7A9E",secondaryColor:"#0E1E38",background:"#0B1628",mainBkg:"#0E1E38",nodeBorder:"#4F8EF7",titleColor:"#E2EAF8",fontFamily:"Arial,sans-serif"},flowchart:{curve:"basis",padding:20}});
       setMLoaded(true);
     };
     document.head.appendChild(s);
@@ -96,32 +84,18 @@ export default function AITutorPage() {
         setUserId(user.id);
         const {data:s}=await supabase.from("subjects").select("*").eq("user_id",user.id);
         setSubjects(s||[]);
-        // Load current chat from localStorage (user specific)
-        try{
-          const m=localStorage.getItem(`sb-ai-v3-${user.id}`);
-          if(m) setMsgs(JSON.parse(m));
-        }catch{}
-        // Load history from Supabase
+        try{ const m=localStorage.getItem(`sb-ai-v3-${user.id}`); if(m) setMsgs(JSON.parse(m)); }catch{}
         await loadHistoryFromDB(user.id);
       }catch{}
     })();
   },[]);
 
   const loadHistoryFromDB=async(uid:string)=>{
-    const {data}=await supabase
-      .from("ai_chat_history")
-      .select("*")
-      .eq("user_id",uid)
-      .order("created_at",{ascending:false})
-      .limit(10);
+    const {data}=await supabase.from("ai_chat_history").select("*").eq("user_id",uid).order("created_at",{ascending:false}).limit(10);
     if(data) setHistory(data);
   };
 
-  useEffect(()=>{
-    if(msgs.length&&userId)
-      try{localStorage.setItem(`sb-ai-v3-${userId}`,JSON.stringify(msgs));}catch{}
-  },[msgs,userId]);
-
+  useEffect(()=>{ if(msgs.length&&userId) try{localStorage.setItem(`sb-ai-v3-${userId}`,JSON.stringify(msgs));}catch{} },[msgs,userId]);
   useEffect(()=>{ bottom.current?.scrollIntoView({behavior:"smooth"}); },[msgs]);
 
   const render=async(id:string,code:string)=>{
@@ -132,15 +106,33 @@ export default function AITutorPage() {
       const numId=parseInt(id.slice(-6))||Math.floor(Math.random()*99999);
       const {svg}=await (window as any).mermaid.render(`maid${numId}`,code);
       el.innerHTML=svg;
-    }catch{
-      el.innerHTML=`<p style="color:#F87171;padding:12px;font-size:12px">⚠️ Diagram render failed</p>`;
-    }
+    }catch{ el.innerHTML=`<p style="color:#F87171;padding:12px;font-size:12px">⚠️ Diagram render failed</p>`; }
   };
 
-  const callAPI=async(messages:any[],system?:string,type="chat")=>{
+  // Handle file upload (PDF or Image)
+  const handleFileUpload=async(file: File)=>{
+    const isPDF=file.type==="application/pdf";
+    const isImage=file.type.startsWith("image/");
+    if(!isPDF && !isImage){ toast.error("Only PDF or Image files allowed!"); return; }
+    if(file.size>10*1024*1024){ toast.error("Max 10MB file allowed"); return; }
+    setAttLoading(true);
+    try{
+      const reader=new FileReader();
+      reader.onload=(e)=>{
+        const data=e.target?.result as string;
+        const base64=data.split(",")[1];
+        setAttachment({ type:isPDF?"pdf":"image", name:file.name, data:base64 });
+        setAttLoading(false);
+        toast.success(`${isPDF?"PDF":"Image"} ready! Now type your question.`);
+      };
+      reader.readAsDataURL(file);
+    }catch{ toast.error("File read failed"); setAttLoading(false); }
+  };
+
+  const callAPI=async(messages:any[],system?:string,attachment?:any)=>{
     const r=await fetch("/api/ai",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({messages,system,type}),
+      body:JSON.stringify({messages,system,type:"chat",attachment}),
     });
     if(!r.ok){const e=await r.json();throw new Error(e.error||`${r.status}`);}
     return (await r.json()).text||"";
@@ -149,60 +141,49 @@ export default function AITutorPage() {
   const genDiag=async(q:string,a:string,id:string)=>{
     setMsgs(p=>p.map(m=>m.id===id?{...m,diagLoading:true}:m));
     try{
-      const raw=await callAPI([{role:"user",content:MERMAID_P(q,a)}],undefined,"diagram");
+      const raw=await callAPI([{role:"user",content:MERMAID_P(q,a)}],undefined);
       const code=raw.replace(/```mermaid/gi,"").replace(/```/g,"").trim();
       setMsgs(p=>p.map(m=>m.id===id?{...m,mermaid:code,diagLoading:false}:m));
       setTimeout(()=>render(id,code),150);
-    }catch{
-      setMsgs(p=>p.map(m=>m.id===id?{...m,diagLoading:false}:m));
-    }
+    }catch{ setMsgs(p=>p.map(m=>m.id===id?{...m,diagLoading:false}:m)); }
   };
 
   const send=async()=>{
-    if(!input.trim()||loading) return;
-    const q=input.trim(); setInput(""); setLoading(true);
+    if(!input.trim()&&!attachment||loading) return;
+    const q=input.trim()||`Analyze this ${attachment?.type}`;
+    const att=attachment;
+    setInput(""); setAttachment(null); setLoading(true);
     const uid=Date.now().toString(), aid=(Date.now()+1).toString(), ts=Date.now();
     setMsgs(p=>[...p,
-      {id:uid,role:"user",content:q,timestamp:ts},
+      {id:uid,role:"user",content:q,timestamp:ts,attachment:att||undefined},
       {id:aid,role:"assistant",content:"",loading:true,timestamp:ts},
     ]);
     try{
       const hist=msgs.slice(-8).map(m=>({role:m.role,content:m.content}));
-      const ans=await callAPI([...hist,{role:"user",content:q}],SYS(sub));
+      const ans=await callAPI([...hist,{role:"user",content:q}],SYS(sub),att);
       setMsgs(p=>p.map(m=>m.id===aid?{...m,content:ans,loading:false}:m));
-      if(autoVis&&ans.length>80) genDiag(q,ans,aid);
+      if(autoVis&&ans.length>80&&!att) genDiag(q,ans,aid);
     }catch(e:any){
-      const msg=e.message.includes("401")||e.message.includes("403")
-        ?"❌ Invalid GROQ_API_KEY. Check .env.local!"
-        :`❌ Error: ${e.message}`;
+      const msg=e.message.includes("401")||e.message.includes("403")?"❌ Invalid GROQ_API_KEY":`❌ Error: ${e.message}`;
       setMsgs(p=>p.map(m=>m.id===aid?{...m,content:msg,loading:false}:m));
       toast.error("Check GROQ_API_KEY in .env.local");
     }
     setLoading(false);
   };
 
-  // Save chat to Supabase DB
   const saveChat=async()=>{
     if(!msgs.length){toast.error("Nothing to save!");return;}
     if(!userId){toast.error("Login required!");return;}
     const title=msgs.find(m=>m.role==="user")?.content.slice(0,45)||"Chat";
-    // Save loading msgs hata ke — clean messages
     const cleanMsgs=msgs.map(({loading:_,diagLoading:__,...rest})=>rest);
-    const {error}=await supabase.from("ai_chat_history").insert({
-      user_id:userId,
-      title,
-      messages:cleanMsgs,
-      subject:sub,
-    });
+    const {error}=await supabase.from("ai_chat_history").insert({user_id:userId,title,messages:cleanMsgs,subject:sub});
     if(error){toast.error("Save failed!");return;}
     toast.success("Chat saved! 💾");
     await loadHistoryFromDB(userId);
   };
 
   const loadChat=async(c:any)=>{
-    setMsgs(c.messages);
-    setSub(c.subject||"");
-    setShowHist(false);
+    setMsgs(c.messages); setSub(c.subject||""); setShowHist(false);
     toast.success("Loaded!");
     setTimeout(()=>c.messages.forEach((m:Message)=>{if(m.mermaid)render(m.id,m.mermaid);}),200);
   };
@@ -215,7 +196,7 @@ export default function AITutorPage() {
   };
 
   const clearChat=()=>{
-    setMsgs([]);
+    setMsgs([]); setAttachment(null);
     try{if(userId)localStorage.removeItem(`sb-ai-v3-${userId}`);}catch{}
     toast.success("Cleared!");
   };
@@ -245,20 +226,36 @@ export default function AITutorPage() {
     {icon:"🧬",text:"Parts and functions of a cell"},
   ];
 
+  const PDF_TASKS=[
+    "Summarize this PDF in key points",
+    "Create 10 flashcards from this PDF",
+    "What are the main topics covered?",
+    "Explain the difficult parts simply",
+    "Give me 5 quiz questions from this",
+  ];
+
+  const IMG_TASKS=[
+    "Explain what is shown in this image",
+    "Solve this problem step by step",
+    "Summarize the diagram/chart",
+    "What concept does this illustrate?",
+  ];
+
   return (
     <>
       <style>{`
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-        @keyframes diagPop{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
         .mi{animation:fadeUp .28s cubic-bezier(.34,1.3,.64,1) both}
         .sb:hover{transform:scale(1.1)!important;box-shadow:0 6px 24px rgba(79,142,247,.5)!important}
-        .sb:active{transform:scale(.95)!important}
         .sg:hover{border-color:#4F8EF7!important;background:rgba(79,142,247,.06)!important;transform:translateY(-2px)}
         .mw svg{max-width:100%!important;font-family:Arial,sans-serif!important}
       `}</style>
+
+      <input ref={fileRef} type="file" accept=".pdf,image/*" style={{display:"none"}}
+        onChange={e=>{if(e.target.files?.[0])handleFileUpload(e.target.files[0]);e.target.value="";}}/>
+
       <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}>
 
         {/* Header */}
@@ -271,7 +268,7 @@ export default function AITutorPage() {
               <h2 style={{fontFamily:"var(--font-lora),serif",fontSize:20,fontWeight:700,color:"var(--text)"}}>AI Study Tutor</h2>
               <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}>
                 <div style={{width:6,height:6,borderRadius:"50%",background:"#34D399",animation:"pulse 2s infinite"}}/>
-                <span style={{fontSize:11,color:"var(--muted)"}}>Groq (Llama 3.3) · Mermaid Diagrams · 100% Free ✅</span>
+                <span style={{fontSize:11,color:"var(--muted)"}}>Groq (Llama 3.3) · PDF & Image Upload · 100% Free ✅</span>
               </div>
             </div>
           </div>
@@ -284,28 +281,28 @@ export default function AITutorPage() {
               </select>
             )}
             <button onClick={()=>setShowHist(!showHist)}
-              style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid var(--border)",background:"var(--card)",color:"var(--muted)",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit",transition:"all .2s"}}>
+              style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid var(--border)",background:"var(--card)",color:"var(--muted)",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit"}}>
               <BookOpen size={13}/> History{history.length>0?` (${history.length})`:""}{showHist?<ChevronUp size={11}/>:<ChevronDown size={11}/>}
             </button>
             {msgs.length>0&&(
               <button onClick={saveChat}
-                style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit",transition:"all .2s"}}
+                style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(52,211,153,.18)"}}
                 onMouseLeave={e=>{e.currentTarget.style.background="rgba(52,211,153,.08)"}}>
                 💾 Save
               </button>
             )}
-            <div style={{display:"flex",alignItems:"center",gap:7,padding:"7px 13px",borderRadius:10,border:`1px solid ${autoVis?"rgba(167,139,250,.4)":"var(--border)"}`,background:autoVis?"rgba(167,139,250,.08)":"var(--card)",cursor:"pointer",transition:"all .2s"}}
+            <div style={{display:"flex",alignItems:"center",gap:7,padding:"7px 13px",borderRadius:10,border:`1px solid ${autoVis?"rgba(167,139,250,.4)":"var(--border)"}`,background:autoVis?"rgba(167,139,250,.08)":"var(--card)",cursor:"pointer"}}
               onClick={()=>setAutoVis(!autoVis)}>
               <Sparkles size={13} color={autoVis?"#A78BFA":"var(--muted)"}/>
               <span style={{fontSize:12,fontWeight:700,color:autoVis?"#A78BFA":"var(--muted)"}}>Diagrams {autoVis?"ON":"OFF"}</span>
-              <div style={{width:34,height:19,borderRadius:10,background:autoVis?"#A78BFA":"var(--border)",position:"relative",transition:"background .25s",flexShrink:0}}>
+              <div style={{width:34,height:19,borderRadius:10,background:autoVis?"#A78BFA":"var(--border)",position:"relative"}}>
                 <div style={{width:15,height:15,borderRadius:"50%",background:"#fff",position:"absolute",top:2,left:autoVis?17:2,transition:"left .25s"}}/>
               </div>
             </div>
             {msgs.length>0&&(
               <button onClick={clearChat}
-                style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid rgba(248,113,113,.25)",background:"rgba(248,113,113,.07)",color:"#F87171",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit",transition:"all .2s"}}
+                style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid rgba(248,113,113,.25)",background:"rgba(248,113,113,.07)",color:"#F87171",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit"}}
                 onMouseEnter={e=>{e.currentTarget.style.background="rgba(248,113,113,.15)"}}
                 onMouseLeave={e=>{e.currentTarget.style.background="rgba(248,113,113,.07)"}}>
                 <Trash2 size={13}/> Clear
@@ -323,20 +320,17 @@ export default function AITutorPage() {
             ):(
               <div style={{display:"flex",flexDirection:"column",gap:7}}>
                 {history.map(c=>(
-                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:"var(--bg)",border:"1px solid var(--border)",transition:"all .15s"}}
+                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,background:"var(--bg)",border:"1px solid var(--border)"}}
                     onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.borderColor="#4F8EF7"}}
                     onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.borderColor="var(--border)"}}>
                     <span style={{fontSize:16}}>💬</span>
                     <div style={{flex:1,minWidth:0,cursor:"pointer"}} onClick={()=>loadChat(c)}>
                       <div style={{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.title}...</div>
-                      <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>
-                        {new Date(c.created_at).toLocaleDateString("en-IN")}
-                        {c.subject?` · ${c.subject}`:""} · {c.messages.length} msgs
-                      </div>
+                      <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{new Date(c.created_at).toLocaleDateString("en-IN")}{c.subject?` · ${c.subject}`:""} · {c.messages.length} msgs</div>
                     </div>
-                    <span style={{fontSize:11,color:"#4F8EF7",fontWeight:600,flexShrink:0,cursor:"pointer"}} onClick={()=>loadChat(c)}>Load →</span>
+                    <span style={{fontSize:11,color:"#4F8EF7",fontWeight:600,cursor:"pointer"}} onClick={()=>loadChat(c)}>Load →</span>
                     <button onClick={()=>deleteChat(c.id)}
-                      style={{padding:"4px 8px",borderRadius:8,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",cursor:"pointer",fontSize:11,fontFamily:"inherit",flexShrink:0,transition:"all .15s"}}
+                      style={{padding:"4px 8px",borderRadius:8,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}
                       onMouseEnter={e=>{e.currentTarget.style.background="rgba(248,113,113,.2)"}}
                       onMouseLeave={e=>{e.currentTarget.style.background="rgba(248,113,113,.08)"}}>
                       🗑️
@@ -352,15 +346,21 @@ export default function AITutorPage() {
         <div style={{flex:1,overflowY:"auto",borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",padding:20,display:"flex",flexDirection:"column",gap:20}}>
           {msgs.length===0&&(
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px 0"}}>
-              <div style={{width:80,height:80,borderRadius:22,background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:18,boxShadow:"0 10px 32px rgba(79,142,247,.35)"}}>🤖</div>
+              <div style={{width:80,height:80,borderRadius:22,background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:18}}>🤖</div>
               <h3 style={{fontFamily:"var(--font-lora),serif",fontSize:22,color:"var(--text)",marginBottom:8,fontWeight:700}}>Ask me anything!</h3>
-              <p style={{fontSize:14,color:"var(--muted)",textAlign:"center",maxWidth:460,lineHeight:1.8,marginBottom:12}}>
-                Complete formatted answers + <strong style={{color:"#A78BFA"}}>Mermaid diagrams</strong> — 100% Free! ✨
+              <p style={{fontSize:14,color:"var(--muted)",textAlign:"center",maxWidth:460,lineHeight:1.8,marginBottom:16}}>
+                Upload a <strong style={{color:"#F87171"}}>PDF</strong> or <strong style={{color:"#34D399"}}>Image</strong> and ask questions, or just type any study topic!
               </p>
-              <div style={{display:"flex",gap:7,marginBottom:24,flexWrap:"wrap",justifyContent:"center"}}>
-                {["🔄 Flowcharts","🗺️ Mind Maps","⏱️ Timelines","📊 Sequences","🔁 Cycles"].map(t=>(
-                  <span key={t} style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:"rgba(167,139,250,.12)",color:"#A78BFA",fontWeight:600}}>{t}</span>
-                ))}
+              {/* Upload quick actions */}
+              <div style={{display:"flex",gap:10,marginBottom:20,flexWrap:"wrap",justifyContent:"center"}}>
+                <button onClick={()=>fileRef.current?.click()}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 18px",borderRadius:12,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
+                  <FileText size={16}/> Upload PDF
+                </button>
+                <button onClick={()=>fileRef.current?.click()}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 18px",borderRadius:12,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
+                  <ImageIcon size={16}/> Upload Image
+                </button>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,width:"100%",maxWidth:560}}>
                 {SUGG.map(s=>(
@@ -377,6 +377,12 @@ export default function AITutorPage() {
             <div key={msg.id} className="mi" style={{animationDelay:`${Math.min(i,6)*25}ms`,display:"flex",flexDirection:"column",alignItems:msg.role==="user"?"flex-end":"flex-start",gap:10}}>
               {msg.role==="user"&&(
                 <div style={{maxWidth:"72%",padding:"12px 18px",borderRadius:"18px 18px 4px 18px",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",fontSize:14,lineHeight:1.7,boxShadow:"0 4px 18px rgba(79,142,247,.35)"}}>
+                  {msg.attachment&&(
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8,padding:"6px 10px",borderRadius:8,background:"rgba(255,255,255,.15)"}}>
+                      {msg.attachment.type==="pdf"?<FileText size={14}/>:<ImageIcon size={14}/>}
+                      <span style={{fontSize:11,fontWeight:700}}>{msg.attachment.name}</span>
+                    </div>
+                  )}
                   {msg.content}
                   <div style={{fontSize:10,opacity:.6,marginTop:4}}>{tf(msg.timestamp)}</div>
                 </div>
@@ -384,13 +390,13 @@ export default function AITutorPage() {
               {msg.role==="assistant"&&(
                 <div style={{width:"100%",maxWidth:"95%"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
-                    <div style={{width:28,height:28,borderRadius:9,background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>
+                    <div style={{width:28,height:28,borderRadius:9,background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🤖</div>
                     <span style={{fontSize:12,fontWeight:700,color:"var(--primary)"}}>AI Tutor</span>
                     {sub&&<span style={{fontSize:10,padding:"2px 9px",borderRadius:20,background:`${sc(sub)}18`,color:sc(sub),fontWeight:700}}>{sub}</span>}
                     <span style={{fontSize:10,color:"var(--muted)"}}>{tf(msg.timestamp)}</span>
                     {!msg.loading&&msg.content&&(
                       <button onClick={()=>cp(msg.content,msg.id)}
-                        style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,border:"1px solid var(--border)",background:"transparent",color:"var(--muted)",cursor:"pointer",fontSize:11,fontFamily:"inherit",transition:"all .15s"}}>
+                        style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:20,border:"1px solid var(--border)",background:"transparent",color:"var(--muted)",cursor:"pointer",fontSize:11,fontFamily:"inherit"}}>
                         {copied===msg.id?<Check size={11}/>:<Copy size={11}/>}
                         {copied===msg.id?"Copied!":"Copy"}
                       </button>
@@ -413,27 +419,17 @@ export default function AITutorPage() {
                         </div>
                       )}
                       {msg.mermaid&&(
-                        <div style={{marginTop:12,animation:"diagPop .35s cubic-bezier(.34,1.3,.64,1) both"}}>
+                        <div style={{marginTop:12}}>
                           <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:8,flexWrap:"wrap"}}>
-                            <div style={{width:22,height:22,borderRadius:7,background:"linear-gradient(135deg,#A78BFA,#8B5CF6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>✨</div>
-                            <span style={{fontSize:12,fontWeight:700,color:"#A78BFA"}}>Visual Diagram</span>
-                            <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:"rgba(167,139,250,.1)",color:"#A78BFA"}}>Mermaid.js</span>
+                            <span style={{fontSize:12,fontWeight:700,color:"#A78BFA"}}>✨ Visual Diagram</span>
                             <div style={{marginLeft:"auto",display:"flex",gap:6}}>
-                              <button onClick={()=>setFullDiag(msg.mermaid!)}
-                                style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(167,139,250,.3)",background:"rgba(167,139,250,.1)",color:"#A78BFA",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>
-                                🔍 Full
-                              </button>
-                              <button onClick={()=>dlPNG(msg.id)}
-                                style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>
-                                <Download size={11}/> PNG
-                              </button>
+                              <button onClick={()=>setFullDiag(msg.mermaid!)} style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(167,139,250,.3)",background:"rgba(167,139,250,.1)",color:"#A78BFA",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}>🔍 Full</button>
+                              <button onClick={()=>dlPNG(msg.id)} style={{fontSize:11,padding:"4px 11px",borderRadius:20,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontFamily:"inherit",fontWeight:600}}><Download size={11}/> PNG</button>
                             </div>
                           </div>
-                          <div style={{borderRadius:16,overflow:"hidden",border:"1px solid rgba(167,139,250,.2)",background:"#0B1628",padding:16,cursor:"pointer"}}
-                            onClick={()=>setFullDiag(msg.mermaid!)}>
+                          <div style={{borderRadius:16,overflow:"hidden",border:"1px solid rgba(167,139,250,.2)",background:"#0B1628",padding:16,cursor:"pointer"}} onClick={()=>setFullDiag(msg.mermaid!)}>
                             <div className="mw" ref={el=>{dRefs.current[msg.id]=el;if(el&&mLoaded&&msg.mermaid)render(msg.id,msg.mermaid);}}/>
                           </div>
-                          <p style={{fontSize:11,color:"var(--muted)",marginTop:5,textAlign:"center"}}>Click to expand · ⬇ PNG</p>
                         </div>
                       )}
                     </>
@@ -445,50 +441,58 @@ export default function AITutorPage() {
           <div ref={bottom}/>
         </div>
 
+        {/* Attachment preview */}
+        {attachment&&(
+          <div style={{marginTop:8,padding:"8px 14px",borderRadius:12,border:`1px solid ${attachment.type==="pdf"?"rgba(248,113,113,.3)":"rgba(52,211,153,.3)"}`,background:attachment.type==="pdf"?"rgba(248,113,113,.06)":"rgba(52,211,153,.06)",display:"flex",alignItems:"center",gap:10}}>
+            {attachment.type==="pdf"?<FileText size={16} color="#F87171"/>:<ImageIcon size={16} color="#34D399"/>}
+            <span style={{fontSize:13,fontWeight:700,color:"var(--text)",flex:1}}>{attachment.name}</span>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {(attachment.type==="pdf"?PDF_TASKS:IMG_TASKS).slice(0,3).map(t=>(
+                <button key={t} onClick={()=>setInput(t)}
+                  style={{fontSize:11,padding:"3px 9px",borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",color:"var(--muted)",cursor:"pointer",fontFamily:"inherit"}}>
+                  {t}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>setAttachment(null)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--muted)"}}><X size={14}/></button>
+          </div>
+        )}
+
         {/* Input */}
-        <div style={{marginTop:12,display:"flex",gap:10,alignItems:"flex-end"}}>
-          <div style={{flex:1,borderRadius:16,border:`1px solid ${loading?"rgba(79,142,247,.5)":"var(--border)"}`,background:"var(--card)",padding:"12px 16px",display:"flex",alignItems:"flex-end",gap:10,transition:"border-color .25s,box-shadow .25s",boxShadow:loading?"0 0 20px rgba(79,142,247,.15)":"none"}}>
+        <div style={{marginTop:8,display:"flex",gap:10,alignItems:"flex-end"}}>
+          <button onClick={()=>fileRef.current?.click()} disabled={attLoading}
+            style={{width:44,height:44,borderRadius:13,border:"1px solid var(--border)",background:"var(--card)",color:"var(--muted)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#4F8EF7";e.currentTarget.style.color="#4F8EF7"}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--border)";e.currentTarget.style.color="var(--muted)"}}>
+            {attLoading?<Loader size={18} style={{animation:"spin .6s linear infinite"}}/>:<Upload size={18}/>}
+          </button>
+          <div style={{flex:1,borderRadius:16,border:`1px solid ${loading?"rgba(79,142,247,.5)":"var(--border)"}`,background:"var(--card)",padding:"12px 16px",display:"flex",alignItems:"flex-end",gap:10,transition:"border-color .25s"}}>
             <textarea value={input} onChange={e=>setInput(e.target.value)}
               onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
-              placeholder="Ask any question... (Shift+Enter for new line)"
+              placeholder={attachment?`Ask about ${attachment.name}...`:"Ask any study question... (Shift+Enter for new line)"}
               rows={1}
               style={{flex:1,background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:14,fontFamily:"inherit",resize:"none",lineHeight:1.65,maxHeight:130,overflowY:"auto"}}
               onInput={e=>{const t=e.target as HTMLTextAreaElement;t.style.height="auto";t.style.height=Math.min(t.scrollHeight,130)+"px";}}/>
           </div>
-          <button className="sb" onClick={send} disabled={loading||!input.trim()}
-            style={{width:52,height:52,borderRadius:15,border:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:loading||!input.trim()?"not-allowed":"pointer",background:loading||!input.trim()?"var(--border)":"linear-gradient(135deg,#4F8EF7,#6366F1)",color:loading||!input.trim()?"var(--muted)":"#fff",transition:"all .2s",boxShadow:!loading&&input.trim()?"0 4px 20px rgba(79,142,247,.4)":"none"}}>
+          <button className="sb" onClick={send} disabled={loading||(!input.trim()&&!attachment)}
+            style={{width:52,height:52,borderRadius:15,border:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:loading?"not-allowed":"pointer",background:loading||(!input.trim()&&!attachment)?"var(--border)":"linear-gradient(135deg,#4F8EF7,#6366F1)",color:loading||(!input.trim()&&!attachment)?"var(--muted)":"#fff",transition:"all .2s"}}>
             {loading?<Loader size={20} style={{animation:"spin .55s linear infinite"}}/>:<Send size={20}/>}
           </button>
         </div>
-        <p style={{fontSize:11,color:"var(--muted)",textAlign:"center",marginTop:7}}>Enter ↵ send · Shift+Enter new line · 💾 Save · ⬇ Download diagrams</p>
+        <p style={{fontSize:11,color:"var(--muted)",textAlign:"center",marginTop:6}}>📎 Upload PDF/Image · Enter ↵ send · 💾 Save chat · Study topics only</p>
       </div>
 
       {/* Full Screen Diagram */}
       {fullDiag&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.9)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(8px)"}}
-          onClick={()=>setFullDiag(null)}>
-          <div style={{background:"var(--card)",borderRadius:22,padding:28,maxWidth:900,width:"100%",maxHeight:"90vh",overflow:"auto",position:"relative",border:"1px solid rgba(167,139,250,.3)",boxShadow:"0 32px 100px rgba(0,0,0,.7)"}}
-            onClick={e=>e.stopPropagation()}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.9)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:24,backdropFilter:"blur(8px)"}} onClick={()=>setFullDiag(null)}>
+          <div style={{background:"var(--card)",borderRadius:22,padding:28,maxWidth:900,width:"100%",maxHeight:"90vh",overflow:"auto",position:"relative",border:"1px solid rgba(167,139,250,.3)"}} onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <Sparkles size={18} color="#A78BFA"/>
-                <h3 style={{fontFamily:"var(--font-lora),serif",fontSize:20,color:"var(--text)",fontWeight:700}}>Visual Diagram</h3>
-              </div>
-              <button onClick={()=>setFullDiag(null)}
-                style={{width:34,height:34,borderRadius:"50%",background:"rgba(248,113,113,.12)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#F87171"}}>
-                <X size={16}/>
-              </button>
+              <h3 style={{fontFamily:"var(--font-lora),serif",fontSize:20,color:"var(--text)",fontWeight:700}}>✨ Visual Diagram</h3>
+              <button onClick={()=>setFullDiag(null)} style={{width:34,height:34,borderRadius:"50%",background:"rgba(248,113,113,.12)",border:"1px solid rgba(248,113,113,.25)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#F87171"}}><X size={16}/></button>
             </div>
-            <div style={{borderRadius:14,overflow:"hidden",background:"#0B1628",padding:24,border:"1px solid rgba(167,139,250,.15)"}}>
-              <div className="mw" ref={el=>{
-                if(el&&mLoaded&&fullDiag){
-                  (window as any).mermaid?.render("fullscreen99",fullDiag)
-                    .then(({svg}:{svg:string})=>{el.innerHTML=svg;})
-                    .catch(()=>{el.innerHTML="<p style='color:#F87171;padding:12px'>Render error</p>";});
-                }
-              }}/>
+            <div style={{borderRadius:14,overflow:"hidden",background:"#0B1628",padding:24}}>
+              <div className="mw" ref={el=>{if(el&&mLoaded&&fullDiag){(window as any).mermaid?.render("fullscreen99",fullDiag).then(({svg}:{svg:string})=>{el.innerHTML=svg;}).catch(()=>{el.innerHTML="<p style='color:#F87171;padding:12px'>Render error</p>";});}}}/>
             </div>
-            <p style={{textAlign:"center",fontSize:12,color:"var(--muted)",marginTop:12}}>Click outside to close</p>
           </div>
         </div>
       )}
