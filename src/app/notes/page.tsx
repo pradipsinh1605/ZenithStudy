@@ -419,11 +419,19 @@ export default function NotesPage() {
                 {/* Actions */}
                 <div style={{display:"flex",gap:8,flexShrink:0}}>
                   {isPdf&&(
-                    <a href={note.pdf_url} target="_blank" rel="noopener noreferrer"
-                      onClick={e=>e.stopPropagation()}
-                      style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,textDecoration:"none"}}>
-                      <Icon.External/> Open
-                    </a>
+                    <button onClick={async(e)=>{
+                      e.stopPropagation();
+                      // Refresh signed URL before opening
+                      if(note.pdf_url && note.pdf_url.includes("supabase")) {
+                        const path = `${userId}/${note.pdf_url.split(`${userId}/`)[1]?.split("?")[0]}`;
+                        const {data} = await supabase.storage.from("note-pdfs").createSignedUrl(path, 3600);
+                        if(data?.signedUrl) { window.open(data.signedUrl,"_blank"); return; }
+                      }
+                      window.open(note.pdf_url,"_blank");
+                    }}
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                    <Icon.External/> Open
+                  </button>
                   )}
                   {!isPdf&&(
                     <button onClick={(e)=>{e.stopPropagation();setActiveNote(note);setView("note-view");}}
@@ -459,10 +467,17 @@ export default function NotesPage() {
               <div style={{textAlign:"center",padding:40}}>
                 <div style={{fontSize:48,marginBottom:16}}>📄</div>
                 <p style={{fontSize:16,fontWeight:700,color:"var(--text)",marginBottom:8}}>{activeNote.pdf_name}</p>
-                <a href={activeNote.pdf_url} target="_blank" rel="noopener noreferrer"
-                  style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 24px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",fontSize:14,fontWeight:700,textDecoration:"none"}}>
+                <button onClick={async()=>{
+                  if(activeNote.pdf_url && activeNote.pdf_url.includes("supabase")) {
+                    const path = `${userId}/${activeNote.pdf_url.split(`${userId}/`)[1]?.split("?")[0]}`;
+                    const {data} = await supabase.storage.from("note-pdfs").createSignedUrl(path, 3600);
+                    if(data?.signedUrl) { window.open(data.signedUrl,"_blank"); return; }
+                  }
+                  window.open(activeNote.pdf_url,"_blank");
+                }}
+                style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 24px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                   <Icon.External/> Open PDF
-                </a>
+                </button>
               </div>
             ):(
               <p style={{fontSize:15,color:"var(--text)",lineHeight:1.9,whiteSpace:"pre-wrap"}}>
