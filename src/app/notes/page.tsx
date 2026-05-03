@@ -1,305 +1,598 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, Trash2, Star, Edit3, Save, Search, FileText, X, Upload, ExternalLink } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addXP } from "@/lib/xp-utils";
-import { validate, debounce } from "@/lib/validation";
 import toast from "react-hot-toast";
+
+// ── Icons (inline SVG to avoid import issues) ──
+const Icon = {
+  Plus:     ()=><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Folder:   ()=><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>,
+  File:     ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+  PDF:      ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h3"/></svg>,
+  Back:     ()=><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>,
+  Trash:    ()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
+  External: ()=><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+  Edit:     ()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Save:     ()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+  Upload:   ()=><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>,
+  Search:   ()=><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+};
+
+function debounce(fn: Function, ms: number) {
+  let t: ReturnType<typeof setTimeout>;
+  return (...args: any[]) => { clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+}
+
+type View = "folders" | "folder-notes" | "note-view" | "note-edit" | "note-new" | "pdf-upload";
 
 export default function NotesPage() {
   const supabase = createClient();
+  const fileRef  = useRef<HTMLInputElement>(null);
+
   const [notes,     setNotes]     = useState<any[]>([]);
   const [subjects,  setSubjects]  = useState<any[]>([]);
-  const [selected,  setSelected]  = useState<any>(null);
-  const [editing,   setEditing]   = useState(false);
-  const [showNew,   setShowNew]   = useState(false);
-  const [search,    setSearch]    = useState("");
-  const [filterSub, setFilterSub] = useState("");
-  const [loading,   setLoading]   = useState(true);
   const [userId,    setUserId]    = useState("");
-  const [visible,   setVisible]   = useState(false);
-  const [newTitle,    setNewTitle]    = useState("");
-  const [newSubject,  setNewSubject]  = useState("");
-  const [newContent,  setNewContent]  = useState("");
-  const [editContent, setEditContent] = useState("");
-  const [autoSaving,  setAutoSaving]  = useState(false);
-  const [lastSaved,   setLastSaved]   = useState<Date|null>(null);
-  // PDF states
-  const [uploading,   setUploading]   = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [loading,   setLoading]   = useState(true);
 
-  useEffect(() => { fetchData(); setTimeout(() => setVisible(true), 50); }, []);
+  // Navigation
+  const [view,         setView]        = useState<View>("folders");
+  const [activeFolder, setActiveFolder] = useState<any>(null); // subject obj or {name:"No Subject",color:"#6B7280"}
+  const [activeNote,   setActiveNote]  = useState<any>(null);
+
+  // New Note form
+  const [newTitle,   setNewTitle]   = useState("");
+  const [newSubject, setNewSubject] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [saving,     setSaving]     = useState(false);
+
+  // PDF Upload form
+  const [pdfFile,      setPdfFile]      = useState<File|null>(null);
+  const [pdfTitle,     setPdfTitle]     = useState("");
+  const [pdfSubject,   setPdfSubject]   = useState("");
+  const [uploading,    setUploading]    = useState(false);
+
+  // Note edit
+  const [editContent,  setEditContent]  = useState("");
+  const [autoSaving,   setAutoSaving]   = useState(false);
+  const [lastSaved,    setLastSaved]    = useState<Date|null>(null);
+
+  // Plus menu
+  const [showPlusMenu, setShowPlusMenu] = useState(false);
+
+  // Search
+  const [search, setSearch] = useState("");
+
+  useEffect(()=>{ fetchData(); },[]);
 
   const fetchData = async () => {
-    try {
-      const { data: { user }, error: ae } = await supabase.auth.getUser();
-      if (ae || !user) { setLoading(false); return; }
+    try{
+      const {data:{user},error} = await supabase.auth.getUser();
+      if(error||!user){setLoading(false);return;}
       setUserId(user.id);
-      const [{ data:n },{ data:s }] = await Promise.all([
+      const [{data:n},{data:s}] = await Promise.all([
         supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),
-        supabase.from("subjects").select("*").eq("user_id",user.id),
+        supabase.from("subjects").select("*").eq("user_id",user.id).order("name"),
       ]);
-      setNotes(n||[]); setSubjects(s||[]);
-      if (s&&s.length>0) setNewSubject(s[0].name);
+      setNotes(n||[]);
+      setSubjects(s||[]);
+      if(s&&s.length>0){setNewSubject(s[0].name);setPdfSubject(s[0].name);}
       setLoading(false);
-    } catch(e){ setLoading(false); }
+    }catch(e){setLoading(false);}
   };
 
-  const saveNew = async () => {
-    const titleErr = validate.noteTitle(newTitle);
-    if (titleErr) { toast.error(titleErr); return; }
-    const { data, error } = await supabase.from("notes").insert({
-      user_id:userId, title:newTitle.trim(), subject:newSubject, content:newContent, starred:false,
+  // ── Folder structure ──
+  const getFolders = () => {
+    const map: Record<string,any[]> = {"No Subject":[]};
+    subjects.forEach(s=>{ map[s.name]=[]; });
+    notes.forEach(n=>{
+      const key = n.subject||"No Subject";
+      if(!map[key]) map[key]=[];
+      map[key].push(n);
+    });
+    // Remove empty "No Subject" if nothing there
+    if(map["No Subject"].length===0) delete map["No Subject"];
+    return map;
+  };
+
+  const folders = getFolders();
+  const subjectColor = (name:string) => {
+    if(name==="No Subject") return "#6B7280";
+    return subjects.find(s=>s.name===name)?.color||"#4F8EF7";
+  };
+
+  // Filter notes in active folder by search
+  const folderNotes = activeFolder
+    ? (folders[activeFolder.name]||[]).filter(n=>
+        search ? n.title.toLowerCase().includes(search.toLowerCase()) : true
+      )
+    : [];
+
+  // ── Save new note ──
+  const saveNewNote = async () => {
+    if(!newTitle.trim()){toast.error("Title enter karo!");return;}
+    setSaving(true);
+    const {data,error} = await supabase.from("notes").insert({
+      user_id:userId, title:newTitle.trim(),
+      subject:newSubject||null, content:newContent,
+      starred:false, note_type:"text",
     }).select().single();
-    if (error) { toast.error("Failed to save"); return; }
-    setNotes(prev => [data,...prev]);
-    setSelected(data); setNewTitle(""); setNewContent(""); setShowNew(false);
-    await addXP(supabase, userId, 10);
+    if(error){toast.error("Save failed: "+error.message);setSaving(false);return;}
+    setNotes(p=>[data,...p]);
+    await addXP(supabase,userId,10);
     toast.success("Note saved! +10 XP 📝");
+    setNewTitle(""); setNewContent("");
+    // Go to folder
+    const folder = subjects.find(s=>s.name===newSubject)||{name:newSubject||"No Subject",color:subjectColor(newSubject||"No Subject")};
+    setActiveFolder(folder);
+    setView("folder-notes");
+    setSaving(false);
   };
 
-  const saveEdit = async () => {
-    if (!selected) return;
-    const { error } = await supabase.from("notes").update({ content:editContent, updated_at:new Date().toISOString() }).eq("id",selected.id);
-    if (error) { toast.error("Save failed"); return; }
-    const updated = { ...selected, content:editContent };
-    setNotes(prev => prev.map(n => n.id===selected.id?updated:n));
-    setSelected(updated); setEditing(false);
-    toast.success("Saved! ✅");
+  // ── PDF Upload ──
+  const handlePdfSelect = (file:File) => {
+    if(file.type!=="application/pdf"){toast.error("Only PDF files!"); return;}
+    if(file.size>10*1024*1024){toast.error("Max 10MB PDF!"); return;}
+    setPdfFile(file);
+    if(!pdfTitle) setPdfTitle(file.name.replace(".pdf",""));
   };
 
-  // Auto-save debounced
-  const autoSave = useCallback(
-    debounce(async (noteId: string, body: string) => {
-      setAutoSaving(true);
-      const { error } = await supabase.from("notes").update({ content:body, updated_at:new Date().toISOString() }).eq("id",noteId);
-      setAutoSaving(false);
-      if (!error) { setLastSaved(new Date()); setNotes(prev => prev.map(n => n.id===noteId?{...n,content:body}:n)); }
-    }, 1500), []
-  );
+  const savePdf = async () => {
+    if(!pdfFile){toast.error("PDF select karo!");return;}
+    if(!pdfTitle.trim()){toast.error("Title enter karo!");return;}
+    setUploading(true);
+    try{
+      // Upload to Supabase Storage
+      const path = `${userId}/${Date.now()}_${pdfFile.name}`;
+      const {error:upErr} = await supabase.storage.from("note-pdfs").upload(path,pdfFile,{upsert:false});
+      if(upErr){
+        // Fallback: store as base64 if storage fails
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64 = (e.target?.result as string);
+          const {data,error} = await supabase.from("notes").insert({
+            user_id:userId, title:pdfTitle.trim(),
+            subject:pdfSubject||null, content:"",
+            pdf_name:pdfFile.name, pdf_url:base64,
+            note_type:"pdf", starred:false,
+          }).select().single();
+          if(error){toast.error("Save failed");setUploading(false);return;}
+          setNotes(p=>[data,...p]);
+          finishPdfUpload(data);
+        };
+        reader.readAsDataURL(pdfFile);
+        return;
+      }
+      const {data:urlData} = supabase.storage.from("note-pdfs").getPublicUrl(path);
+      const {data,error} = await supabase.from("notes").insert({
+        user_id:userId, title:pdfTitle.trim(),
+        subject:pdfSubject||null, content:"",
+        pdf_name:pdfFile.name, pdf_url:urlData.publicUrl,
+        note_type:"pdf", starred:false,
+      }).select().single();
+      if(error){toast.error("Save failed");setUploading(false);return;}
+      setNotes(p=>[data,...p]);
+      finishPdfUpload(data);
+    }catch(e){toast.error("Upload error");setUploading(false);}
+  };
 
-  const deleteNote = async (id: string) => {
-    // Delete PDF from storage if exists
-    const note = notes.find(n => n.id === id);
-    if (note?.pdf_url) {
-      const path = `${userId}/${id}.pdf`;
-      await supabase.storage.from("note-pdfs").remove([path]);
+  const finishPdfUpload = (data:any) => {
+    toast.success("PDF uploaded! 📄");
+    setPdfFile(null); setPdfTitle(""); setUploading(false);
+    const folder = subjects.find(s=>s.name===pdfSubject)||{name:pdfSubject||"No Subject",color:subjectColor(pdfSubject||"No Subject")};
+    setActiveFolder(folder);
+    setView("folder-notes");
+  };
+
+  // ── Delete note ──
+  const deleteNote = async (note:any) => {
+    if(!confirm(`"${note.title}" delete karvu chhe?`)) return;
+    // Remove from storage if PDF
+    if(note.pdf_url&&note.pdf_url.startsWith("http")&&!note.pdf_url.startsWith("data:")) {
+      const path = note.pdf_url.split("/note-pdfs/")[1];
+      if(path) await supabase.storage.from("note-pdfs").remove([path]);
     }
-    const { error } = await supabase.from("notes").delete().eq("id",id);
-    if (error) { toast.error("Delete failed"); return; }
-    setNotes(prev => prev.filter(n => n.id!==id));
-    if (selected?.id===id) setSelected(null);
+    await supabase.from("notes").delete().eq("id",note.id);
+    setNotes(p=>p.filter(n=>n.id!==note.id));
+    if(activeNote?.id===note.id) setView("folder-notes");
     toast.success("Deleted");
   };
 
-  const toggleStar = async (note: any) => {
-    await supabase.from("notes").update({ starred:!note.starred }).eq("id",note.id);
-    const updated = {...note,starred:!note.starred};
-    setNotes(prev => prev.map(n => n.id===note.id?updated:n));
-    if (selected?.id===note.id) setSelected(updated);
+  // ── Auto save for text notes ──
+  const autoSaveFn = useCallback(
+    debounce(async (noteId:string, body:string) => {
+      setAutoSaving(true);
+      await supabase.from("notes").update({content:body,updated_at:new Date().toISOString()}).eq("id",noteId);
+      setAutoSaving(false); setLastSaved(new Date());
+      setNotes(p=>p.map(n=>n.id===noteId?{...n,content:body}:n));
+    },1500), []
+  );
+
+  const saveEdit = async () => {
+    if(!activeNote) return;
+    const {error} = await supabase.from("notes").update({content:editContent,updated_at:new Date().toISOString()}).eq("id",activeNote.id);
+    if(error){toast.error("Save failed");return;}
+    const updated = {...activeNote,content:editContent};
+    setNotes(p=>p.map(n=>n.id===activeNote.id?updated:n));
+    setActiveNote(updated); setView("note-view");
+    toast.success("Saved! ✅");
   };
 
-  // PDF Upload
-  const uploadPDF = async (file: File) => {
-    if (!selected) { toast.error("Pehla note select karo"); return; }
-    if (file.type !== "application/pdf") { toast.error("Only PDF files allowed!"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("Max 10MB PDF allowed"); return; }
-    setUploading(true);
-    const path = `${userId}/${selected.id}.pdf`;
-    const { error: upErr } = await supabase.storage.from("note-pdfs").upload(path, file, { upsert:true });
-    if (upErr) { toast.error("Upload failed: " + upErr.message); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("note-pdfs").getPublicUrl(path);
-    const pdfUrl = urlData.publicUrl;
-    await supabase.from("notes").update({ pdf_url:pdfUrl, pdf_name:file.name }).eq("id",selected.id);
-    const updated = { ...selected, pdf_url:pdfUrl, pdf_name:file.name };
-    setNotes(prev => prev.map(n => n.id===selected.id?updated:n));
-    setSelected(updated);
-    setUploading(false);
-    toast.success("PDF uploaded! 📄");
-  };
+  if(loading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:300,color:"var(--muted)"}}>Loading…</div>;
 
-  const removePDF = async () => {
-    if (!selected?.pdf_url) return;
-    const path = `${userId}/${selected.id}.pdf`;
-    await supabase.storage.from("note-pdfs").remove([path]);
-    await supabase.from("notes").update({ pdf_url:null, pdf_name:null }).eq("id",selected.id);
-    const updated = { ...selected, pdf_url:null, pdf_name:null };
-    setNotes(prev => prev.map(n => n.id===selected.id?updated:n));
-    setSelected(updated);
-    toast.success("PDF removed");
-  };
+  // ════════════════════════════════════════
+  // RENDER
+  // ════════════════════════════════════════
 
-  const subjectColor = (n: string) => subjects.find(s=>s.name===n)?.color||"#4F8EF7";
-  const filtered = notes.filter(n => {
-    const ms = n.title.toLowerCase().includes(search.toLowerCase())||n.content?.toLowerCase().includes(search.toLowerCase());
-    const mf = filterSub ? n.subject===filterSub : true;
-    return ms&&mf;
-  });
-
-  const fadeUp = (d=0) => ({ opacity:visible?1:0, transform:visible?"translateY(0)":"translateY(14px)", transition:`opacity .3s ease ${d}ms, transform .3s cubic-bezier(.34,1.3,.64,1) ${d}ms` });
-
-  if (loading) return <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:300,color:"var(--muted)" }}>Loading…</div>;
+  const col  = (name:string) => subjectColor(name);
+  const inp  = {width:"100%",borderRadius:12,padding:"11px 14px",fontSize:14,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",boxSizing:"border-box" as const};
+  const btn  = (bg:string,c:string="#fff") => ({padding:"11px 20px",borderRadius:12,border:"none",background:bg,color:c,cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:"inherit",transition:"all .2s"} as React.CSSProperties);
 
   return (
-    <>
+    <div style={{maxWidth:900,margin:"0 auto"}}>
       <style>{`
-        @keyframes popIn { from{opacity:0;transform:scale(.93)} to{opacity:1;transform:scale(1)} }
-        .note-list-item:hover { border-color:rgba(79,142,247,.3) !important; background:rgba(79,142,247,.06) !important; transform:translateX(3px); }
-        .note-list-item { transition:all .18s !important; }
+        @keyframes popIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+        @keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+        .folder-card:hover{transform:translateY(-3px)!important;box-shadow:0 8px 28px rgba(0,0,0,.25)!important;}
+        .note-row:hover{background:rgba(79,142,247,.06)!important;border-color:rgba(79,142,247,.3)!important;}
+        .plus-menu-item:hover{background:rgba(79,142,247,.08)!important;}
       `}</style>
 
-      <input ref={fileRef} type="file" accept=".pdf" style={{ display:"none" }}
-        onChange={e => { if(e.target.files?.[0]) uploadPDF(e.target.files[0]); e.target.value=""; }}/>
+      {/* Hidden file input */}
+      <input ref={fileRef} type="file" accept=".pdf" style={{display:"none"}}
+        onChange={e=>{if(e.target.files?.[0])handlePdfSelect(e.target.files[0]);e.target.value="";}}/>
 
-      <div style={{ display:"flex", gap:18, height:"calc(100vh - 130px)" }}>
-
-        {/* Left Panel */}
-        <div style={{ ...fadeUp(0), width:290, display:"flex", flexDirection:"column", gap:10, flexShrink:0 }}>
-          <div style={{ display:"flex", gap:8 }}>
-            <div style={{ flex:1, display:"flex", alignItems:"center", gap:8, borderRadius:12, border:"1px solid var(--border)", background:"var(--bg)", padding:"8px 12px" }}>
-              <Search size={14} color="var(--muted)"/>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search notes…"
-                style={{ background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:13,fontFamily:"inherit",width:"100%" }}/>
-            </div>
-            <button onClick={()=>setShowNew(!showNew)} style={{ width:40,height:40,borderRadius:12,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:"0 4px 16px rgba(79,142,247,.4)",transition:"all .2s" }}
-              onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.1) rotate(8deg)"}}
-              onMouseLeave={e=>{e.currentTarget.style.transform="scale(1) rotate(0)"}}>
-              <Plus size={17}/>
+      {/* ── TOP BAR ── */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          {/* Back button */}
+          {view!=="folders"&&(
+            <button onClick={()=>{
+              if(view==="note-view"||view==="note-edit") setView("folder-notes");
+              else if(view==="folder-notes"||view==="note-new"||view==="pdf-upload") { setView("folders"); setActiveFolder(null); setSearch(""); }
+            }} style={{width:38,height:38,borderRadius:12,border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <Icon.Back/>
             </button>
-          </div>
-
-          {subjects.length > 0 && (
-            <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-              <button onClick={()=>setFilterSub("")} style={{ padding:"3px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${!filterSub?"#4F8EF7":"rgba(255,255,255,.08)"}`,background:!filterSub?"rgba(79,142,247,.15)":"transparent",color:!filterSub?"#4F8EF7":"var(--muted)",transition:"all .15s" }}>All</button>
-              {subjects.map(s => (
-                <button key={s.id} onClick={()=>setFilterSub(filterSub===s.name?"":s.name)} style={{ padding:"3px 12px",borderRadius:20,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",border:`1px solid ${filterSub===s.name?s.color+"66":"rgba(255,255,255,.08)"}`,background:filterSub===s.name?s.color+"18":"transparent",color:filterSub===s.name?s.color:"var(--muted)",transition:"all .15s" }}>{s.name}</button>
-              ))}
-            </div>
           )}
-
-          {showNew && (
-            <div style={{ padding:14,borderRadius:16,border:"1px solid rgba(79,142,247,.3)",background:"var(--card)",animation:"popIn .25s ease" }}>
-              <input value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="Note title…" autoFocus
-                style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",marginBottom:8,boxSizing:"border-box" }}/>
-              <select value={newSubject} onChange={e=>setNewSubject(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",marginBottom:8 }}>
-                <option value="">No subject</option>
-                {subjects.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
-              </select>
-              <textarea value={newContent} onChange={e=>setNewContent(e.target.value)} rows={3} placeholder="Start writing…"
-                style={{ width:"100%",borderRadius:10,padding:"8px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",resize:"none",marginBottom:8,boxSizing:"border-box" }}/>
-              <div style={{ display:"flex",gap:8 }}>
-                <button onClick={saveNew} style={{ flex:1,padding:"8px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:12,fontFamily:"inherit" }}>Save +10 XP ⚡</button>
-                <button onClick={()=>setShowNew(false)} style={{ padding:"8px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,.08)",background:"transparent",color:"var(--muted)",cursor:"pointer",fontSize:12,fontFamily:"inherit" }}>✕</button>
-              </div>
-            </div>
-          )}
-
-          <div style={{ flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:7 }}>
-            {filtered.length === 0 && (
-              <div style={{ textAlign:"center",padding:40,color:"var(--muted)" }}>
-                <FileText size={36} style={{ margin:"0 auto 10px",opacity:.15 }}/>
-                <p style={{ fontSize:13 }}>{search?"No results":"No notes yet"}</p>
-              </div>
-            )}
-            {filtered.map((note,i) => (
-              <div key={note.id} className="note-list-item" onClick={()=>{setSelected(note);setEditContent(note.content||"");setEditing(false);setLastSaved(null);}}
-                style={{ padding:"11px 14px",borderRadius:14,border:`1px solid ${selected?.id===note.id?"rgba(79,142,247,.4)":"rgba(255,255,255,.06)"}`,background:selected?.id===note.id?"rgba(79,142,247,.1)":"var(--bg)",cursor:"pointer",borderLeft:`3px solid ${subjectColor(note.subject)}`,animation:`popIn .25s ease ${i*30}ms both` }}>
-                <div style={{ display:"flex",justifyContent:"space-between",marginBottom:5 }}>
-                  {note.subject && <span style={{ fontSize:10,padding:"2px 8px",borderRadius:20,fontWeight:700,background:`${subjectColor(note.subject)}22`,color:subjectColor(note.subject) }}>{note.subject}</span>}
-                  <div style={{ display:"flex",gap:4,alignItems:"center" }}>
-                    {note.pdf_url && <span style={{ fontSize:9,padding:"1px 5px",borderRadius:10,background:"rgba(248,113,113,.15)",color:"#F87171",fontWeight:700 }}>PDF</span>}
-                    {note.starred && <Star size={12} color="#F5A623" fill="#F5A623"/>}
-                  </div>
-                </div>
-                <h4 style={{ fontSize:13,fontWeight:700,color:"var(--text)",marginBottom:3 }}>{note.title}</h4>
-                <p style={{ fontSize:11,color:"var(--muted)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{note.pdf_name || note.content||"Empty note"}</p>
-                <p style={{ fontSize:10,color:"var(--muted)",marginTop:4,opacity:.6 }}>{new Date(note.created_at).toLocaleDateString("en-IN")}</p>
-              </div>
-            ))}
+          <div>
+            <h2 style={{fontFamily:"var(--font-lora),serif",fontSize:20,fontWeight:700,color:"var(--text)"}}>
+              {view==="folders"&&"📁 My Notes"}
+              {view==="folder-notes"&&`📂 ${activeFolder?.name}`}
+              {view==="note-view"&&activeNote?.title}
+              {view==="note-edit"&&"✏️ Editing"}
+              {view==="note-new"&&"📝 New Note"}
+              {view==="pdf-upload"&&"📄 Upload PDF"}
+            </h2>
+            <p style={{fontSize:12,color:"var(--muted)",marginTop:2}}>
+              {view==="folders"&&`${Object.keys(folders).length} subject folders · ${notes.length} total notes`}
+              {view==="folder-notes"&&`${folderNotes.length} notes in this folder`}
+              {view==="note-view"&&`${activeNote?.note_type==="pdf"?"PDF":"Text note"} · ${activeNote?.subject||"No Subject"}`}
+            </p>
           </div>
-          <div style={{ fontSize:11,color:"var(--muted)",textAlign:"center",padding:"6px 0",borderTop:"1px solid rgba(255,255,255,.06)" }}>📝 {notes.length} notes · +10 XP each</div>
         </div>
 
-        {/* Viewer */}
-        <div style={{ ...fadeUp(80), flex:1, borderRadius:20, border:"1px solid rgba(79,142,247,.12)", background:"var(--card)", display:"flex", flexDirection:"column", overflow:"hidden", boxShadow:"0 4px 30px rgba(0,0,0,.3)" }}>
-          {selected ? (
-            <>
-              <div style={{ padding:"18px 22px",borderBottom:"1px solid rgba(255,255,255,.06)",display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:"rgba(79,142,247,.04)" }}>
-                <div>
-                  {selected.subject && <span style={{ fontSize:11,padding:"3px 10px",borderRadius:20,fontWeight:700,background:`${subjectColor(selected.subject)}22`,color:subjectColor(selected.subject),display:"inline-block",marginBottom:8 }}>{selected.subject}</span>}
-                  <h2 style={{ fontFamily:"var(--font-lora),serif",fontSize:22,color:"var(--text)",fontWeight:700 }}>{selected.title}</h2>
-                  <div style={{ display:"flex",alignItems:"center",gap:10,marginTop:4 }}>
-                    <p style={{ fontSize:12,color:"var(--muted)" }}>{new Date(selected.created_at).toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p>
-                    {autoSaving && <span style={{ fontSize:11,color:"var(--muted)" }}>💾 Saving...</span>}
-                    {!autoSaving && lastSaved && <span style={{ fontSize:11,color:"#34D399" }}>✓ Auto-saved {lastSaved.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>}
-                  </div>
-                </div>
-                <div style={{ display:"flex",gap:8,flexShrink:0,flexWrap:"wrap",justifyContent:"flex-end" }}>
-                  {/* PDF Upload Button */}
-                  <button onClick={()=>fileRef.current?.click()} disabled={uploading}
-                    style={{ padding:"6px 10px",borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.1)",color:"#F87171",cursor:"pointer",display:"flex",alignItems:"center",gap:5,fontSize:11,fontFamily:"inherit",fontWeight:700 }}>
-                    <Upload size={13}/>{uploading?"Uploading...":"Upload PDF"}
-                  </button>
-                  <button onClick={()=>toggleStar(selected)} style={{ padding:8,borderRadius:10,border:"1px solid rgba(245,166,35,.3)",background:"rgba(245,166,35,.15)",color:"var(--text)",cursor:"pointer",display:"flex",transition:"all .18s" }}>
-                    <Star size={16} color="#F5A623" fill={selected.starred?"#F5A623":"none"}/>
-                  </button>
-                  {editing ? (
-                    <button onClick={saveEdit} style={{ padding:8,borderRadius:10,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.15)",color:"var(--text)",cursor:"pointer",display:"flex" }}>
-                      <Save size={16}/>
-                    </button>
-                  ) : (
-                    <button onClick={()=>{setEditContent(selected.content||"");setEditing(true);}} style={{ padding:8,borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.15)",color:"var(--text)",cursor:"pointer",display:"flex" }}>
-                      <Edit3 size={16}/>
-                    </button>
-                  )}
-                  {editing && <button onClick={()=>setEditing(false)} style={{ padding:8,borderRadius:10,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.05)",color:"var(--text)",cursor:"pointer",display:"flex" }}><X size={16}/></button>}
-                  <button onClick={()=>deleteNote(selected.id)} style={{ padding:8,borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.12)",color:"var(--text)",cursor:"pointer",display:"flex" }}>
-                    <Trash2 size={16}/>
-                  </button>
-                </div>
-              </div>
+        {/* Right actions */}
+        <div style={{display:"flex",gap:8,alignItems:"center",position:"relative"}}>
+          {/* Search - only in folder-notes */}
+          {view==="folder-notes"&&(
+            <div style={{display:"flex",alignItems:"center",gap:8,borderRadius:12,border:"1px solid var(--border)",background:"var(--card)",padding:"8px 14px"}}>
+              <Icon.Search/>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…"
+                style={{background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:13,fontFamily:"inherit",width:140}}/>
+            </div>
+          )}
 
-              {/* PDF Section */}
-              {selected.pdf_url && (
-                <div style={{ margin:"12px 22px 0",padding:"10px 14px",borderRadius:12,border:"1px solid rgba(248,113,113,.25)",background:"rgba(248,113,113,.06)",display:"flex",alignItems:"center",gap:10 }}>
-                  <span style={{ fontSize:18 }}>📄</span>
-                  <div style={{ flex:1,minWidth:0 }}>
-                    <div style={{ fontSize:13,fontWeight:700,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{selected.pdf_name}</div>
-                    <div style={{ fontSize:11,color:"var(--muted)" }}>PDF attached to this note</div>
-                  </div>
-                  <a href={selected.pdf_url} target="_blank" rel="noopener noreferrer"
-                    style={{ padding:"5px 10px",borderRadius:8,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:11,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:4 }}>
-                    <ExternalLink size={11}/> Open
-                  </a>
-                  <button onClick={removePDF} style={{ padding:"5px 10px",borderRadius:8,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit" }}>
-                    Remove
+          {/* Plus button - only on folder/folder-notes views */}
+          {(view==="folders"||view==="folder-notes")&&(
+            <div style={{position:"relative"}}>
+              <button onClick={()=>setShowPlusMenu(!showPlusMenu)}
+                style={{width:44,height:44,borderRadius:14,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 18px rgba(79,142,247,.4)",transition:"all .2s",transform:showPlusMenu?"rotate(45deg)":"rotate(0)"}}>
+                <Icon.Plus/>
+              </button>
+
+              {/* Plus Dropdown Menu */}
+              {showPlusMenu&&(
+                <div style={{position:"absolute",right:0,top:52,background:"var(--card)",borderRadius:16,border:"1px solid var(--border)",boxShadow:"0 16px 48px rgba(0,0,0,.4)",padding:8,minWidth:220,zIndex:100,animation:"popIn .2s ease"}}>
+                  {/* Write Note */}
+                  <button className="plus-menu-item" onClick={()=>{
+                    setShowPlusMenu(false);
+                    if(activeFolder&&activeFolder.name!=="No Subject") setNewSubject(activeFolder.name);
+                    setView("note-new");
+                  }} style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",textAlign:"left" as const,display:"flex",alignItems:"center",gap:12,transition:"all .15s"}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:"rgba(79,142,247,.15)",display:"flex",alignItems:"center",justifyContent:"center",color:"#4F8EF7"}}>✏️</div>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Write Note</div>
+                      <div style={{fontSize:11,color:"var(--muted)"}}>Create text note (+10 XP)</div>
+                    </div>
+                  </button>
+
+                  <div style={{height:1,background:"var(--border)",margin:"4px 8px"}}/>
+
+                  {/* Upload PDF */}
+                  <button className="plus-menu-item" onClick={()=>{
+                    setShowPlusMenu(false);
+                    if(activeFolder&&activeFolder.name!=="No Subject") setPdfSubject(activeFolder.name);
+                    setView("pdf-upload");
+                  }} style={{width:"100%",padding:"12px 16px",borderRadius:12,border:"none",background:"transparent",cursor:"pointer",fontFamily:"inherit",textAlign:"left" as const,display:"flex",alignItems:"center",gap:12,transition:"all .15s"}}>
+                    <div style={{width:36,height:36,borderRadius:10,background:"rgba(248,113,113,.15)",display:"flex",alignItems:"center",justifyContent:"center",color:"#F87171"}}>📄</div>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:"var(--text)"}}>Upload PDF</div>
+                      <div style={{fontSize:11,color:"var(--muted)"}}>Upload PDF as note</div>
+                    </div>
                   </button>
                 </div>
               )}
-
-              <div style={{ flex:1,padding:24,overflowY:"auto" }}>
-                {editing ? (
-                  <textarea value={editContent}
-                    onChange={e=>{setEditContent(e.target.value); autoSave(selected.id, e.target.value);}}
-                    autoFocus
-                    style={{ width:"100%",height:"100%",background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.9 }}
-                    placeholder="Write your note here…"/>
-                ) : (
-                  <p style={{ fontSize:15,color:"var(--text)",lineHeight:1.9,whiteSpace:"pre-wrap" }}>
-                    {selected.content || <span style={{ color:"var(--muted)",fontStyle:"italic" }}>Empty note. Click ✏️ to write.</span>}
-                  </p>
-                )}
-              </div>
-            </>
-          ) : (
-            <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"var(--muted)" }}>
-              <FileText size={64} style={{ opacity:.08,marginBottom:16 }}/>
-              <p style={{ fontSize:15,fontWeight:700 }}>Select a note to view</p>
-              <p style={{ fontSize:13,marginTop:6,opacity:.6 }}>or click + to create one (+10 XP!)</p>
             </div>
+          )}
+
+          {/* Edit button - note view */}
+          {view==="note-view"&&activeNote?.note_type!=="pdf"&&(
+            <button onClick={()=>{setEditContent(activeNote.content||"");setView("note-edit");setLastSaved(null);}}
+              style={{display:"flex",alignItems:"center",gap:6,padding:"9px 16px",borderRadius:12,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
+              <Icon.Edit/> Edit
+            </button>
+          )}
+
+          {/* Note actions */}
+          {(view==="note-view"||view==="note-edit")&&(
+            <button onClick={()=>deleteNote(activeNote)}
+              style={{display:"flex",alignItems:"center",gap:5,padding:"9px 14px",borderRadius:12,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.1)",color:"#F87171",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
+              <Icon.Trash/> Delete
+            </button>
           )}
         </div>
       </div>
-    </>
+
+      {/* Close plus menu on outside click */}
+      {showPlusMenu&&<div style={{position:"fixed",inset:0,zIndex:99}} onClick={()=>setShowPlusMenu(false)}/>}
+
+      {/* ══════════════════════════════════════
+          VIEW: FOLDERS
+      ══════════════════════════════════════ */}
+      {view==="folders"&&(
+        <div>
+          {Object.keys(folders).length===0?(
+            <div style={{textAlign:"center",padding:"60px 20px",color:"var(--muted)"}}>
+              <div style={{fontSize:52,marginBottom:16}}>📁</div>
+              <h3 style={{fontSize:18,fontWeight:700,color:"var(--text)",marginBottom:8}}>No Notes Yet</h3>
+              <p style={{fontSize:14,lineHeight:1.7}}>Click the <strong style={{color:"#4F8EF7"}}>+</strong> button to write a note or upload a PDF!</p>
+            </div>
+          ):(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:16}}>
+              {Object.entries(folders).map(([name,fNotes])=>{
+                const c = col(name);
+                const pdfs  = (fNotes as any[]).filter(n=>n.note_type==="pdf").length;
+                const texts = (fNotes as any[]).filter(n=>n.note_type!=="pdf").length;
+                return(
+                  <div key={name} className="folder-card"
+                    onClick={()=>{ setActiveFolder({name,color:c}); setView("folder-notes"); setSearch(""); }}
+                    style={{padding:"20px 18px",borderRadius:20,border:`1px solid ${c}44`,background:`${c}0e`,cursor:"pointer",transition:"all .25s",animation:"popIn .3s ease"}}>
+                    <div style={{fontSize:40,marginBottom:12}}>
+                      <svg width="44" height="44" viewBox="0 0 24 24" fill={c}>
+                        <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+                      </svg>
+                    </div>
+                    <h3 style={{fontSize:15,fontWeight:700,color:"var(--text)",marginBottom:6}}>{name}</h3>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {texts>0&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:`${c}22`,color:c,fontWeight:700}}>✏️ {texts} notes</span>}
+                      {pdfs>0&&<span style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:"rgba(248,113,113,.15)",color:"#F87171",fontWeight:700}}>📄 {pdfs} PDFs</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          VIEW: FOLDER NOTES LIST
+      ══════════════════════════════════════ */}
+      {view==="folder-notes"&&(
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {folderNotes.length===0?(
+            <div style={{textAlign:"center",padding:48,color:"var(--muted)"}}>
+              <div style={{fontSize:40,marginBottom:12}}>📭</div>
+              <p style={{fontSize:15,fontWeight:600}}>{search?"No results found":"Folder is empty"}</p>
+              <p style={{fontSize:13,marginTop:6}}>Click <strong style={{color:"#4F8EF7"}}>+</strong> to add notes or upload PDFs</p>
+            </div>
+          ):folderNotes.map((note,i)=>{
+            const isPdf = note.note_type==="pdf";
+            const c = col(activeFolder?.name||"");
+            return(
+              <div key={note.id} className="note-row"
+                style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",borderRadius:16,border:"1px solid var(--border)",background:"var(--card)",cursor:"pointer",transition:"all .2s",animation:`slideIn .25s ease ${i*40}ms both`}}>
+                {/* Icon */}
+                <div style={{width:40,height:40,borderRadius:12,background:isPdf?"rgba(248,113,113,.12)":`${c}12`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:isPdf?"#F87171":c}}>
+                  {isPdf?<Icon.PDF/>:<Icon.File/>}
+                </div>
+                {/* Info */}
+                <div style={{flex:1,minWidth:0}} onClick={()=>{setActiveNote(note);setView("note-view");}}>
+                  <div style={{fontSize:15,fontWeight:700,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{note.title}</div>
+                  <div style={{fontSize:11,color:"var(--muted)",marginTop:3,display:"flex",gap:8}}>
+                    <span>{isPdf?"📄 PDF":"✏️ Note"}</span>
+                    <span>·</span>
+                    <span>{new Date(note.created_at).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</span>
+                    {!isPdf&&note.content&&<><span>·</span><span>{note.content.slice(0,30)}{note.content.length>30?"…":""}</span></>}
+                  </div>
+                </div>
+                {/* Actions */}
+                <div style={{display:"flex",gap:8,flexShrink:0}}>
+                  {isPdf&&(
+                    <a href={note.pdf_url} target="_blank" rel="noopener noreferrer"
+                      onClick={e=>e.stopPropagation()}
+                      style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,textDecoration:"none"}}>
+                      <Icon.External/> Open
+                    </a>
+                  )}
+                  {!isPdf&&(
+                    <button onClick={(e)=>{e.stopPropagation();setActiveNote(note);setView("note-view");}}
+                      style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                      Open
+                    </button>
+                  )}
+                  <button onClick={(e)=>{e.stopPropagation();deleteNote(note);}}
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                    <Icon.Trash/> Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          VIEW: NOTE VIEW (text)
+      ══════════════════════════════════════ */}
+      {view==="note-view"&&activeNote&&(
+        <div style={{borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",overflow:"hidden"}}>
+          <div style={{padding:"20px 28px",borderBottom:"1px solid var(--border)",background:"rgba(79,142,247,.04)"}}>
+            <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+              {activeNote.subject&&<span style={{fontSize:11,padding:"3px 12px",borderRadius:20,fontWeight:700,background:`${col(activeNote.subject)}22`,color:col(activeNote.subject)}}>{activeNote.subject}</span>}
+              <span style={{fontSize:11,padding:"3px 12px",borderRadius:20,fontWeight:700,background:"var(--bg)",color:"var(--muted)"}}>{new Date(activeNote.created_at).toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</span>
+            </div>
+            <h2 style={{fontFamily:"var(--font-lora),serif",fontSize:24,color:"var(--text)",fontWeight:700}}>{activeNote.title}</h2>
+          </div>
+          <div style={{padding:"24px 28px",minHeight:300}}>
+            {activeNote.note_type==="pdf"?(
+              <div style={{textAlign:"center",padding:40}}>
+                <div style={{fontSize:48,marginBottom:16}}>📄</div>
+                <p style={{fontSize:16,fontWeight:700,color:"var(--text)",marginBottom:8}}>{activeNote.pdf_name}</p>
+                <a href={activeNote.pdf_url} target="_blank" rel="noopener noreferrer"
+                  style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 24px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",fontSize:14,fontWeight:700,textDecoration:"none"}}>
+                  <Icon.External/> Open PDF
+                </a>
+              </div>
+            ):(
+              <p style={{fontSize:15,color:"var(--text)",lineHeight:1.9,whiteSpace:"pre-wrap"}}>
+                {activeNote.content||<span style={{color:"var(--muted)",fontStyle:"italic"}}>Empty note. Click Edit to write.</span>}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          VIEW: NOTE EDIT
+      ══════════════════════════════════════ */}
+      {view==="note-edit"&&activeNote&&(
+        <div style={{borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",overflow:"hidden"}}>
+          <div style={{padding:"16px 24px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(79,142,247,.04)"}}>
+            <span style={{fontSize:13,color:"var(--muted)"}}>{autoSaving?"💾 Saving...":lastSaved?`✓ Saved ${lastSaved.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}`:""}</span>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={saveEdit} style={{...btn("linear-gradient(135deg,#34D399,#059669)"),display:"flex",alignItems:"center",gap:6,fontSize:13,padding:"8px 16px"}}>
+                <Icon.Save/> Save
+              </button>
+              <button onClick={()=>setView("note-view")} style={{...btn("var(--bg)","var(--muted)"),border:"1px solid var(--border)",fontSize:13,padding:"8px 14px"}}>
+                Cancel
+              </button>
+            </div>
+          </div>
+          <textarea value={editContent}
+            onChange={e=>{setEditContent(e.target.value); autoSaveFn(activeNote.id,e.target.value);}}
+            autoFocus
+            style={{width:"100%",minHeight:"60vh",background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.9,padding:"24px 28px",boxSizing:"border-box"}}
+            placeholder="Write your note here…"/>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          VIEW: NEW NOTE FORM
+      ══════════════════════════════════════ */}
+      {view==="note-new"&&(
+        <div style={{borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",padding:28,animation:"popIn .25s ease"}}>
+          <h3 style={{fontFamily:"var(--font-lora),serif",fontSize:18,color:"var(--text)",marginBottom:20,fontWeight:700}}>✏️ Write a New Note</h3>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:600,color:"var(--muted)",textTransform:"uppercase" as const,marginBottom:6,letterSpacing:".05em"}}>Note Title *</label>
+              <input type="text" value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="Enter note title…" autoFocus style={inp}/>
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:600,color:"var(--muted)",textTransform:"uppercase" as const,marginBottom:6,letterSpacing:".05em"}}>Subject (Folder)</label>
+              <select value={newSubject} onChange={e=>setNewSubject(e.target.value)} style={inp}>
+                <option value="">No Subject</option>
+                {subjects.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:600,color:"var(--muted)",textTransform:"uppercase" as const,marginBottom:6,letterSpacing:".05em"}}>Content</label>
+              <textarea value={newContent} onChange={e=>setNewContent(e.target.value)} rows={8} placeholder="Start writing your note…"
+                style={{...inp,resize:"none" as const}}/>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={saveNewNote} disabled={saving}
+                style={{...btn("linear-gradient(135deg,#4F8EF7,#6366F1)"),opacity:saving?.7:1,flex:1}}>
+                {saving?"Saving…":"💾 Save Note (+10 XP)"}
+              </button>
+              <button onClick={()=>setView(activeFolder?"folder-notes":"folders")}
+                style={{...btn("var(--bg)","var(--muted)"),border:"1px solid var(--border)"}}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          VIEW: PDF UPLOAD FORM
+      ══════════════════════════════════════ */}
+      {view==="pdf-upload"&&(
+        <div style={{borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",padding:28,animation:"popIn .25s ease"}}>
+          <h3 style={{fontFamily:"var(--font-lora),serif",fontSize:18,color:"var(--text)",marginBottom:20,fontWeight:700}}>📄 Upload PDF Note</h3>
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+            {/* PDF Drop Zone */}
+            <div onClick={()=>fileRef.current?.click()}
+              style={{borderRadius:16,border:`2px dashed ${pdfFile?"#34D399":"rgba(79,142,247,.4)"}`,background:pdfFile?"rgba(52,211,153,.06)":"rgba(79,142,247,.04)",padding:"32px 24px",textAlign:"center",cursor:"pointer",transition:"all .2s"}}>
+              {pdfFile?(
+                <>
+                  <div style={{fontSize:36,marginBottom:8}}>📄</div>
+                  <p style={{fontSize:15,fontWeight:700,color:"#34D399"}}>{pdfFile.name}</p>
+                  <p style={{fontSize:12,color:"var(--muted)",marginTop:4}}>{(pdfFile.size/1024/1024).toFixed(1)} MB · Click to change</p>
+                </>
+              ):(
+                <>
+                  <div style={{fontSize:36,marginBottom:10,color:"rgba(79,142,247,.6)"}}><Icon.Upload/></div>
+                  <p style={{fontSize:15,fontWeight:700,color:"var(--text)"}}>Click to select PDF</p>
+                  <p style={{fontSize:12,color:"var(--muted)",marginTop:4}}>Max 10MB · PDF files only</p>
+                </>
+              )}
+            </div>
+
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:600,color:"var(--muted)",textTransform:"uppercase" as const,marginBottom:6,letterSpacing:".05em"}}>PDF Title *</label>
+              <input type="text" value={pdfTitle} onChange={e=>setPdfTitle(e.target.value)} placeholder="Enter title for this PDF…" style={inp}/>
+            </div>
+
+            <div>
+              <label style={{display:"block",fontSize:12,fontWeight:600,color:"var(--muted)",textTransform:"uppercase" as const,marginBottom:6,letterSpacing:".05em"}}>Subject (Folder)</label>
+              <select value={pdfSubject} onChange={e=>setPdfSubject(e.target.value)} style={inp}>
+                <option value="">No Subject</option>
+                {subjects.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
+              </select>
+            </div>
+
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={savePdf} disabled={uploading||!pdfFile}
+                style={{...btn("linear-gradient(135deg,#F87171,#EF4444)"),opacity:(uploading||!pdfFile)?.6:1,flex:1}}>
+                {uploading?"Uploading…":"📤 Upload PDF"}
+              </button>
+              <button onClick={()=>{ setPdfFile(null); setPdfTitle(""); setView(activeFolder?"folder-notes":"folders"); }}
+                style={{...btn("var(--bg)","var(--muted)"),border:"1px solid var(--border)"}}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      {view==="folders"&&(
+        <div style={{textAlign:"center",marginTop:20,fontSize:12,color:"var(--muted)"}}>
+          📝 {notes.filter(n=>n.note_type!=="pdf").length} text notes · 📄 {notes.filter(n=>n.note_type==="pdf").length} PDFs · +10 XP each note
+        </div>
+      )}
+    </div>
   );
 }
