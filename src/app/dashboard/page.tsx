@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { CheckSquare, FileText, Flame, Zap, Check, ArrowRight } from "lucide-react";
 import { onXPUpdate } from "@/lib/xp-utils";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import StudyCalendar from "@/components/dashboard/StudyCalendar";
 
 const weeklyData = [
   { day:"Mon", hours:3.5 }, { day:"Tue", hours:2 },
@@ -217,6 +218,8 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Chart + Tasks ── */}
+        <StudyCalendar />
+
         <div style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:16 }}>
           <div style={{
             ...fadeUp(320),
