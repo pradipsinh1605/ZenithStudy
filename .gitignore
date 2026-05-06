@@ -4,6 +4,7 @@ node_modules/
 .env.*.local
 .DS_Store
 *.log
+*.tsbuildinfo
 /build
 /.pnp
 .pnp.js

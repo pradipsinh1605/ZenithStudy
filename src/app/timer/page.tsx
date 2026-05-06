@@ -35,7 +35,7 @@ export default function TimerPage() {
         {(Object.keys(MODES) as (keyof typeof MODES)[]).map(m => (
           <button key={m} onClick={() => setMode(m)}
             style={{
-              flex: 1, padding: "9px 12px", borderRadius: 11, border: "none",
+              flex: 1, padding: "9px 12px", borderRadius: 11,
               background: mode === m ? `${MODES[m].color}22` : "transparent",
               color: mode === m ? MODES[m].color : "var(--muted)",
               fontWeight: mode === m ? 700 : 500,
