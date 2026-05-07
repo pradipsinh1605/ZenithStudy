@@ -9,7 +9,24 @@ const lora = Lora({ subsets: ["latin"], variable: "--font-lora", display: "swap"
 
 export const metadata: Metadata = {
   title: { default: "StudyBuddy AI", template: "%s | StudyBuddy AI" },
-  description: "Your AI-powered academic success hub",
+  description:
+    "StudyBuddy AI is an AI-powered student productivity platform for smart notes, timetable planning, quizzes, doubt solving, reminders, analytics, and gamified studying.",
+  keywords: [
+    "StudyBuddy AI",
+    "AI study assistant",
+    "student productivity",
+    "AI notes",
+    "quiz generator",
+    "timetable planner",
+    "study reminders",
+  ],
+  openGraph: {
+    title: "StudyBuddy AI - Study Smarter with AI",
+    description:
+      "AI-powered notes, timetable planning, quizzes, doubt solving, productivity tracking, and gamified studying in one intelligent platform.",
+    siteName: "StudyBuddy AI",
+    type: "website",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

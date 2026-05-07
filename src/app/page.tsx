@@ -1,176 +1,858 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  ArrowRight,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Brain,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  Cloud,
+  FileText,
+  Github,
+  Instagram,
+  Linkedin,
+  Mail,
+  Menu,
+  MessageCircle,
+  Play,
+  Shield,
+  Sparkles,
+  Star,
+  Timer,
+  Trophy,
+  Upload,
+  X,
+  Zap,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-const FEATURES = [
-  { icon:"📝", title:"Smart Notes",   desc:"Rich notes with AI summaries",      color:"#4F8EF7" },
-  { icon:"🤖", title:"AI Tutor",      desc:"24/7 AI with visual diagrams",      color:"#A78BFA" },
-  { icon:"⏱️", title:"Focus Timer",   desc:"Pomodoro sessions with XP rewards", color:"#34D399" },
-  { icon:"📅", title:"Timetable",     desc:"Smart weekly class schedule",       color:"#F5A623" },
-  { icon:"⚡", title:"Flashcards",    desc:"Quiz mode with flip cards",         color:"#F87171" },
-  { icon:"🏆", title:"Achievements",  desc:"XP, streaks and badges",           color:"#22D3EE" },
+const navLinks = [
+  { label: "Features", href: "#features" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "Contact", href: "#contact" },
 ];
+
+const stats = [
+  { label: "Students joined", value: 18000, suffix: "+" },
+  { label: "Notes generated", value: 126000, suffix: "+" },
+  { label: "Study hours tracked", value: 94000, suffix: "+" },
+  { label: "AI questions solved", value: 310000, suffix: "+" },
+];
+
+const features = [
+  { icon: BookOpen, title: "AI Smart Notes", desc: "Turn lectures, ideas, and messy study material into clean summaries and action points.", tone: "from-sky-400 to-cyan-300" },
+  { icon: CalendarDays, title: "Timetable Planner", desc: "Build flexible schedules that adapt to exams, deadlines, streaks, and real life.", tone: "from-violet-400 to-fuchsia-400" },
+  { icon: Brain, title: "AI Doubt Solver", desc: "Ask questions in natural language and get guided explanations with study context.", tone: "from-blue-400 to-violet-400" },
+  { icon: Zap, title: "Quiz Generator", desc: "Create revision quizzes from notes, PDFs, chapters, or your own weak topics.", tone: "from-amber-300 to-orange-400" },
+  { icon: Trophy, title: "XP & Streak System", desc: "Keep momentum with daily goals, achievements, XP rewards, and streak recovery.", tone: "from-emerald-300 to-teal-400" },
+  { icon: BarChart3, title: "Progress Analytics", desc: "See your focus hours, quiz accuracy, subject balance, and study consistency.", tone: "from-indigo-300 to-sky-400" },
+  { icon: Upload, title: "PDF Upload", desc: "Upload study PDFs and transform them into notes, flashcards, and practice questions.", tone: "from-rose-300 to-pink-400" },
+  { icon: Cloud, title: "Cloud Sync", desc: "Keep notes, reminders, plans, and progress available across your devices.", tone: "from-cyan-300 to-blue-400" },
+  { icon: Bell, title: "Study Reminders", desc: "Set reminders for revision, assignments, exams, and deep work sessions.", tone: "from-lime-300 to-emerald-400" },
+  { icon: Sparkles, title: "Personal AI Assistant", desc: "A focused study copilot that helps you choose what to do next.", tone: "from-purple-300 to-blue-400" },
+];
+
+const previewTiles = [
+  { label: "Focus Score", value: "94%", icon: Timer },
+  { label: "Streak", value: "21 days", icon: Trophy },
+  { label: "Today", value: "5 tasks", icon: Check },
+];
+
+const reasons = [
+  "All-in-one study platform",
+  "AI-powered productivity",
+  "Personalized learning",
+  "Gamified motivation",
+  "Modern clean experience",
+  "Faster studying",
+  "Better focus",
+];
+
+const plans = [
+  {
+    name: "Free",
+    monthly: 0,
+    yearly: 0,
+    desc: "Start building better study habits.",
+    features: ["Basic notes", "Timetable", "Limited AI usage", "Daily streak tracking"],
+  },
+  {
+    name: "Pro",
+    monthly: 9,
+    yearly: 7,
+    desc: "For students who want serious momentum.",
+    popular: true,
+    features: ["Unlimited AI tools", "Advanced analytics", "Unlimited uploads", "Smart recommendations", "Priority reminders"],
+  },
+  {
+    name: "Premium+",
+    monthly: 19,
+    yearly: 15,
+    desc: "The complete AI study command center.",
+    features: ["Full AI assistant", "Cloud sync", "Priority features", "Future premium tools", "Early beta access"],
+  },
+];
+
+const testimonials = [
+  { name: "Aarav Patel", role: "Engineering Student", quote: "StudyBuddy AI made my revision feel organized for the first time. The quiz generator is my exam-week weapon." },
+  { name: "Nisha Shah", role: "Medical Aspirant", quote: "The timetable and reminders helped me keep consistency without feeling overwhelmed by my syllabus." },
+  { name: "Rohan Mehta", role: "BCA Student", quote: "I upload PDFs, ask doubts, and track progress in one place. It feels like a focused study cockpit." },
+];
+
+const faqs = [
+  { q: "Is StudyBuddy AI free?", a: "Yes. You can start with the free plan, then upgrade when you need unlimited AI tools, uploads, and advanced analytics." },
+  { q: "Can I upload PDFs?", a: "Yes. PDF upload is designed for converting study material into notes, quizzes, flashcards, and revision flows." },
+  { q: "Does it work on mobile?", a: "Yes. The interface is responsive and built to work smoothly on mobile, tablet, and desktop screens." },
+  { q: "Is my data secure?", a: "StudyBuddy AI is built with authenticated access and privacy-first product patterns so your study data stays protected." },
+  { q: "How does AI help studying?", a: "AI helps summarize content, solve doubts, generate quizzes, recommend study actions, and keep learning personalized." },
+];
+
+function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const duration = 1300;
+    const frames = 42;
+    let frame = 0;
+    const interval = window.setInterval(() => {
+      frame += 1;
+      const progress = 1 - Math.pow(1 - frame / frames, 3);
+      setCount(Math.round(value * progress));
+      if (frame >= frames) window.clearInterval(interval);
+    }, duration / frames);
+
+    return () => window.clearInterval(interval);
+  }, [value]);
+
+  return (
+    <span>
+      {count.toLocaleString()}
+      {suffix}
+    </span>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  desc,
+}: {
+  eyebrow: string;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.55 }}
+      className="mx-auto mb-12 max-w-3xl text-center"
+    >
+      <p className="mb-3 text-xs font-bold uppercase text-cyan-200">{eyebrow}</p>
+      <h2 className="font-lora text-3xl font-bold text-white sm:text-4xl lg:text-5xl">{title}</h2>
+      <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">{desc}</p>
+    </motion.div>
+  );
+}
 
 export default function HomePage() {
   const router = useRouter();
   const supabase = createClient();
-  const [visible, setVisible] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
+  const [openFaq, setOpenFaq] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [cursor, setCursor] = useState({ x: -200, y: -200 });
+
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 38 }, (_, index) => ({
+        left: (index * 37) % 100,
+        top: (index * 53) % 100,
+        delay: (index % 9) * 0.35,
+        size: 2 + (index % 3),
+      })),
+    [],
+  );
 
   useEffect(() => {
-    setTimeout(() => setVisible(true), 100);
     (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) router.push("/dashboard");
-      } catch {}
+      } catch {
+        // Landing page remains available if auth probing fails.
+      }
     })();
+  }, [router, supabase]);
+
+  useEffect(() => {
+    const onMove = (event: MouseEvent) => setCursor({ x: event.clientX, y: event.clientY });
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
-  const fadeStyle = (delay: number) => ({
-    opacity: visible ? 1 : 0,
-    transform: visible ? "translateY(0)" : "translateY(24px)",
-    transition: "opacity 0.5s ease " + delay + "ms, transform 0.5s ease " + delay + "ms",
-  });
+  const goLogin = () => router.push("/auth/login");
 
   return (
-    <>
-      <style>{`
-        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-        @keyframes float   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-        @keyframes glow    { 0%,100%{box-shadow:0 0 0 0 rgba(79,142,247,.5)} 50%{box-shadow:0 0 0 16px rgba(79,142,247,0)} }
-        .feat:hover        { transform:translateY(-8px) scale(1.02)!important; border-color:rgba(79,142,247,.4)!important; }
-        .cta:hover         { transform:translateY(-4px) scale(1.03)!important; filter:brightness(1.1)!important; }
-        .outline:hover     { background:rgba(255,255,255,.1)!important; transform:translateY(-2px)!important; }
+    <main className="min-h-screen overflow-hidden bg-[#030711] text-white selection:bg-cyan-300/30">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed z-50 hidden h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300/10 blur-3xl lg:block"
+        style={{ left: cursor.x, top: cursor.y }}
+      />
+
+      <div aria-hidden="true" className="fixed inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(79,142,247,0.25),transparent_34%),radial-gradient(circle_at_78%_8%,rgba(168,85,247,0.22),transparent_32%),linear-gradient(180deg,#030711_0%,#07111f_44%,#030711_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:72px_72px] opacity-25" />
+        <div className="absolute inset-x-0 top-0 h-80 bg-[conic-gradient(from_90deg_at_50%_50%,rgba(56,189,248,0.18),rgba(168,85,247,0.22),rgba(16,185,129,0.10),rgba(56,189,248,0.18))] blur-3xl" />
+        {particles.map((particle) => (
+          <span
+            key={`${particle.left}-${particle.top}`}
+            className="absolute rounded-full bg-cyan-200/50 shadow-[0_0_18px_rgba(103,232,249,0.75)]"
+            style={{
+              left: `${particle.left}%`,
+              top: `${particle.top}%`,
+              width: particle.size,
+              height: particle.size,
+              animation: reduceMotion ? undefined : `particleFloat 9s ease-in-out ${particle.delay}s infinite`,
+            }}
+          />
+        ))}
+      </div>
+
+      <style jsx global>{`
+        html {
+          scroll-behavior: smooth;
+        }
+        @keyframes particleFloat {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0);
+            opacity: 0.35;
+          }
+          50% {
+            transform: translate3d(18px, -28px, 0);
+            opacity: 0.9;
+          }
+        }
+        @keyframes shimmerLine {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(220%);
+          }
+        }
       `}</style>
 
-      <div style={{ minHeight:"100vh", background:"#060D1B", color:"#E2EAF8", fontFamily:"var(--font-sora),sans-serif", overflowX:"hidden" }}>
-
-        {/* Navbar */}
-        <nav style={{ position:"sticky", top:0, zIndex:100, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 40px", background:"rgba(6,13,27,.9)", backdropFilter:"blur(20px)", borderBottom:"1px solid rgba(79,142,247,.1)" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <img src="/icon-192.png" alt="logo" style={{ width:36, height:36, borderRadius:10 }} />
-            <span style={{ fontWeight:800, fontSize:18, color:"#fff" }}>StudyBuddy AI</span>
-          </div>
-          <div style={{ display:"flex", gap:10 }}>
-            <button className="outline" onClick={() => router.push("/auth/login")}
-              style={{ padding:"9px 22px", borderRadius:12, border:"1px solid rgba(255,255,255,.15)", background:"transparent", color:"#E2EAF8", cursor:"pointer", fontFamily:"var(--font-sora),sans-serif", fontWeight:600, fontSize:13, transition:"all .2s" }}>
-              Sign In
-            </button>
-            <button className="cta" onClick={() => router.push("/auth/login")}
-              style={{ padding:"9px 22px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:"pointer", fontFamily:"var(--font-sora),sans-serif", fontWeight:700, fontSize:13, boxShadow:"0 4px 16px rgba(79,142,247,.35)", transition:"all .2s" }}>
-              Get Started Free →
-            </button>
-          </div>
-        </nav>
-
-        <div style={{ maxWidth:1000, margin:"0 auto", padding:"80px 24px 60px", textAlign:"center" }}>
-
-          {/* Badge */}
-          <div style={{ ...fadeStyle(0), display:"inline-flex", alignItems:"center", gap:8, padding:"7px 20px", borderRadius:30, background:"rgba(79,142,247,.1)", border:"1px solid rgba(79,142,247,.25)", fontSize:12, fontWeight:700, color:"#7FB3FF", marginBottom:32 }}>
-            <span style={{ width:7, height:7, borderRadius:"50%", background:"#34D399", display:"inline-block" }}/>
-            AI-Powered · Free to Start · No Credit Card
-          </div>
-
-          {/* Logo */}
-          <div style={{ ...fadeStyle(100), marginBottom:28 }}>
-            <img src="/icon-192.png" alt="StudyBuddy AI" style={{ width:100, height:100, borderRadius:24, boxShadow:"0 16px 48px rgba(79,142,247,.4)", animation:"float 4s ease-in-out infinite" }} />
-          </div>
-
-          {/* Heading */}
-          <h1 style={{ ...fadeStyle(200), fontFamily:"var(--font-lora),serif", fontSize:"clamp(36px,6vw,68px)", lineHeight:1.1, fontWeight:700, marginBottom:22, color:"#fff" }}>
-            Study Smarter with<br/>
-            <span style={{ background:"linear-gradient(135deg,#4F8EF7,#A78BFA,#34D399)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundSize:"200%", animation:"shimmer 4s linear infinite" }}>
-              AI by Your Side
+      <nav className="sticky top-0 z-40 border-b border-white/10 bg-[#030711]/65 backdrop-blur-2xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+          <button onClick={() => router.push("/")} className="group flex items-center gap-3" aria-label="StudyBuddy AI home">
+            <span className="relative grid h-10 w-10 place-items-center rounded-xl border border-cyan-200/25 bg-white/10 shadow-[0_0_32px_rgba(79,142,247,0.28)]">
+              <img src="/icon-192.png" alt="" className="h-7 w-7 rounded-lg" />
+              <span className="absolute inset-0 rounded-xl border border-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
             </span>
-          </h1>
+            <span className="text-sm font-extrabold tracking-normal text-white sm:text-base">StudyBuddy AI</span>
+          </button>
 
-          <p style={{ ...fadeStyle(300), fontSize:17, color:"rgba(232,240,254,.5)", maxWidth:480, margin:"0 auto 44px", lineHeight:1.9, fontWeight:300 }}>
-            Notes · Planner · Flashcards · Focus Timer · AI Tutor with Diagrams · XP & Achievements
-          </p>
-
-          {/* Buttons */}
-          <div style={{ ...fadeStyle(400), display:"flex", gap:14, justifyContent:"center", marginBottom:60, flexWrap:"wrap" }}>
-            <button className="cta" onClick={() => router.push("/auth/login")}
-              style={{ padding:"16px 44px", borderRadius:16, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:"pointer", fontFamily:"var(--font-sora),sans-serif", fontWeight:800, fontSize:16, boxShadow:"0 8px 32px rgba(79,142,247,.4)", transition:"all .3s", animation:"glow 3s infinite" }}>
-              🚀 Start for Free
-            </button>
-            <button className="outline" onClick={() => router.push("/auth/login")}
-              style={{ padding:"16px 36px", borderRadius:16, border:"1px solid rgba(255,255,255,.12)", background:"rgba(255,255,255,.05)", color:"#E2EAF8", cursor:"pointer", fontFamily:"var(--font-sora),sans-serif", fontWeight:600, fontSize:16, transition:"all .2s" }}>
-              Sign In →
-            </button>
-          </div>
-
-          {/* Stats */}
-          <div style={{ ...fadeStyle(500), display:"flex", gap:40, justifyContent:"center", marginBottom:72, flexWrap:"wrap" }}>
-            {[["10,000+","Students","#4F8EF7"],["50,000+","Tasks Done","#34D399"],["99%","Satisfaction","#F5A623"]].map(([num,label,color]) => (
-              <div key={label} style={{ textAlign:"center" }}>
-                <div style={{ fontSize:28, fontWeight:900, color }}>{num}</div>
-                <div style={{ fontSize:12, color:"rgba(232,240,254,.4)", marginTop:3, fontWeight:600 }}>{label}</div>
-              </div>
+          <div className="hidden items-center gap-8 md:flex">
+            {navLinks.map((link) => (
+              <a key={link.href} href={link.href} className="text-sm font-semibold text-slate-300 transition hover:text-white">
+                {link.label}
+              </a>
             ))}
           </div>
 
-          {/* Divider */}
-          <div style={{ height:1, background:"linear-gradient(90deg,transparent,rgba(79,142,247,.4),rgba(167,139,250,.4),transparent)", marginBottom:72 }} />
-
-          {/* Features heading */}
-          <h2 style={{ ...fadeStyle(0), fontFamily:"var(--font-lora),serif", fontSize:"clamp(24px,4vw,40px)", fontWeight:700, marginBottom:14, color:"#fff" }}>
-            Everything you need to excel
-          </h2>
-          <p style={{ ...fadeStyle(100), fontSize:14, color:"rgba(232,240,254,.4)", marginBottom:40 }}>
-            One platform for all your academic needs
-          </p>
-
-          {/* Features Grid */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:16, marginBottom:72 }}>
-            {FEATURES.map(({ icon, title, desc, color }, i) => (
-              <div key={title} className="feat" style={{
-                ...fadeStyle(i * 80),
-                padding:"24px 22px", borderRadius:20,
-                background:"linear-gradient(145deg,rgba(14,22,48,.9),rgba(8,14,32,.9))",
-                border:"1px solid " + color + "22",
-                transition:"all .3s cubic-bezier(.34,1.3,.64,1)",
-                textAlign:"left",
-              }}>
-                <div style={{ width:52, height:52, borderRadius:14, background:color + "18", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, marginBottom:14 }}>
-                  {icon}
-                </div>
-                <h3 style={{ fontWeight:700, fontSize:16, color:"#fff", marginBottom:8 }}>{title}</h3>
-                <p style={{ fontSize:13, color:"rgba(232,240,254,.4)", lineHeight:1.7 }}>{desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA Bottom */}
-          <div style={{ padding:"60px 24px", background:"rgba(79,142,247,.05)", borderRadius:24, border:"1px solid rgba(79,142,247,.15)", marginBottom:48 }}>
-            <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:"clamp(24px,4vw,40px)", fontWeight:700, marginBottom:14, color:"#fff" }}>
-              Ready to transform your studies?
-            </h2>
-            <p style={{ fontSize:14, color:"rgba(232,240,254,.4)", marginBottom:32 }}>
-              Join thousands of students achieving more with StudyBuddy AI
-            </p>
-            <button className="cta" onClick={() => router.push("/auth/login")}
-              style={{ padding:"18px 56px", borderRadius:18, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1,#A78BFA)", color:"#fff", cursor:"pointer", fontFamily:"var(--font-sora),sans-serif", fontWeight:800, fontSize:18, boxShadow:"0 8px 40px rgba(79,142,247,.5)", transition:"all .3s" }}>
-              🎓 Start Free — No Credit Card
+          <div className="hidden items-center gap-3 md:flex">
+            <button onClick={goLogin} className="rounded-xl px-4 py-2 text-sm font-bold text-slate-200 transition hover:bg-white/10 hover:text-white">
+              Login
             </button>
-            <p style={{ fontSize:12, color:"rgba(232,240,254,.25)", marginTop:14 }}>
-              2 minute setup · Cancel anytime
-            </p>
+            <button
+              onClick={goLogin}
+              className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-5 py-2.5 text-sm font-extrabold text-white shadow-[0_0_34px_rgba(79,142,247,0.34)] transition hover:-translate-y-0.5"
+            >
+              <span className="absolute inset-y-0 left-0 w-1/3 -translate-x-full bg-white/25 blur-xl transition group-hover:translate-x-[320%]" />
+              Get Started
+            </button>
           </div>
 
-          {/* Footer */}
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12, paddingTop:24, borderTop:"1px solid rgba(79,142,247,.08)" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <img src="/icon-192.png" alt="logo" style={{ width:28, height:28, borderRadius:8 }} />
-              <span style={{ fontWeight:700, fontSize:14, color:"rgba(232,240,254,.6)" }}>StudyBuddy AI</span>
-            </div>
-            <p style={{ fontSize:12, color:"rgba(232,240,254,.2)" }}>© 2026 StudyBuddy AI · Made with ❤️</p>
-            <p style={{ fontSize:12, color:"rgba(232,240,254,.2)" }}>Smarter Study. Better You.</p>
-          </div>
-
+          <button
+            onClick={() => setMenuOpen((value) => !value)}
+            className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/10 text-white md:hidden"
+            aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
         </div>
-      </div>
-    </>
+
+        {menuOpen && (
+          <div className="border-t border-white/10 bg-[#030711]/95 px-4 py-4 backdrop-blur-2xl md:hidden">
+            <div className="grid gap-2">
+              {navLinks.map((link) => (
+                <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="rounded-xl px-3 py-3 text-sm font-semibold text-slate-200 hover:bg-white/10">
+                  {link.label}
+                </a>
+              ))}
+              <button onClick={goLogin} className="mt-2 rounded-xl bg-white px-4 py-3 text-sm font-extrabold text-slate-950">
+                Get Started Free
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-70px)] max-w-7xl flex-col items-center px-4 pb-20 pt-16 sm:px-6 lg:px-8 lg:pt-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-white/10 px-4 py-2 text-xs font-bold text-cyan-100 shadow-[0_0_40px_rgba(56,189,248,0.16)] backdrop-blur-xl"
+        >
+          <Sparkles size={15} />
+          AI notes, timetable, quizzes, doubts, reminders and progress in one platform
+        </motion.div>
+
+        <div className="grid w-full items-center gap-12 lg:grid-cols-[1fr_0.95fr]">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="text-center lg:text-left"
+          >
+            <h1 className="font-lora text-5xl font-bold leading-tight text-white sm:text-6xl lg:text-7xl">
+              Study Smarter with{" "}
+              <span className="bg-gradient-to-r from-cyan-200 via-blue-300 to-violet-300 bg-clip-text text-transparent">AI</span>
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg lg:mx-0">
+              AI-powered notes, timetable planning, quizzes, doubt solving, productivity tracking and gamified studying - all in one intelligent platform.
+            </p>
+            <div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
+              <button
+                onClick={goLogin}
+                className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-7 py-4 text-sm font-extrabold text-white shadow-[0_0_44px_rgba(79,142,247,0.42)] transition hover:-translate-y-1"
+              >
+                <span className="absolute inset-0 opacity-0 transition group-hover:opacity-100">
+                  <span className="absolute inset-y-0 left-0 w-1/3 bg-white/20 blur-xl" style={{ animation: reduceMotion ? undefined : "shimmerLine 1.2s ease forwards" }} />
+                </span>
+                <span className="relative inline-flex items-center justify-center gap-2">
+                  Get Started Free <ArrowRight size={17} />
+                </span>
+              </button>
+              <button
+                onClick={goLogin}
+                className="group rounded-xl border border-white/15 bg-white/10 px-7 py-4 text-sm font-extrabold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl transition hover:-translate-y-1 hover:border-white/30 hover:bg-white/15"
+              >
+                <span className="inline-flex items-center justify-center gap-3">
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-white text-xs font-black text-slate-950">G</span>
+                  Continue with Google
+                </span>
+              </button>
+            </div>
+
+            <div className="mt-10 grid grid-cols-3 gap-3 sm:max-w-xl">
+              {previewTiles.map((tile) => {
+                const Icon = tile.icon;
+                return (
+                  <motion.div
+                    key={tile.label}
+                    whileHover={{ y: -5 }}
+                    className="rounded-xl border border-white/10 bg-white/[0.07] p-4 text-left backdrop-blur-xl"
+                  >
+                    <Icon className="mb-4 text-cyan-200" size={18} />
+                    <p className="text-lg font-extrabold text-white">{tile.value}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-400">{tile.label}</p>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 24 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.75, delay: 0.2 }}
+            className="relative"
+          >
+            <div className="absolute -inset-10 bg-[conic-gradient(from_180deg,rgba(56,189,248,0.18),rgba(168,85,247,0.2),rgba(14,165,233,0.14),rgba(56,189,248,0.18))] blur-3xl" />
+            <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-slate-950/70 p-3 shadow-[0_28px_120px_rgba(15,23,42,0.8)] backdrop-blur-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 px-3 pb-3">
+                <div className="flex gap-2">
+                  <span className="h-3 w-3 rounded-full bg-rose-400" />
+                  <span className="h-3 w-3 rounded-full bg-amber-300" />
+                  <span className="h-3 w-3 rounded-full bg-emerald-300" />
+                </div>
+                <span className="rounded-full border border-cyan-200/20 bg-cyan-300/10 px-3 py-1 text-[11px] font-bold text-cyan-100">Live AI Dashboard</span>
+              </div>
+              <div className="grid gap-3 p-3 sm:grid-cols-[1fr_0.68fr]">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-5">
+                  <div className="mb-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase text-slate-400">Today Plan</p>
+                      <h3 className="mt-1 text-xl font-extrabold text-white">Physics Revision</h3>
+                    </div>
+                    <span className="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-bold text-emerald-200">On track</span>
+                  </div>
+                  <div className="space-y-4">
+                    {["AI notes from chapter 4", "Generate 15 MCQs", "Deep focus session", "Revise weak formulas"].map((task, index) => (
+                      <motion.div
+                        key={task}
+                        initial={{ opacity: 0, x: -18 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.45 + index * 0.1 }}
+                        className="flex items-center gap-3 rounded-xl bg-slate-900/80 p-3"
+                      >
+                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-300/10 text-cyan-200">
+                          <Check size={16} />
+                        </span>
+                        <span className="text-sm font-semibold text-slate-200">{task}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid gap-3">
+                  <div className="rounded-xl border border-white/10 bg-gradient-to-br from-blue-500/20 to-violet-500/10 p-4">
+                    <p className="text-xs font-bold uppercase text-slate-300">AI Assistant</p>
+                    <div className="mt-4 space-y-3">
+                      <p className="rounded-xl bg-white/10 p-3 text-xs leading-5 text-slate-200">Explain Newton's laws with a simple exam answer.</p>
+                      <p className="rounded-xl bg-cyan-300/15 p-3 text-xs leading-5 text-cyan-100">Here is a short answer, diagram idea, and 3 revision questions.</p>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                    <div className="mb-4 flex items-center justify-between">
+                      <p className="text-xs font-bold uppercase text-slate-400">Analytics</p>
+                      <BarChart3 size={18} className="text-violet-200" />
+                    </div>
+                    <div className="flex h-24 items-end gap-2">
+                      {[38, 54, 44, 72, 62, 86, 78].map((height, index) => (
+                        <motion.span
+                          key={height + index}
+                          initial={{ height: 8 }}
+                          animate={{ height }}
+                          transition={{ delay: 0.4 + index * 0.08, duration: 0.5 }}
+                          className="flex-1 rounded-t-md bg-gradient-to-t from-blue-500 to-cyan-200"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <motion.div
+              animate={reduceMotion ? undefined : { y: [0, -12, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -bottom-8 -left-3 hidden w-44 rounded-2xl border border-white/15 bg-slate-950/80 p-3 shadow-2xl backdrop-blur-xl sm:block"
+            >
+              <div className="mx-auto h-52 rounded-xl border border-white/10 bg-gradient-to-b from-slate-900 to-slate-950 p-3">
+                <div className="mb-4 h-2 w-16 rounded-full bg-white/20" />
+                <div className="rounded-lg bg-cyan-300/15 p-3">
+                  <p className="text-[10px] font-bold text-cyan-100">Next reminder</p>
+                  <p className="mt-1 text-sm font-extrabold">Math quiz at 7 PM</p>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-1.5">
+                  {Array.from({ length: 12 }, (_, index) => (
+                    <span key={index} className={`h-6 rounded-md ${index === 8 ? "bg-violet-400" : "bg-white/10"}`} />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45, delay: index * 0.08 }}
+              className="rounded-2xl border border-white/10 bg-white/[0.07] p-6 text-center backdrop-blur-xl transition hover:-translate-y-1 hover:border-cyan-200/30 hover:bg-white/[0.09]"
+            >
+              <p className="bg-gradient-to-r from-cyan-200 to-violet-200 bg-clip-text text-3xl font-black text-transparent">
+                <CountUp value={stat.value} suffix={stat.suffix} />
+              </p>
+              <p className="mt-2 text-xs font-bold uppercase text-slate-400">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section id="features" className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Features"
+          title="Every study tool, redesigned around AI"
+          desc="Premium workflows for notes, planning, revision, doubt solving, motivation, and performance tracking."
+        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <motion.article
+                key={feature.title}
+                initial={{ opacity: 0, y: 26 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -8, rotateX: 2, rotateY: -2 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.45, delay: index * 0.04 }}
+                className="group rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl transition hover:border-cyan-200/30 hover:bg-white/[0.09] hover:shadow-[0_0_42px_rgba(56,189,248,0.12)]"
+              >
+                <div className={`mb-5 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br ${feature.tone} text-slate-950 shadow-[0_0_30px_rgba(79,142,247,0.2)] transition group-hover:scale-105`}>
+                  <Icon size={22} />
+                </div>
+                <h3 className="text-base font-extrabold text-white">{feature.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-400">{feature.desc}</p>
+              </motion.article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Preview"
+          title="A futuristic study workspace that feels calm"
+          desc="Dashboard, AI chat, analytics, mobile reminders, and study plans are designed to work together without clutter."
+        />
+        <div className="grid items-center gap-5 lg:grid-cols-[0.72fr_1fr]">
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="mx-auto w-full max-w-sm rounded-[2rem] border border-white/15 bg-slate-950/80 p-4 shadow-[0_32px_100px_rgba(0,0,0,0.45)]"
+          >
+            <div className="rounded-[1.5rem] border border-white/10 bg-[#071120] p-5">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-slate-400">Good evening</p>
+                  <p className="text-xl font-black text-white">Ready to focus?</p>
+                </div>
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-400/15 text-blue-100">
+                  <Bell size={20} />
+                </span>
+              </div>
+              <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 p-5">
+                <p className="text-xs font-bold uppercase text-white/70">Deep work</p>
+                <p className="mt-2 text-3xl font-black">45:00</p>
+                <div className="mt-5 h-2 rounded-full bg-white/25">
+                  <div className="h-2 w-3/4 rounded-full bg-white" />
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {["Notes", "Quiz", "PDF", "Streak"].map((item) => (
+                  <div key={item} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                    <p className="text-sm font-bold text-white">{item}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-400">Synced</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="grid gap-5">
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="rounded-2xl border border-white/10 bg-white/[0.065] p-6 backdrop-blur-xl"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-xl font-black text-white">AI Chat Interface</h3>
+                <MessageCircle className="text-cyan-200" />
+              </div>
+              <div className="space-y-3">
+                <p className="max-w-xl rounded-2xl bg-white/10 p-4 text-sm leading-7 text-slate-200">Create a 7-day plan for chemistry revision and generate a quiz from my weak chapters.</p>
+                <p className="ml-auto max-w-xl rounded-2xl bg-cyan-300/15 p-4 text-sm leading-7 text-cyan-50">Done. I grouped your chapters by difficulty, added reminders, and created 30 adaptive questions.</p>
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.12 }}
+              className="grid gap-5 sm:grid-cols-2"
+            >
+              <div className="rounded-2xl border border-white/10 bg-white/[0.065] p-6 backdrop-blur-xl">
+                <FileText className="mb-5 text-violet-200" />
+                <h3 className="text-lg font-black text-white">Smart Notes Engine</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-400">Clean summaries, key points, flashcards, and quiz material from one upload.</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.065] p-6 backdrop-blur-xl">
+                <BarChart3 className="mb-5 text-emerald-200" />
+                <h3 className="text-lg font-black text-white">Analytics Preview</h3>
+                <p className="mt-3 text-sm leading-7 text-slate-400">Track accuracy, focus time, progress, and weak areas at a glance.</p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Why StudyBuddy AI"
+          title="Built for students who want focus, speed, and clarity"
+          desc="StudyBuddy AI combines the intelligence of AI tools with the discipline of a productivity system."
+        />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {reasons.map((reason, index) => (
+            <motion.div
+              key={reason}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.04 }}
+              className="flex items-center gap-4 rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.035] p-5 backdrop-blur-xl"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-cyan-300/15 text-cyan-100">
+                <Check size={18} />
+              </span>
+              <p className="font-bold text-slate-100">{reason}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section id="pricing" className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Pricing"
+          title="Start free, upgrade when your ambition grows"
+          desc="Simple premium plans for students who want faster studying, deeper AI help, and better organization."
+        />
+        <div className="mb-10 flex justify-center">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-1 backdrop-blur-xl">
+            {(["monthly", "yearly"] as const).map((option) => (
+              <button
+                key={option}
+                onClick={() => setBilling(option)}
+                className={`rounded-xl px-5 py-2 text-sm font-extrabold transition ${
+                  billing === option ? "bg-white text-slate-950" : "text-slate-300 hover:text-white"
+                }`}
+              >
+                {option === "monthly" ? "Monthly" : "Yearly"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <motion.article
+              key={plan.name}
+              whileHover={{ y: -8 }}
+              className={`relative rounded-2xl border p-6 backdrop-blur-xl ${
+                plan.popular
+                  ? "border-cyan-200/35 bg-cyan-200/[0.08] shadow-[0_0_70px_rgba(56,189,248,0.16)]"
+                  : "border-white/10 bg-white/[0.06]"
+              }`}
+            >
+              {plan.popular && (
+                <span className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-cyan-300 to-violet-300 px-3 py-1 text-xs font-black text-slate-950">
+                  Most Popular
+                </span>
+              )}
+              <h3 className="text-2xl font-black text-white">{plan.name}</h3>
+              <p className="mt-3 min-h-14 text-sm leading-7 text-slate-400">{plan.desc}</p>
+              <div className="mt-6 flex items-end gap-2">
+                <span className="text-5xl font-black text-white">${billing === "yearly" ? plan.yearly : plan.monthly}</span>
+                <span className="pb-2 text-sm font-bold text-slate-400">/month</span>
+              </div>
+              <button
+                onClick={goLogin}
+                className={`mt-7 w-full rounded-xl px-5 py-3 text-sm font-extrabold transition hover:-translate-y-0.5 ${
+                  plan.popular ? "bg-gradient-to-r from-blue-500 to-violet-500 text-white" : "border border-white/15 bg-white/10 text-white hover:bg-white/15"
+                }`}
+              >
+                Choose {plan.name}
+              </button>
+              <div className="mt-7 space-y-3">
+                {plan.features.map((item) => (
+                  <p key={item} className="flex items-center gap-3 text-sm font-semibold text-slate-300">
+                    <Check size={16} className="text-cyan-200" />
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </motion.article>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Testimonials"
+          title="Students use it to move from chaos to momentum"
+          desc="Designed for daily studying, intense exam weeks, and long-term academic growth."
+        />
+        <div className="grid gap-5 md:grid-cols-3">
+          {testimonials.map((testimonial, index) => (
+            <motion.article
+              key={testimonial.name}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.08 }}
+              className="rounded-2xl border border-white/10 bg-white/[0.065] p-6 backdrop-blur-xl"
+            >
+              <div className="mb-5 flex gap-1 text-amber-200">
+                {Array.from({ length: 5 }, (_, starIndex) => (
+                  <Star key={starIndex} size={16} fill="currentColor" />
+                ))}
+              </div>
+              <p className="text-sm leading-7 text-slate-300">"{testimonial.quote}"</p>
+              <div className="mt-6 border-t border-white/10 pt-5">
+                <p className="font-black text-white">{testimonial.name}</p>
+                <p className="mt-1 text-xs font-bold text-slate-500">{testimonial.role}</p>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="FAQ"
+          title="Questions students ask before starting"
+          desc="A quick look at access, uploads, mobile support, security, and AI study help."
+        />
+        <div className="space-y-3">
+          {faqs.map((faq, index) => {
+            const isOpen = openFaq === index;
+            return (
+              <div key={faq.q} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl">
+                <button
+                  onClick={() => setOpenFaq(isOpen ? -1 : index)}
+                  className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left"
+                  aria-expanded={isOpen}
+                >
+                  <span className="font-extrabold text-white">{faq.q}</span>
+                  <ChevronDown className={`shrink-0 text-cyan-200 transition ${isOpen ? "rotate-180" : ""}`} size={18} />
+                </button>
+                {isOpen && <p className="px-5 pb-5 text-sm leading-7 text-slate-400">{faq.a}</p>}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="contact" className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Contact"
+          title="Share feedback, ideas, or partnership notes"
+          desc="StudyBuddy AI is built around student workflows, so feedback directly shapes the product."
+        />
+        <div className="grid gap-5 lg:grid-cols-[0.8fr_1fr]">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            {[
+              { icon: Mail, label: "Email", value: "support@studybuddy.ai" },
+              { icon: Instagram, label: "Instagram", value: "@studybuddy.ai" },
+              { icon: Github, label: "GitHub", value: "StudyBuddy-AI" },
+              { icon: Linkedin, label: "LinkedIn", value: "StudyBuddy AI" },
+            ].map((contact) => {
+              const Icon = contact.icon;
+              return (
+                <div key={contact.label} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-300/15 text-cyan-100">
+                    <Icon size={19} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold uppercase text-slate-500">{contact.label}</p>
+                    <p className="mt-1 font-bold text-white">{contact.value}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSubmitted(true);
+            }}
+            className="rounded-2xl border border-white/10 bg-white/[0.065] p-6 backdrop-blur-xl"
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm font-bold text-slate-300">
+                Name
+                <input required className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Your name" />
+              </label>
+              <label className="grid gap-2 text-sm font-bold text-slate-300">
+                Email
+                <input required type="email" className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="you@example.com" />
+              </label>
+            </div>
+            <label className="mt-4 grid gap-2 text-sm font-bold text-slate-300">
+              Feedback
+              <textarea required rows={5} className="resize-none rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Tell us what you want StudyBuddy AI to improve next." />
+            </label>
+            <button className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-6 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5">
+              Send Feedback <ArrowRight size={16} />
+            </button>
+            {submitted && <p className="mt-4 text-sm font-bold text-emerald-200">Thank you. Your feedback is ready for review.</p>}
+          </form>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-blue-500/15 via-violet-500/15 to-cyan-400/15 p-8 text-center backdrop-blur-xl sm:p-12">
+          <div className="mx-auto mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-white text-slate-950">
+            <Play size={24} fill="currentColor" />
+          </div>
+          <h2 className="font-lora text-3xl font-bold text-white sm:text-5xl">Turn your next study session into progress.</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-300 sm:text-base">
+            Build notes, solve doubts, plan revision, track focus, and stay motivated with one intelligent platform.
+          </p>
+          <button
+            onClick={goLogin}
+            className="mt-8 rounded-xl bg-white px-7 py-4 text-sm font-black text-slate-950 shadow-[0_0_50px_rgba(255,255,255,0.18)] transition hover:-translate-y-1"
+          >
+            Start Studying Free
+          </button>
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-white/10 bg-[#030711]/80">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1fr_auto] lg:px-8">
+          <div>
+            <div className="flex items-center gap-3">
+              <img src="/icon-192.png" alt="StudyBuddy AI logo" className="h-10 w-10 rounded-xl" />
+              <p className="text-base font-black text-white">StudyBuddy AI</p>
+            </div>
+            <p className="mt-4 max-w-lg text-sm leading-7 text-slate-500">
+              AI-powered student productivity for notes, planning, quizzes, doubts, reminders, analytics, and focused study.
+            </p>
+          </div>
+          <div className="grid gap-3 text-sm font-bold text-slate-400 sm:grid-cols-2 md:text-right">
+            <a href="#features" className="hover:text-white">Features</a>
+            <a href="#pricing" className="hover:text-white">Pricing</a>
+            <a href="#contact" className="hover:text-white">Contact</a>
+            <a href="#" className="hover:text-white">Privacy Policy</a>
+            <a href="#" className="hover:text-white">Terms & Conditions</a>
+            <button onClick={goLogin} className="text-left hover:text-white md:text-right">Login</button>
+          </div>
+        </div>
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 border-t border-white/10 px-4 py-5 text-xs font-semibold text-slate-600 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+          <p>Copyright 2026 StudyBuddy AI. All rights reserved.</p>
+          <div className="flex gap-4">
+            <Github size={17} />
+            <Instagram size={17} />
+            <Linkedin size={17} />
+            <Shield size={17} />
+          </div>
+        </div>
+      </footer>
+    </main>
   );
 }
