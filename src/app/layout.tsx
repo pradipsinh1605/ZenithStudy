@@ -65,6 +65,7 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
+          storageKey="studybuddy-theme"
           enableSystem={false}
           disableTransitionOnChange
         >

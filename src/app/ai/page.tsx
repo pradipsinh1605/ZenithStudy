@@ -324,6 +324,9 @@ export default function AITutorPage() {
 
         {/* ── Chat Area ── */}
         <div style={{flex:1,overflowY:"auto",borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",padding:20,display:"flex",flexDirection:"column",gap:20}}>
+          <div style={{position:"sticky",top:0,zIndex:2,padding:"9px 12px",borderRadius:12,border:"1px solid rgba(245,166,35,.28)",background:"rgba(245,166,35,.08)",color:"#F5A623",fontSize:12,fontWeight:700,textAlign:"center"}}>
+            AI answers may contain errors. Verify before exams.
+          </div>
 
           {/* Empty state */}
           {msgs.length===0&&(

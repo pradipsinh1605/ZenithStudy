@@ -3,25 +3,8 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import { createClient } from "@/lib/supabase/client";
 import { addXP } from "@/lib/xp-utils";
 import toast from "react-hot-toast";
+import { TIMER_MODES as MODES, TimerModeKey as ModeKey, PersistedTimerState as TimerState, usePersistedTimer } from "@/hooks/usePersistedTimer";
 
-const MODES = {
-  work:  { label:"Focus",       duration:25*60, color:"#4F8EF7" },
-  short: { label:"Short Break", duration:5*60,  color:"#34D399" },
-  long:  { label:"Long Break",  duration:15*60, color:"#A78BFA" },
-};
-
-type ModeKey = keyof typeof MODES;
-
-interface TimerState {
-  mode: ModeKey;
-  timeLeft: number;
-  running: boolean;
-  sessions: number;
-  totalMins: number;
-  xpEarned: number;
-  custom: number;
-  selSub: string;
-}
 
 interface TimerContextType extends TimerState {
   setMode: (m: ModeKey) => void;
@@ -42,38 +25,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState("");
   const [subjects, setSubjects] = useState<any[]>([]);
 
-  // Load persisted state
-  const loadState = (): TimerState => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const s = JSON.parse(saved);
-        // If timer was running, calculate elapsed time
-        if (s.running && s.savedAt) {
-          const elapsed = Math.floor((Date.now() - s.savedAt) / 1000);
-          const newTimeLeft = Math.max(0, s.timeLeft - elapsed);
-          return { ...s, timeLeft: newTimeLeft, running: newTimeLeft > 0 };
-        }
-        return s;
-      }
-    } catch {}
-    return {
-      mode: "work", timeLeft: MODES.work.duration, running: false,
-      sessions: 0, totalMins: 0, xpEarned: 0, custom: 25, selSub: "",
-    };
-  };
-
-  const [state, setState] = useState<TimerState>(loadState);
-
-  // Persist state to localStorage on every change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        ...state,
-        savedAt: Date.now(),
-      }));
-    } catch {}
-  }, [state]);
+  const [state, setState] = usePersistedTimer();
 
   // Fetch user on mount
   useEffect(() => {

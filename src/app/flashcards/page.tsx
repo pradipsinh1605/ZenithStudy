@@ -3,8 +3,37 @@ import { useState, useEffect } from "react";
 import { Plus, ChevronLeft, ChevronRight, Check, X, Trash2, Layers, Sparkles, Brain } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { z, ZodError } from "zod";
 
 type CardType = "flashcard" | "quiz";
+const mcqResponseSchema = z.array(
+  z.object({
+    front: z.string().trim().min(1),
+    back: z.string().trim().min(1),
+    options: z.array(z.string().trim().min(1)).length(4),
+  }).refine((card) => card.options.includes(card.back), {
+    message: "Correct answer must exactly match one option",
+    path: ["back"],
+  }),
+).min(1);
+
+type ValidMCQCard = z.infer<typeof mcqResponseSchema>[number];
+
+class AIQuizValidationError extends Error {
+  readonly issues: z.ZodIssue[];
+
+  constructor(error: ZodError) {
+    super("Malformed quiz response");
+    this.name = "AIQuizValidationError";
+    this.issues = error.issues;
+  }
+}
+
+function validateMCQResponse(value: unknown): ValidMCQCard[] {
+  const result = mcqResponseSchema.safeParse(value);
+  if (!result.success) throw new AIQuizValidationError(result.error);
+  return result.data;
+}
 
 export default function FlashcardsPage() {
   const supabase = createClient();
@@ -117,17 +146,18 @@ export default function FlashcardsPage() {
       if(start===-1||end===-1) throw new Error("No JSON array found");
       const parsed = JSON.parse(text.slice(start, end+1));
       if(!Array.isArray(parsed)) throw new Error("Not array");
+      const validatedCards = isQuiz ? validateMCQResponse(parsed) : parsed;
 
       const {data:{user}} = await supabase.auth.getUser();
       if(!user) return;
-      const toInsert = parsed.slice(0,aiCount).map((c:any)=>({
+      const toInsert = validatedCards.slice(0,aiCount).map((c:any)=>({
         user_id: user.id,
         front:   c.front||"",
         back:    c.back||"",
         subject: aiSubject||aiPrompt.slice(0,30),
         ai_generated: true,
         card_type: isQuiz?"quiz":"flashcard",
-        options: isQuiz ? (c.options||null) : null,
+        options: isQuiz ? c.options : null,
       }));
       const {data:inserted,error} = await supabase.from("flashcards").insert(toInsert).select();
       if(error){toast.error("Save failed: "+error.message);setAiLoading(false);return;}
@@ -138,7 +168,11 @@ export default function FlashcardsPage() {
       toast.success(`${inserted?.length} ${isQuiz?"quiz questions":"flashcards"} generated! 🤖`);
     }catch(e:any){
       console.error(e);
-      toast.error("AI generation failed. Try again!");
+      if(e instanceof AIQuizValidationError){
+        toast.error("AI returned malformed quiz data. Nothing was saved.");
+      }else{
+        toast.error("AI generation failed. Try again!");
+      }
       setAiLoading(false);
     }
   };
@@ -154,6 +188,21 @@ export default function FlashcardsPage() {
     setTimeout(()=>setIdx(i=>(i-1+filtered.length)%Math.max(filtered.length,1)),150);
   };
   const resetScore = () => { setScore({correct:0,incorrect:0}); setIdx(0); setFlipped(false); setSelectedOpt(null); setAnswerShown(false); };
+
+  const reportQuizError = (quiz:any) => {
+    const report = {
+      id: quiz?.id,
+      front: quiz?.front,
+      back: quiz?.back,
+      options: quiz?.options,
+      reportedAt: new Date().toISOString(),
+    };
+    try{
+      const existing = JSON.parse(localStorage.getItem("sb-quiz-error-reports")||"[]");
+      localStorage.setItem("sb-quiz-error-reports", JSON.stringify([report,...existing].slice(0,50)));
+    }catch{}
+    toast.success("Quiz error reported. Verify before exams.");
+  };
 
   // Quiz option click handler
   const handleOptionClick = (optIdx: number, options: string[], correctAnswer: string) => {
@@ -458,6 +507,9 @@ export default function FlashcardsPage() {
                 <button onClick={()=>goNext()} disabled={!answerShown}
                   style={{display:"flex",alignItems:"center",gap:6,padding:"10px 22px",borderRadius:12,border:"none",background:answerShown?"#4F8EF7":"var(--border)",color:answerShown?"#fff":"var(--muted)",cursor:answerShown?"pointer":"not-allowed",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
                   Next Question <ChevronRight size={18}/>
+                </button>
+                <button onClick={()=>reportQuizError(card)} style={{padding:"10px 14px",borderRadius:12,border:"1px solid rgba(245,166,35,.35)",background:"rgba(245,166,35,.08)",color:"#F5A623",cursor:"pointer",display:"flex",alignItems:"center",fontSize:13,fontFamily:"inherit",fontWeight:700}}>
+                  Report error
                 </button>
                 <button onClick={()=>deleteCard(card?.id)} style={{padding:"10px 14px",borderRadius:12,border:"1px solid #F8717144",background:"#F8717111",color:"#F87171",cursor:"pointer",display:"flex",alignItems:"center",fontSize:13,fontFamily:"inherit"}}>
                   <Trash2 size={15}/>

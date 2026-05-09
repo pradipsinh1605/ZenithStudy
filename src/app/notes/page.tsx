@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addXP } from "@/lib/xp-utils";
 import toast from "react-hot-toast";
+import { sanitizeFilename, validateFile } from "@/lib/validateFile";
 
 // ── Icons (inline SVG to avoid import issues) ──
 const Icon = {
@@ -129,12 +130,13 @@ export default function NotesPage() {
     setSaving(false);
   };
 
-  // ── PDF Upload ──
+  // PDF Upload
   const handlePdfSelect = (file:File) => {
-    if(file.type!=="application/pdf"){toast.error("Only PDF files!"); return;}
-    if(file.size>10*1024*1024){toast.error("Max 10MB PDF!"); return;}
-    setPdfFile(file);
-    if(!pdfTitle) setPdfTitle(file.name.replace(".pdf",""));
+    const result = validateFile(file);
+    if(result.ok === false){toast.error(result.message); return;}
+    const safeFile = new File([file], result.sanitizedName, { type: "application/pdf" });
+    setPdfFile(safeFile);
+    if(!pdfTitle) setPdfTitle(result.sanitizedName.replace(/\.pdf$/i,""));
   };
 
   const savePdf = async () => {
@@ -142,9 +144,18 @@ export default function NotesPage() {
     if(!pdfTitle.trim()){toast.error("Title enter karo!");return;}
     setUploading(true);
     try{
+      const validationRes = await fetch("/api/upload", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({name:pdfFile.name,size:pdfFile.size,type:pdfFile.type}),
+      });
+      const validation = await validationRes.json();
+      if(!validationRes.ok||!validation.ok){toast.error(validation?.error?.message||"Invalid PDF file");setUploading(false);return;}
+      const safeName = sanitizeFilename(validation.sanitizedName);
+      const safeFile = safeName===pdfFile.name ? pdfFile : new File([pdfFile], safeName, { type:"application/pdf" });
       // Upload to Supabase Storage
-      const path = `${userId}/${Date.now()}_${pdfFile.name}`;
-      const {error:upErr} = await supabase.storage.from("note-pdfs").upload(path,pdfFile,{upsert:false});
+      const path = `${userId}/${Date.now()}_${safeName}`;
+      const {error:upErr} = await supabase.storage.from("note-pdfs").upload(path,safeFile,{upsert:false});
       if(upErr){
         // Fallback: store as base64 if storage fails
         const reader = new FileReader();
@@ -153,21 +164,21 @@ export default function NotesPage() {
           const {data,error} = await supabase.from("notes").insert({
             user_id:userId, title:pdfTitle.trim(),
             subject:pdfSubject||null, content:"",
-            pdf_name:pdfFile.name, pdf_url:base64,
+            pdf_name:safeName, pdf_url:base64,
             note_type:"pdf", starred:false,
           }).select().single();
           if(error){toast.error("Save failed");setUploading(false);return;}
           setNotes(p=>[data,...p]);
           finishPdfUpload(data);
         };
-        reader.readAsDataURL(pdfFile);
+        reader.readAsDataURL(safeFile);
         return;
       }
       const {data:urlData} = supabase.storage.from("note-pdfs").getPublicUrl(path);
       const {data,error} = await supabase.from("notes").insert({
         user_id:userId, title:pdfTitle.trim(),
         subject:pdfSubject||null, content:"",
-        pdf_name:pdfFile.name, pdf_url:urlData.publicUrl,
+        pdf_name:safeName, pdf_url:urlData.publicUrl,
         note_type:"pdf", starred:false,
       }).select().single();
       if(error){toast.error("Save failed");setUploading(false);return;}
@@ -175,7 +186,6 @@ export default function NotesPage() {
       finishPdfUpload(data);
     }catch(e){toast.error("Upload error");setUploading(false);}
   };
-
   const finishPdfUpload = (data:any) => {
     toast.success("PDF uploaded! 📄");
     setPdfFile(null); setPdfTitle(""); setUploading(false);
@@ -198,26 +208,40 @@ export default function NotesPage() {
     toast.success("Deleted");
   };
 
-  // ── Auto save for text notes ──
+  // Auto save for text notes
   const autoSaveFn = useCallback(
-    debounce(async (noteId:string, body:string) => {
+    debounce(async (noteId:string, body:string, expectedVersion:number) => {
       setAutoSaving(true);
-      await supabase.from("notes").update({content:body,updated_at:new Date().toISOString()}).eq("id",noteId);
-      setAutoSaving(false); setLastSaved(new Date());
-      setNotes(p=>p.map(n=>n.id===noteId?{...n,content:body}:n));
-    },1500), []
+      const nextVersion = expectedVersion + 1;
+      const {data,error} = await supabase.from("notes")
+        .update({content:body,updated_at:new Date().toISOString(),version:nextVersion})
+        .eq("id",noteId)
+        .eq("version",expectedVersion)
+        .select()
+        .single();
+      setAutoSaving(false);
+      if(error||!data){toast.error("This note changed elsewhere. Reload before saving.");return;}
+      setLastSaved(new Date());
+      setNotes(p=>p.map(n=>n.id===noteId?data:n));
+      setActiveNote((n:any)=>n?.id===noteId?data:n);
+    },1500), [supabase]
   );
 
   const saveEdit = async () => {
     if(!activeNote) return;
-    const {error} = await supabase.from("notes").update({content:editContent,updated_at:new Date().toISOString()}).eq("id",activeNote.id);
-    if(error){toast.error("Save failed");return;}
-    const updated = {...activeNote,content:editContent};
-    setNotes(p=>p.map(n=>n.id===activeNote.id?updated:n));
-    setActiveNote(updated); setView("note-view");
-    toast.success("Saved! ✅");
+    const expectedVersion = Number(activeNote.version||0);
+    const nextVersion = expectedVersion + 1;
+    const {data,error} = await supabase.from("notes")
+      .update({content:editContent,updated_at:new Date().toISOString(),version:nextVersion})
+      .eq("id",activeNote.id)
+      .eq("version",expectedVersion)
+      .select()
+      .single();
+    if(error||!data){toast.error("This note changed elsewhere. Reload before saving.");return;}
+    setNotes(p=>p.map(n=>n.id===activeNote.id?data:n));
+    setActiveNote(data); setView("note-view");
+    toast.success("Saved!");
   };
-
   if(loading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:300,color:"var(--muted)"}}>Loading…</div>;
 
   // ════════════════════════════════════════
@@ -505,7 +529,7 @@ export default function NotesPage() {
             </div>
           </div>
           <textarea value={editContent}
-            onChange={e=>{setEditContent(e.target.value); autoSaveFn(activeNote.id,e.target.value);}}
+            onChange={e=>{setEditContent(e.target.value); autoSaveFn(activeNote.id,e.target.value,Number(activeNote.version||0));}}
             autoFocus
             style={{width:"100%",minHeight:"60vh",background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.9,padding:"24px 28px",boxSizing:"border-box"}}
             placeholder="Write your note here…"/>
