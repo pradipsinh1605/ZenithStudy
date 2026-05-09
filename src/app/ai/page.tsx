@@ -124,11 +124,11 @@ export default function AITutorPage() {
   };
 
   const callAPI = async(messages:any[], system?:string, attachment?:any) => {
-    const r = await fetch("/api/ai",{
+    const r = await fetch("/api/ai/chat",{
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({messages, system, type:"chat", attachment}),
     });
-    if(!r.ok){ const e=await r.json(); throw new Error(e.error||`${r.status}`); }
+    if(!r.ok){ const e=await r.json(); throw new Error(e?.error?.message||e?.error||`${r.status}`); }
     return (await r.json()).text||"";
   };
 
@@ -159,7 +159,7 @@ export default function AITutorPage() {
       if(autoVis&&ans.length>80&&!att) genDiag(q,ans,aid);
     }catch(e:any){
       const msg = e.message.includes("401")||e.message.includes("403")
-        ?"❌ Invalid GROQ_API_KEY — check .env.local"
+        ?"AI service is not configured. Please check server env."
         :`❌ Error: ${e.message}`;
       setMsgs(p=>p.map(m=>m.id===aid?{...m,content:msg,loading:false}:m));
       toast.error("AI error — check console");

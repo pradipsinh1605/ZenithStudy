@@ -23,7 +23,6 @@ import {
   Play,
   Shield,
   Sparkles,
-  Star,
   Timer,
   Trophy,
   Upload,
@@ -36,13 +35,6 @@ const navLinks = [
   { label: "Features", href: "#features" },
   { label: "Pricing", href: "#pricing" },
   { label: "Contact", href: "#contact" },
-];
-
-const stats = [
-  { label: "Students joined", value: 18000, suffix: "+" },
-  { label: "Notes generated", value: 126000, suffix: "+" },
-  { label: "Study hours tracked", value: 94000, suffix: "+" },
-  { label: "AI questions solved", value: 310000, suffix: "+" },
 ];
 
 const features = [
@@ -99,12 +91,6 @@ const plans = [
   },
 ];
 
-const testimonials = [
-  { name: "Aarav Patel", role: "Engineering Student", quote: "StudyBuddy AI made my revision feel organized for the first time. The quiz generator is my exam-week weapon." },
-  { name: "Nisha Shah", role: "Medical Aspirant", quote: "The timetable and reminders helped me keep consistency without feeling overwhelmed by my syllabus." },
-  { name: "Rohan Mehta", role: "BCA Student", quote: "I upload PDFs, ask doubts, and track progress in one place. It feels like a focused study cockpit." },
-];
-
 const faqs = [
   { q: "Is StudyBuddy AI free?", a: "Yes. You can start with the free plan, then upgrade when you need unlimited AI tools, uploads, and advanced analytics." },
   { q: "Can I upload PDFs?", a: "Yes. PDF upload is designed for converting study material into notes, quizzes, flashcards, and revision flows." },
@@ -112,31 +98,6 @@ const faqs = [
   { q: "Is my data secure?", a: "StudyBuddy AI is built with authenticated access and privacy-first product patterns so your study data stays protected." },
   { q: "How does AI help studying?", a: "AI helps summarize content, solve doubts, generate quizzes, recommend study actions, and keep learning personalized." },
 ];
-
-function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    const duration = 1300;
-    const frames = 42;
-    let frame = 0;
-    const interval = window.setInterval(() => {
-      frame += 1;
-      const progress = 1 - Math.pow(1 - frame / frames, 3);
-      setCount(Math.round(value * progress));
-      if (frame >= frames) window.clearInterval(interval);
-    }, duration / frames);
-
-    return () => window.clearInterval(interval);
-  }, [value]);
-
-  return (
-    <span>
-      {count.toLocaleString()}
-      {suffix}
-    </span>
-  );
-}
 
 function SectionHeading({
   eyebrow,
@@ -472,25 +433,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: index * 0.08 }}
-              className="rounded-2xl border border-white/10 bg-white/[0.07] p-6 text-center backdrop-blur-xl transition hover:-translate-y-1 hover:border-cyan-200/30 hover:bg-white/[0.09]"
-            >
-              <p className="bg-gradient-to-r from-cyan-200 to-violet-200 bg-clip-text text-3xl font-black text-transparent">
-                <CountUp value={stat.value} suffix={stat.suffix} />
-              </p>
-              <p className="mt-2 text-xs font-bold uppercase text-slate-400">{stat.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       <section id="features" className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
@@ -690,36 +632,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Testimonials"
-          title="Students use it to move from chaos to momentum"
-          desc="Designed for daily studying, intense exam weeks, and long-term academic growth."
-        />
-        <div className="grid gap-5 md:grid-cols-3">
-          {testimonials.map((testimonial, index) => (
-            <motion.article
-              key={testimonial.name}
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.08 }}
-              className="rounded-2xl border border-white/10 bg-white/[0.065] p-6 backdrop-blur-xl"
-            >
-              <div className="mb-5 flex gap-1 text-amber-200">
-                {Array.from({ length: 5 }, (_, starIndex) => (
-                  <Star key={starIndex} size={16} fill="currentColor" />
-                ))}
-              </div>
-              <p className="text-sm leading-7 text-slate-300">"{testimonial.quote}"</p>
-              <div className="mt-6 border-t border-white/10 pt-5">
-                <p className="font-black text-white">{testimonial.name}</p>
-                <p className="mt-1 text-xs font-bold text-slate-500">{testimonial.role}</p>
-              </div>
-            </motion.article>
-          ))}
-        </div>
-      </section>
 
       <section className="relative z-10 mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
@@ -838,8 +750,8 @@ export default function HomePage() {
             <a href="#features" className="hover:text-white">Features</a>
             <a href="#pricing" className="hover:text-white">Pricing</a>
             <a href="#contact" className="hover:text-white">Contact</a>
-            <a href="#" className="hover:text-white">Privacy Policy</a>
-            <a href="#" className="hover:text-white">Terms & Conditions</a>
+            <a href="/privacy" className="hover:text-white">Privacy Policy</a>
+            <a href="/terms" className="hover:text-white">Terms & Conditions</a>
             <button onClick={goLogin} className="text-left hover:text-white md:text-right">Login</button>
           </div>
         </div>

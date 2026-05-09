@@ -78,8 +78,8 @@
 ```
 NEXT_PUBLIC_SUPABASE_URL=      ← Step 2.4 નો Project URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY= ← Step 2.4 નો anon key
-NEXT_PUBLIC_DIFY_API_KEY=      ← Dify Dashboard થી API Key
-NEXT_PUBLIC_DIFY_BASE_URL=https://api.dify.ai/v1
+DIFY_BOT_KEY=      ← Dify Dashboard થી API Key
+DIFY_BASE_URL=https://api.dify.ai/v1
 ```
 
 Save કરો! ✅
@@ -136,8 +136,8 @@ Browser open કરો: **http://localhost:3000**
 ```
 NEXT_PUBLIC_SUPABASE_URL      = (your Supabase URL)
 NEXT_PUBLIC_SUPABASE_ANON_KEY = (your Supabase anon key)
-NEXT_PUBLIC_DIFY_API_KEY      = (your Dify API key)
-NEXT_PUBLIC_DIFY_BASE_URL     = https://api.dify.ai/v1
+DIFY_BOT_KEY               = (your Dify API key)
+DIFY_BASE_URL              = https://api.dify.ai/v1
 ```
 
 4. **"Deploy"** click

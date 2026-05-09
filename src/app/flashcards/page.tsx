@@ -98,7 +98,7 @@ export default function FlashcardsPage() {
         ? `Generate exactly ${aiCount} multiple choice quiz questions for studying. Return ONLY a valid JSON array. No markdown, no explanation. Format: [{"front":"Question?","back":"Correct Answer text","options":["Option A","Option B","Option C","Option D"]}]. Make sure "back" exactly matches one of the options.`
         : `Generate exactly ${aiCount} flashcards for studying. Return ONLY a valid JSON array. No markdown, no explanation. Format: [{"front":"Term or Question","back":"Definition or Answer"}]`;
 
-      const res = await fetch("/api/ai",{
+      const res = await fetch("/api/ai/chat",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
@@ -107,7 +107,7 @@ export default function FlashcardsPage() {
           type:"json",
         }),
       });
-      if(!res.ok) throw new Error("API error");
+      if(!res.ok){ const e=await res.json(); throw new Error(e?.error?.message||e?.error||"API error"); }
       const data = await res.json();
       let text = data.text||"";
       text = text.replace(/```json/gi,"").replace(/```/g,"").trim();
