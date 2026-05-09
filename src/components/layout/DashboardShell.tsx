@@ -88,7 +88,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const [navPct, setNavPct] = useState(0);
   const [navLoading, setNavLoading] = useState(false);
   const [navHidden, setNavHidden] = useState(false);
+  const [navIdle, setNavIdle] = useState(false);
   const lastScrollY = useRef(0);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const current = useMemo(
     () => NAV.find((item) => isActive(pathname, item.href)) ?? NAV[0],
@@ -144,11 +146,18 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   }, [uid, supabase]);
 
   useEffect(() => {
+    const wakeNav = () => {
+      setNavIdle(false);
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      idleTimer.current = setTimeout(() => setNavIdle(true), 3200);
+    };
+
     const onScroll = () => {
       const currentY = window.scrollY;
       const movingDown = currentY > lastScrollY.current + 8;
       const movingUp = currentY < lastScrollY.current - 8;
 
+      wakeNav();
       if (currentY < 80) setNavHidden(false);
       else if (movingDown) setNavHidden(true);
       else if (movingUp) setNavHidden(false);
@@ -156,8 +165,22 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       lastScrollY.current = currentY;
     };
 
+    const onPointerMove = (event: PointerEvent) => {
+      const nearDock = window.innerHeight - event.clientY < 128;
+      if (nearDock) {
+        setNavHidden(false);
+        wakeNav();
+      }
+    };
+
+    wakeNav();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointermove", onPointerMove);
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    };
   }, []);
 
   const fetchUser = async (forceRefresh = false) => {
@@ -243,9 +266,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         <style>{`
           .app-shell {
             min-height: 100vh;
+            overflow-x: hidden;
             background:
-              radial-gradient(circle at top left, rgba(20,184,166,.12), transparent 34%),
-              radial-gradient(circle at top right, rgba(245,158,11,.1), transparent 30%),
+              radial-gradient(circle at 16% 0%, rgba(56,189,248,.16), transparent 34%),
+              radial-gradient(circle at 84% 6%, rgba(139,92,246,.17), transparent 34%),
+              linear-gradient(180deg, rgba(3,7,17,.96), rgba(7,21,39,.94)),
               var(--bg);
             color: var(--text);
             font-family: var(--font-sora), sans-serif;
@@ -320,14 +345,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             gap: 10px;
             padding: 0 12px 0 7px;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--surface);
+            border-radius: 14px;
+            background: var(--glass-card);
+            backdrop-filter: blur(18px);
           }
 
           .page-wrap {
-            max-width: 1180px;
+            width: min(100%, 1220px);
             margin: 0 auto;
-            padding: 22px 22px 116px;
+            padding: clamp(16px, 2.4vw, 28px) clamp(14px, 3vw, 28px) calc(132px + env(safe-area-inset-bottom));
           }
 
           .page-heading {
@@ -363,33 +389,62 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           .bottom-nav {
             position: fixed;
             left: 50%;
-            bottom: 14px;
+            bottom: max(14px, env(safe-area-inset-bottom));
             z-index: 70;
-            width: min(720px, calc(100vw - 28px));
+            width: min(760px, calc(100vw - 24px));
+            min-height: 74px;
             transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(58px, 1fr);
+            align-items: center;
+            gap: 2px;
             overflow-x: auto;
-            padding: 10px 12px;
-            border: 1px solid rgba(255,255,255,.16);
-            border-radius: 22px;
+            padding: 8px 10px;
+            border: 1px solid rgba(139,92,246,.48);
+            border-radius: 999px;
             background:
-              linear-gradient(120deg, rgba(96,165,250,.22), rgba(20,184,166,.12)),
-              var(--nav-bg);
-            backdrop-filter: blur(20px);
+              linear-gradient(135deg, rgba(15,23,42,.72), rgba(17,24,39,.42)),
+              rgba(3,7,18,.52);
+            backdrop-filter: blur(28px) saturate(1.45);
             box-shadow:
-              inset 0 1px 1px rgba(255,255,255,.2),
-              0 18px 55px rgba(15,23,42,.18);
+              inset 0 1px 0 rgba(255,255,255,.16),
+              0 0 0 1px rgba(56,189,248,.16),
+              0 22px 70px rgba(2,6,23,.55),
+              0 0 46px rgba(124,58,237,.26),
+              0 0 34px rgba(56,189,248,.16);
             scrollbar-width: none;
             animation: navFloatIn .55s cubic-bezier(.2,1,.22,1) both;
             transition:
               transform .34s cubic-bezier(.2,1,.22,1),
               opacity .24s ease,
+              filter .24s ease,
               box-shadow .24s ease;
           }
 
+          .bottom-nav.nav-idle {
+            opacity: .48;
+            filter: saturate(.88);
+          }
+
+          .bottom-nav:hover,
+          .bottom-nav:focus-within {
+            opacity: 1;
+            filter: saturate(1.12);
+          }
+
+          .nav-hit-zone {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 124px;
+            z-index: 60;
+            pointer-events: none;
+          }
+
           .bottom-nav.nav-hidden {
-            transform: translateX(-50%) translateY(96px) scale(.98);
+            transform: translateX(-50%) translateY(110px) scale(.98);
             opacity: 0;
             pointer-events: none;
           }
@@ -399,56 +454,60 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           }
 
           .bottom-link {
-            min-width: 50px;
-            width: 50px;
-            height: 50px;
-            border-radius: 16px;
+            min-width: 0;
+            width: 100%;
+            height: 58px;
+            border-radius: 24px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 9px;
-            color: var(--muted);
+            gap: 4px;
+            color: rgba(226,232,240,.76);
             text-decoration: none;
-            font-size: 0;
+            font-size: 11px;
             font-weight: 900;
             white-space: nowrap;
             overflow: hidden;
             flex: 0 0 auto;
+            border: 1px solid transparent;
+            position: relative;
             transition:
-              width .34s cubic-bezier(.2,1,.22,1),
-              min-width .34s cubic-bezier(.2,1,.22,1),
               background .22s ease,
               color .22s ease,
               transform .22s ease,
-              box-shadow .22s ease;
+              box-shadow .22s ease,
+              border-color .22s ease;
           }
 
           .bottom-link:hover {
-            color: var(--primary);
-            background: var(--soft);
+            color: #fff;
+            background: rgba(255,255,255,.07);
             transform: translateY(-2px);
           }
 
           .bottom-link.active {
-            width: 126px;
-            min-width: 126px;
             color: #fff;
-            font-size: 14px;
-            background: linear-gradient(135deg, var(--primary), #14B8A6);
+            background:
+              radial-gradient(circle at 50% 0%, rgba(168,85,247,.45), transparent 58%),
+              linear-gradient(180deg, rgba(99,102,241,.28), rgba(15,23,42,.34));
+            border-color: rgba(139,92,246,.34);
             box-shadow:
-              0 12px 28px rgba(37,99,235,.28),
-              inset 0 1px 1px rgba(255,255,255,.28);
+              inset 0 1px 0 rgba(255,255,255,.16),
+              0 12px 30px rgba(79,70,229,.22),
+              0 0 28px rgba(124,58,237,.36),
+              inset 0 -4px 0 rgba(139,92,246,.75);
           }
 
           .bottom-link svg {
             flex: 0 0 auto;
-            filter: drop-shadow(0 2px 10px rgba(255,255,255,.12));
+            filter: drop-shadow(0 2px 12px rgba(124,58,237,.22));
             transition: transform .24s cubic-bezier(.2,1,.22,1);
           }
 
           .bottom-link:hover svg,
           .bottom-link.active svg {
-            transform: scale(1.12);
+            transform: translateY(-1px) scale(1.12);
           }
 
           .bottom-link::after {
@@ -487,6 +546,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }
           }
 
+          @media (min-width: 901px) {
+            .bottom-nav {
+              grid-auto-columns: minmax(68px, 1fr);
+              padding: 10px 16px;
+            }
+          }
+
           @media (max-width: 900px) {
             .app-header-inner {
               grid-template-columns: minmax(0, 1fr) auto;
@@ -504,16 +570,16 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               justify-content: flex-start;
             }
 
-            .bottom-link {
-              min-width: 48px;
-              width: 48px;
-              height: 48px;
+            .bottom-nav {
+              width: min(680px, calc(100vw - 20px));
+              min-height: 70px;
+              grid-auto-columns: minmax(56px, 1fr);
             }
 
-            .bottom-link.active {
-              min-width: 110px;
-              width: 110px;
-              font-size: 13px;
+            .bottom-link {
+              height: 54px;
+              border-radius: 21px;
+              font-size: 10px;
             }
           }
 
@@ -523,8 +589,24 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }
 
             .page-wrap {
-              padding: 18px 14px 96px;
+              padding: 16px 12px calc(112px + env(safe-area-inset-bottom));
             }
+
+            .bottom-nav {
+              width: min(100vw - 14px, 430px);
+              min-height: 66px;
+              grid-auto-columns: minmax(54px, 1fr);
+              gap: 0;
+              padding: 7px;
+            }
+
+            .bottom-link {
+              height: 52px;
+              border-radius: 19px;
+              font-size: 9px;
+            }
+
+            .bottom-link svg { width: 17px; height: 17px; }
 
             .brand-copy p {
               display: none;
@@ -781,7 +863,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           <PageTransition>{children}</PageTransition>
         </main>
 
-        <nav className={`bottom-nav${navHidden ? " nav-hidden" : ""}`} aria-label="Primary navigation">
+        <div className="nav-hit-zone" onMouseEnter={() => { setNavHidden(false); setNavIdle(false); }} />
+
+        <nav
+          className={`bottom-nav${navHidden ? " nav-hidden" : ""}${navIdle ? " nav-idle" : ""}`}
+          aria-label="Primary navigation"
+          onMouseEnter={() => { setNavHidden(false); setNavIdle(false); }}
+        >
           {NAV.map(({ href, icon: Icon, label }) => {
             const active = isActive(pathname, href);
             return (

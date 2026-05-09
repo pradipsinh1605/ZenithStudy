@@ -1,12 +1,18 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ArrowLeft, ArrowRight, Brain, Check, Eye, EyeOff, Loader2, Lock, Mail, Sparkles, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { validate } from "@/lib/validation";
 import toast from "react-hot-toast";
 
+const phrase = "Your AI Study Partner";
+
 export default function LoginPage() {
   const router = useRouter();
+  const reduceMotion = useReducedMotion();
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,9 +20,32 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [typed, setTyped] = useState("");
 
-  // ─── STEP 1+2: SIGNUP ───────────────────────────────────────────────────────
-  // New user signup → show success → switch to Sign In tab
+  const particles = useMemo(
+    () => Array.from({ length: 34 }, (_, index) => ({
+      left: (index * 29) % 100,
+      top: (index * 47) % 100,
+      delay: (index % 8) * 0.35,
+      size: 2 + (index % 4),
+    })),
+    [],
+  );
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setTyped(phrase);
+      return;
+    }
+    let index = 0;
+    const timer = window.setInterval(() => {
+      index = (index + 1) % (phrase.length + 8);
+      setTyped(phrase.slice(0, Math.min(index, phrase.length)));
+    }, 85);
+    return () => window.clearInterval(timer);
+  }, [reduceMotion]);
+
   const handleSignup = async () => {
     const nameErr = validate.name(name);
     const emailErr = validate.email(email);
@@ -33,20 +62,16 @@ export default function LoginPage() {
       return;
     }
     if (data.user) {
-      // Save name to profiles table
       await supabase.from("profiles").upsert({ user_id: data.user.id, name, edu_level: "Student" });
       await supabase.from("user_xp").upsert({ user_id: data.user.id, total_xp: 0, level: 1, streak: 0 });
     }
-    // Step 2: Show success then redirect to Sign In tab
-    toast.success("Account created! Now sign in 🎉");
+    toast.success("Account created. Now sign in.");
     setPassword("");
     setName("");
-    setMode("login"); // Switch to Sign In tab
+    setMode("login");
     setLoading(false);
   };
 
-  // ─── STEP 3+4: LOGIN ────────────────────────────────────────────────────────
-  // Check credentials → if right go to dashboard → if wrong show message
   const handleLogin = async () => {
     const emailErr = validate.email(email);
     if (emailErr) { toast.error(emailErr); return; }
@@ -55,21 +80,14 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      // Step 4: Wrong credentials
       toast.error("Invalid credentials. Please try again.");
       setLoading(false);
       return;
     }
-    // Step 3: Correct → go to dashboard
-    toast.success("Welcome back! 🎉");
-    // Small delay to let cookie set before redirect
-    setTimeout(() => {
-      window.location.replace("/dashboard");
-    }, 300);
+    toast.success("Welcome back.");
+    setTimeout(() => window.location.replace("/dashboard"), 300);
   };
 
-  // ─── STEP 5: GOOGLE LOGIN ───────────────────────────────────────────────────
-  // Works for both new and existing Google users
   const handleGoogle = async () => {
     setGoogleLoading(true);
     const supabase = createClient();
@@ -84,10 +102,8 @@ export default function LoginPage() {
       toast.error(error.message);
       setGoogleLoading(false);
     }
-    // Browser will redirect to Google — no need to setLoading(false)
   };
 
-  // ─── FORGOT PASSWORD ────────────────────────────────────────────────────────
   const handleForgot = async () => {
     const emailErr = validate.email(email);
     if (emailErr) { toast.error(emailErr); return; }
@@ -97,130 +113,174 @@ export default function LoginPage() {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
     if (error) toast.error(error.message);
-    else { setForgotSent(true); toast.success("Reset link sent! Check email 📧"); }
+    else { setForgotSent(true); toast.success("Reset link sent. Check your email."); }
     setLoading(false);
   };
 
-  const inputStyle = {
-    width: "100%", borderRadius: 12, padding: "12px 16px",
-    border: "1px solid rgba(79,142,247,.25)",
-    background: "rgba(255,255,255,.05)",
-    color: "white", fontSize: 14,
-    fontFamily: "var(--font-sora),sans-serif",
-    outline: "none", transition: "border-color .2s",
-    boxSizing: "border-box" as const,
+  const switchMode = (next: "login" | "signup") => {
+    setMode(next);
+    setEmail("");
+    setPassword("");
+    setName("");
+    setForgotSent(false);
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#060D1B", display:"flex", alignItems:"center", justifyContent:"center", padding:20, fontFamily:"var(--font-sora),sans-serif" }}>
-      <style>{`
-        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        .login-card { animation: fadeUp .4s ease; }
-        input:focus { border-color: #4F8EF7 !important; box-shadow: 0 0 0 3px rgba(79,142,247,.1); }
-        .g-btn:hover { background: rgba(255,255,255,.12) !important; transform: translateY(-1px); }
-        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
+    <main className="relative min-h-screen overflow-hidden bg-[#030711] px-4 py-8 text-white sm:px-6 lg:px-8">
+      <style jsx global>{`
+        @keyframes authParticle {
+          0%, 100% { transform: translate3d(0,0,0); opacity: .35; }
+          50% { transform: translate3d(18px,-30px,0); opacity: .9; }
+        }
+        @keyframes neuralPulse {
+          0%, 100% { transform: scale(1); opacity: .75; }
+          50% { transform: scale(1.08); opacity: 1; }
+        }
       `}</style>
 
-      <div className="login-card" style={{ width:"100%", maxWidth:420, background:"linear-gradient(145deg,rgba(14,22,48,.95),rgba(8,14,32,.95))", borderRadius:24, padding:36, border:"1px solid rgba(79,142,247,.2)", boxShadow:"0 24px 80px rgba(0,0,0,.5)" }}>
+      <div aria-hidden="true" className="absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(56,189,248,.26),transparent_32%),radial-gradient(circle_at_82%_16%,rgba(168,85,247,.24),transparent_30%),linear-gradient(180deg,#030711_0%,#071527_48%,#030711_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] bg-[size:68px_68px] opacity-20" />
+        <div className="absolute left-1/2 top-16 h-72 w-72 -translate-x-1/2 rounded-full bg-cyan-300/20 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-violet-500/15 blur-3xl" />
+        {particles.map((particle) => (
+          <span
+            key={`${particle.left}-${particle.top}`}
+            className="absolute rounded-full bg-cyan-100/60 shadow-[0_0_18px_rgba(103,232,249,.8)]"
+            style={{
+              left: `${particle.left}%`,
+              top: `${particle.top}%`,
+              width: particle.size,
+              height: particle.size,
+              animation: reduceMotion ? undefined : `authParticle 8s ease-in-out ${particle.delay}s infinite`,
+            }}
+          />
+        ))}
+      </div>
 
-        {/* Logo */}
-        <div style={{ textAlign:"center", marginBottom:28 }}>
-          <img src="/icon-192.png" alt="logo" style={{ width:64, height:64, borderRadius:16, marginBottom:12, boxShadow:"0 8px 24px rgba(79,142,247,.3)" }}/>
-          <h1 style={{ fontFamily:"var(--font-lora),serif", fontSize:24, color:"#fff", fontWeight:700, marginBottom:4 }}>StudyBuddy AI</h1>
-          <p style={{ fontSize:13, color:"rgba(232,240,254,.4)" }}>Smarter Study. Better You.</p>
-        </div>
+      <button onClick={() => router.push("/")} className="relative z-10 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-slate-200 backdrop-blur-xl transition hover:bg-white/15">
+        <ArrowLeft size={16} /> Home
+      </button>
 
-        {/* Tabs */}
-        {mode !== "forgot" && (
-          <div style={{ display:"flex", background:"rgba(255,255,255,.05)", borderRadius:12, padding:4, marginBottom:24 }}>
-            {(["login","signup"] as const).map(m => (
-              <button key={m} onClick={() => { setMode(m); setEmail(""); setPassword(""); setName(""); }} style={{
-                flex:1, padding:"9px", borderRadius:10, border:"none", cursor:"pointer",
-                fontFamily:"var(--font-sora),sans-serif", fontSize:13, fontWeight:700,
-                background: mode===m ? "linear-gradient(135deg,#4F8EF7,#6366F1)" : "transparent",
-                color: mode===m ? "#fff" : "rgba(232,240,254,.4)",
-                boxShadow: mode===m ? "0 4px 12px rgba(79,142,247,.3)" : "none",
-                transition:"all .2s",
-              }}>
-                {m === "login" ? "Sign In" : "Sign Up"}
-              </button>
+      <section className="relative z-10 mx-auto grid min-h-[calc(100vh-96px)] max-w-6xl items-center gap-10 lg:grid-cols-[1fr_440px]">
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="hidden lg:block">
+          <div className="relative mb-8 grid h-28 w-28 place-items-center rounded-[2rem] border border-cyan-200/20 bg-white/10 shadow-[0_0_80px_rgba(56,189,248,.28)] backdrop-blur-2xl">
+            <div className="absolute inset-3 rounded-[1.5rem] border border-cyan-200/20" style={{ animation: reduceMotion ? undefined : "neuralPulse 3.8s ease-in-out infinite" }} />
+            <Brain size={42} className="text-cyan-100" />
+          </div>
+          <p className="mb-4 inline-flex rounded-full border border-cyan-200/20 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase text-cyan-100">
+            StudyBuddy AI
+          </p>
+          <h1 className="font-lora text-6xl font-bold leading-tight text-white">
+            {typed}<span className="text-cyan-200">|</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-base leading-8 text-slate-300">
+            Notes, planning, focus sessions, quizzes, progress, and AI tutoring in a calm premium workspace built for serious students.
+          </p>
+          <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
+            {["AI tutor", "Smart plans", "Focus streaks"].map((item) => (
+              <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.07] p-4 backdrop-blur-xl">
+                <Check className="mb-3 text-cyan-200" size={18} />
+                <p className="text-sm font-black text-white">{item}</p>
+              </div>
             ))}
           </div>
-        )}
+        </motion.div>
 
-        {/* Forgot Password */}
-        {mode === "forgot" && (
-          <div>
-            <button onClick={() => { setMode("login"); setForgotSent(false); }} style={{ background:"none", border:"none", color:"#4F8EF7", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"inherit", marginBottom:16 }}>
-              ← Back to Sign In
-            </button>
-            <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:20, color:"#fff", fontWeight:700, marginBottom:8 }}>Reset Password</h2>
-            <p style={{ fontSize:13, color:"rgba(232,240,254,.4)", marginBottom:20 }}>Enter your email to receive a reset link</p>
-            {forgotSent ? (
-              <div style={{ textAlign:"center", padding:24 }}>
-                <div style={{ fontSize:40, marginBottom:12 }}>📧</div>
-                <h3 style={{ color:"#34D399", fontWeight:700, marginBottom:8 }}>Email Sent!</h3>
-                <p style={{ fontSize:13, color:"rgba(232,240,254,.4)", lineHeight:1.7 }}>Check your inbox and click the reset link</p>
-                <button onClick={() => { setMode("login"); setForgotSent(false); }} style={{ marginTop:20, padding:"10px 24px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:"pointer", fontFamily:"inherit", fontWeight:700 }}>
-                  Back to Sign In
-                </button>
+        <motion.div initial={{ opacity: 0, y: 24, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: .55 }} className="relative mx-auto w-full max-w-md">
+          <div className="absolute -inset-8 rounded-[2rem] bg-[conic-gradient(from_180deg,rgba(56,189,248,.22),rgba(168,85,247,.2),rgba(16,185,129,.12),rgba(56,189,248,.22))] blur-3xl" />
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-slate-950/70 p-6 shadow-[0_28px_110px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-8">
+            <div className="mb-7 text-center">
+              <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl border border-cyan-200/20 bg-white/10 shadow-[0_0_40px_rgba(56,189,248,.22)]">
+                <img src="/icon-192.png" alt="StudyBuddy AI" className="h-10 w-10 rounded-xl" />
               </div>
-            ) : (
-              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                <input type="email" placeholder="Your email address" value={email} onChange={e=>setEmail(e.target.value)} style={inputStyle}/>
-                <button onClick={handleForgot} disabled={loading} style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:loading?"not-allowed":"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, opacity:loading?.7:1 }}>
-                  {loading ? "Sending..." : "📧 Send Reset Link"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Main Form */}
-        {mode !== "forgot" && (
-          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-
-            {/* Google Button */}
-            <button className="g-btn" onClick={handleGoogle} disabled={googleLoading} style={{ width:"100%", padding:"12px", borderRadius:12, border:"1px solid rgba(255,255,255,.15)", background:"rgba(255,255,255,.05)", color:"#E2EAF8", cursor:"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, display:"flex", alignItems:"center", justifyContent:"center", gap:10, transition:"all .2s" }}>
-              <svg width="18" height="18" viewBox="0 0 18 18">
-                <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-                <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
-                <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/>
-                <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"/>
-              </svg>
-              {googleLoading ? "Connecting..." : `Continue with Google`}
-            </button>
-
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)"}}/><span style={{ fontSize:12, color:"rgba(232,240,254,.3)" }}>or</span><div style={{ flex:1, height:1, background:"rgba(255,255,255,.1)"}}/>
+              <h2 className="font-lora text-2xl font-bold text-white">StudyBuddy AI</h2>
+              <p className="mt-2 text-sm font-semibold text-slate-400">Smarter Study. Better You.</p>
             </div>
 
-            {mode === "signup" && (
-              <input type="text" placeholder="Full Name" value={name} onChange={e=>setName(e.target.value)} style={inputStyle}/>
-            )}
-            <input type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} style={inputStyle}/>
-            <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)}
-              onKeyDown={e=>{ if(e.key==="Enter") mode==="login"?handleLogin():handleSignup(); }} style={inputStyle}/>
-
-            {mode === "login" && (
-              <button onClick={() => setMode("forgot")} style={{ background:"none", border:"none", color:"#4F8EF7", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"inherit", textAlign:"right", padding:0 }}>
-                Forgot Password?
-              </button>
+            {mode !== "forgot" && (
+              <div className="mb-6 grid grid-cols-2 rounded-2xl border border-white/10 bg-white/[0.06] p-1">
+                {(["login", "signup"] as const).map((item) => (
+                  <button key={item} onClick={() => switchMode(item)} className={`rounded-xl px-4 py-3 text-sm font-black transition ${mode === item ? "bg-white text-slate-950 shadow-lg" : "text-slate-400 hover:text-white"}`}>
+                    {item === "login" ? "Sign In" : "Sign Up"}
+                  </button>
+                ))}
+              </div>
             )}
 
-            <button className="submit-btn" onClick={mode==="login"?handleLogin:handleSignup} disabled={loading}
-              style={{ width:"100%", padding:"13px", borderRadius:12, border:"none", background:"linear-gradient(135deg,#4F8EF7,#6366F1)", color:"#fff", cursor:loading?"not-allowed":"pointer", fontFamily:"inherit", fontWeight:700, fontSize:14, transition:"all .2s", opacity:loading?.7:1, marginTop:4, boxShadow:"0 4px 16px rgba(79,142,247,.35)" }}>
-              {loading ? "Please wait..." : mode==="login" ? "Sign In →" : "Create Account →"}
-            </button>
+            <AnimatePresence mode="wait">
+              {mode === "forgot" ? (
+                <motion.div key="forgot" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }}>
+                  <button onClick={() => { setMode("login"); setForgotSent(false); }} className="mb-5 inline-flex items-center gap-2 text-sm font-bold text-cyan-100">
+                    <ArrowLeft size={15} /> Back to sign in
+                  </button>
+                  <h3 className="text-xl font-black text-white">Reset password</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">Enter your email and we will send a secure reset link.</p>
+                  {forgotSent ? (
+                    <div className="mt-6 rounded-2xl border border-emerald-200/20 bg-emerald-300/10 p-5 text-center">
+                      <Mail className="mx-auto mb-3 text-emerald-200" />
+                      <p className="font-black text-emerald-100">Email sent</p>
+                      <p className="mt-2 text-sm text-slate-300">Check your inbox for the reset link.</p>
+                    </div>
+                  ) : (
+                    <div className="mt-6 space-y-4">
+                      <Field icon={<Mail size={17} />} value={email} onChange={setEmail} type="email" placeholder="Email address" />
+                      <PrimaryButton loading={loading} onClick={handleForgot}>Send reset link</PrimaryButton>
+                    </div>
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div key={mode} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} className="space-y-4">
+                  <button onClick={handleGoogle} disabled={googleLoading} className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-sm font-black text-white transition hover:bg-white/[0.11] disabled:opacity-60">
+                    {googleLoading ? <Loader2 size={17} className="animate-spin" /> : <span className="grid h-6 w-6 place-items-center rounded-full bg-white text-xs font-black text-slate-950">G</span>}
+                    Continue with Google
+                  </button>
+                  <div className="flex items-center gap-3 text-xs font-bold uppercase text-slate-500"><span className="h-px flex-1 bg-white/10" />or<span className="h-px flex-1 bg-white/10" /></div>
+                  {mode === "signup" && <Field icon={<User size={17} />} value={name} onChange={setName} placeholder="Full name" />}
+                  <Field icon={<Mail size={17} />} value={email} onChange={setEmail} type="email" placeholder="Email address" />
+                  <Field icon={<Lock size={17} />} value={password} onChange={setPassword} type={showPassword ? "text" : "password"} placeholder="Password" onEnter={mode === "login" ? handleLogin : handleSignup} right={
+                    <button type="button" onClick={() => setShowPassword((value) => !value)} className="text-slate-500 hover:text-white" aria-label="Toggle password visibility">
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  } />
+                  {mode === "login" && <button onClick={() => setMode("forgot")} className="ml-auto block text-sm font-bold text-cyan-100 hover:text-white">Forgot password?</button>}
+                  <PrimaryButton loading={loading} onClick={mode === "login" ? handleLogin : handleSignup}>
+                    {mode === "login" ? "Enter dashboard" : "Create account"}
+                  </PrimaryButton>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        )}
+        </motion.div>
+      </section>
+    </main>
+  );
+}
 
-        <div style={{ textAlign:"center", marginTop:20 }}>
-          <button onClick={() => router.push("/")} style={{ background:"none", border:"none", color:"rgba(232,240,254,.3)", cursor:"pointer", fontSize:12, fontFamily:"inherit" }}>
-            ← Back to home
-          </button>
-        </div>
-      </div>
-    </div>
+function Field({ icon, value, onChange, placeholder, type = "text", right, onEnter }: { icon: React.ReactNode; value: string; onChange: (value: string) => void; placeholder: string; type?: string; right?: React.ReactNode; onEnter?: () => void }) {
+  return (
+    <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-400 transition focus-within:border-cyan-200/50 focus-within:shadow-[0_0_0_4px_rgba(56,189,248,.08)]">
+      {icon}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => { if (event.key === "Enter" && onEnter) onEnter(); }}
+        type={type}
+        placeholder={placeholder}
+        className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-white outline-none placeholder:text-slate-600"
+      />
+      {right}
+    </label>
+  );
+}
+
+function PrimaryButton({ children, loading, onClick }: { children: React.ReactNode; loading: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} disabled={loading} className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-5 py-3.5 text-sm font-black text-white shadow-[0_0_42px_rgba(79,142,247,.35)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
+      <span className="absolute inset-y-0 left-0 w-1/3 -translate-x-full bg-white/25 blur-xl transition group-hover:translate-x-[320%]" />
+      {loading ? <Loader2 size={17} className="animate-spin" /> : <Sparkles size={17} />}
+      <span className="relative">{loading ? "Please wait..." : children}</span>
+      {!loading && <ArrowRight size={16} className="relative" />}
+    </button>
   );
 }

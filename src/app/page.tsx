@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
+import toast from "react-hot-toast";
 import {
   ArrowRight,
   BarChart3,
@@ -22,6 +23,7 @@ import {
   MessageCircle,
   Play,
   Shield,
+  Send,
   Sparkles,
   Timer,
   Trophy,
@@ -77,7 +79,7 @@ const plans = [
   {
     name: "Pro",
     monthly: 9,
-    yearly: 7,
+    yearly: 69,
     desc: "For students who want serious momentum.",
     popular: true,
     features: ["Unlimited AI tools", "Advanced analytics", "Unlimited uploads", "Smart recommendations", "Priority reminders"],
@@ -85,11 +87,26 @@ const plans = [
   {
     name: "Premium+",
     monthly: 19,
-    yearly: 15,
+    yearly: 149,
     desc: "The complete AI study command center.",
     features: ["Full AI assistant", "Cloud sync", "Priority features", "Future premium tools", "Early beta access"],
   },
 ];
+
+const testimonials = [
+  { name: "Aarav Mehta", role: "Engineering student", quote: "StudyBuddy turns my late lecture notes into clean revision blocks before lab days. The quiz flow is the reason I revise consistently now." },
+  { name: "Nisha Rao", role: "Medical aspirant", quote: "I use it after biology lectures to summarize diagrams and make quick MCQs. It saves me from drowning in scattered notes." },
+  { name: "Kabir Singh", role: "UPSC learner", quote: "The planner keeps polity, history, and current affairs balanced. It feels like a disciplined study mentor without the pressure." },
+  { name: "Meera Iyer", role: "College topper", quote: "The dashboard made my weekly study pattern obvious. I started fixing weak subjects before tests instead of after them." },
+  { name: "Rohan Patel", role: "Late-night learner", quote: "The dark interface is calm at 1 AM, and the AI tutor explains concepts without making me leave my workflow." },
+  { name: "Sara Khan", role: "Productivity-focused student", quote: "Tasks, streaks, and focus sessions finally live in one place. It feels premium but still simple enough to use daily." },
+  { name: "Devansh Shah", role: "Computer science student", quote: "I generate flashcards from coding notes and revise on the bus. The AI answers are fast, but the verification reminder is useful." },
+  { name: "Ananya Das", role: "NEET student", quote: "The spaced revision rhythm helps me stay calm. I can see what needs attention instead of guessing every morning." },
+  { name: "Vikram Joshi", role: "Exam comeback student", quote: "I had messy habits before finals. StudyBuddy made my backlog visible and gave me a plan I could actually follow." },
+];
+
+const studentTypes = ["Engineering", "Medical", "UPSC", "Productivity", "Late-night learner", "College topper", "Other"];
+const testimonialLoop = [...testimonials, ...testimonials];
 
 const faqs = [
   { q: "Is StudyBuddy AI free?", a: "Yes. You can start with the free plan, then upgrade when you need unlimited AI tools, uploads, and advanced analytics." },
@@ -131,6 +148,10 @@ export default function HomePage() {
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [openFaq, setOpenFaq] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
+  const [testimonialLoading, setTestimonialLoading] = useState(false);
+  const [testimonialSubmitted, setTestimonialSubmitted] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [cursor, setCursor] = useState({ x: -200, y: -200 });
 
   const particles = useMemo(
@@ -164,6 +185,49 @@ export default function HomePage() {
   }, []);
 
   const goLogin = () => router.push("/auth/login");
+
+  const submitContact = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setContactLoading(true);
+    try {
+      const { error } = await supabase.from("feedback").insert({
+        name: String(form.get("name") || "").trim(),
+        email: String(form.get("email") || "").trim(),
+        message: String(form.get("message") || "").trim(),
+      });
+      if (error) throw error;
+      event.currentTarget.reset();
+      setSubmitted(true);
+    } catch (error: any) {
+      toast.error(error?.message || "Feedback could not be saved.");
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
+  const submitTestimonial = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setTestimonialLoading(true);
+    try {
+      const { error } = await supabase.from("testimonial_submissions").insert({
+        name: String(form.get("name") || "").trim(),
+        email: String(form.get("email") || "").trim(),
+        student_type: String(form.get("student_type") || "Other"),
+        message: String(form.get("message") || "").trim(),
+        rating: Number(form.get("rating") || 5),
+        status: "pending",
+      });
+      if (error) throw error;
+      event.currentTarget.reset();
+      setTestimonialSubmitted(true);
+    } catch (error: any) {
+      toast.error(error?.message || "Testimonial could not be saved.");
+    } finally {
+      setTestimonialLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#030711] text-white selection:bg-cyan-300/30">
@@ -208,13 +272,16 @@ export default function HomePage() {
           }
         }
         @keyframes shimmerLine {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(220%);
-          }
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(220%); }
         }
+        @keyframes testimonialMarquee {
+          from { transform: translate3d(0,0,0); }
+          to { transform: translate3d(-50%,0,0); }
+        }
+        .testimonial-track { animation: testimonialMarquee 42s linear infinite; will-change: transform; }
+        .testimonial-track:hover { animation-play-state: paused; }
+        @media (prefers-reduced-motion: reduce) { .testimonial-track { animation: none; } }
       `}</style>
 
       <nav className="sticky top-0 z-40 border-b border-white/10 bg-[#030711]/65 backdrop-blur-2xl">
@@ -451,7 +518,11 @@ export default function HomePage() {
                 whileHover={{ y: -8, rotateX: 2, rotateY: -2 }}
                 viewport={{ once: true, margin: "-40px" }}
                 transition={{ duration: 0.45, delay: index * 0.04 }}
-                className="group rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl transition hover:border-cyan-200/30 hover:bg-white/[0.09] hover:shadow-[0_0_42px_rgba(56,189,248,0.12)]"
+                onClick={goLogin}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => { if (event.key === "Enter") goLogin(); }}
+                className="group cursor-pointer rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl transition hover:border-cyan-200/30 hover:bg-white/[0.09] hover:shadow-[0_0_42px_rgba(56,189,248,0.12)]"
               >
                 <div className={`mb-5 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br ${feature.tone} text-slate-950 shadow-[0_0_30px_rgba(79,142,247,0.2)] transition group-hover:scale-105`}>
                   <Icon size={22} />
@@ -593,23 +664,28 @@ export default function HomePage() {
           {plans.map((plan) => (
             <motion.article
               key={plan.name}
-              whileHover={{ y: -8 }}
-              className={`relative rounded-2xl border p-6 backdrop-blur-xl ${
+              whileHover={{ y: -10, scale: 1.015 }}
+              className={`relative overflow-hidden rounded-2xl border p-6 backdrop-blur-xl transition hover:shadow-[0_0_55px_rgba(79,142,247,0.14)] ${
                 plan.popular
                   ? "border-cyan-200/35 bg-cyan-200/[0.08] shadow-[0_0_70px_rgba(56,189,248,0.16)]"
                   : "border-white/10 bg-white/[0.06]"
               }`}
             >
+              {billing === "yearly" && plan.monthly > 0 && (
+                <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute left-5 top-5 rounded-full border border-emerald-200/30 bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-100">
+                  Save {Math.round((1 - plan.yearly / (plan.monthly * 12)) * 100)}%
+                </motion.span>
+              )}
               {plan.popular && (
-                <span className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-cyan-300 to-violet-300 px-3 py-1 text-xs font-black text-slate-950">
+                <span className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-cyan-300 to-violet-300 px-3 py-1 text-xs font-black text-slate-950 max-sm:top-10">
                   Most Popular
                 </span>
               )}
-              <h3 className="text-2xl font-black text-white">{plan.name}</h3>
+              <h3 className="pt-8 text-2xl font-black text-white">{plan.name}</h3>
               <p className="mt-3 min-h-14 text-sm leading-7 text-slate-400">{plan.desc}</p>
               <div className="mt-6 flex items-end gap-2">
                 <span className="text-5xl font-black text-white">${billing === "yearly" ? plan.yearly : plan.monthly}</span>
-                <span className="pb-2 text-sm font-bold text-slate-400">/month</span>
+                <span className="pb-2 text-sm font-bold text-slate-400">/{billing === "yearly" ? "year" : "month"}</span>
               </div>
               <button
                 onClick={goLogin}
@@ -632,6 +708,81 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="relative z-10 mx-auto max-w-7xl px-0 py-20 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-0">
+          <SectionHeading
+            eyebrow="Student stories"
+            title="Built with feedback from ambitious learners"
+            desc="From engineering labs to medical prep and UPSC revision, students use StudyBuddy AI to stay clear, consistent, and calm."
+          />
+          <div className="mb-8 flex justify-center">
+            <button onClick={() => setFeedbackModalOpen(true)} className="rounded-full border border-cyan-200/20 bg-white/10 px-5 py-3 text-sm font-black text-white shadow-[0_0_35px_rgba(56,189,248,.12)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/15">
+              Add Feedback
+            </button>
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden py-2 [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
+          <div className="testimonial-track flex w-max gap-4 px-4 sm:gap-5">
+            {testimonialLoop.map((item, index) => (
+              <article
+                key={item.name + "-" + index}
+                className="w-[82vw] max-w-[360px] shrink-0 rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl transition hover:-translate-y-1 hover:border-cyan-200/25 hover:bg-white/[0.085] sm:w-[360px]"
+              >
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-300/30 to-violet-300/20 text-sm font-black text-white">
+                    {item.name.split(" ").map((part) => part[0]).join("").slice(0, 2)}
+                  </span>
+                  <div>
+                    <p className="font-extrabold text-white">{item.name}</p>
+                    <p className="text-xs font-bold text-cyan-100/70">{item.role}</p>
+                  </div>
+                </div>
+                <p className="text-sm leading-7 text-slate-300">{item.quote}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        {feedbackModalOpen && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/75 px-4 backdrop-blur-xl" onClick={() => setFeedbackModalOpen(false)}>
+            <motion.form
+              onSubmit={submitTestimonial}
+              initial={{ opacity: 0, y: 24, scale: .96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-950/90 p-5 shadow-[0_30px_120px_rgba(0,0,0,.65)] sm:p-6"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase text-cyan-100">Submit your feedback</p>
+                  <h3 className="mt-1 text-xl font-black text-white">Help shape StudyBuddy AI</h3>
+                </div>
+                <button type="button" onClick={() => setFeedbackModalOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white"><X size={18} /></button>
+              </div>
+              {testimonialSubmitted && (
+                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="mb-4 rounded-2xl border border-emerald-200/20 bg-emerald-300/10 px-4 py-3 text-sm font-black text-emerald-100">
+                  Sent for moderation
+                </motion.div>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input name="name" required className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none" placeholder="Your name" />
+                <input name="email" required type="email" className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none" placeholder="you@example.com" />
+                <select name="student_type" className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none">
+                  {studentTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+                <select name="rating" className="rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none" defaultValue="5">
+                  {[5, 4, 3].map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}
+                </select>
+              </div>
+              <textarea name="message" required rows={4} className="mt-4 w-full resize-none rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none" placeholder="What improved in your study workflow?" />
+              <button disabled={testimonialLoading} className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-extrabold text-slate-950 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
+                {testimonialLoading ? "Submitting..." : "Submit feedback"} <Send size={16} />
+              </button>
+            </motion.form>
+          </div>
+        )}
+      </section>
 
       <section className="relative z-10 mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
@@ -689,30 +840,31 @@ export default function HomePage() {
           </div>
 
           <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              setSubmitted(true);
-            }}
+            onSubmit={submitContact}
             className="rounded-2xl border border-white/10 bg-white/[0.065] p-6 backdrop-blur-xl"
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-bold text-slate-300">
                 Name
-                <input required className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Your name" />
+                <input name="name" required className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Your name" />
               </label>
               <label className="grid gap-2 text-sm font-bold text-slate-300">
                 Email
-                <input required type="email" className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="you@example.com" />
+                <input name="email" required type="email" className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="you@example.com" />
               </label>
             </div>
             <label className="mt-4 grid gap-2 text-sm font-bold text-slate-300">
               Feedback
-              <textarea required rows={5} className="resize-none rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Tell us what you want StudyBuddy AI to improve next." />
+              <textarea name="message" required rows={5} className="resize-none rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Tell us what you want StudyBuddy AI to improve next." />
             </label>
-            <button className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-6 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5">
-              Send Feedback <ArrowRight size={16} />
+            <button disabled={contactLoading} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-6 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
+              {contactLoading ? "Sending..." : "Send Feedback"} <ArrowRight size={16} />
             </button>
-            {submitted && <p className="mt-4 text-sm font-bold text-emerald-200">Thank you. Your feedback is ready for review.</p>}
+            {submitted && (
+              <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 text-sm font-bold text-emerald-200">
+                Thank you. Your feedback is saved and ready for review.
+              </motion.p>
+            )}
           </form>
         </div>
       </section>
