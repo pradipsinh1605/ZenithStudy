@@ -273,7 +273,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               linear-gradient(180deg, rgba(3,7,17,.96), rgba(7,21,39,.94)),
               var(--bg);
             color: var(--text);
-            font-family: var(--font-sora), sans-serif;
+            font-family: var(--font-dm-sans), var(--font-sora), sans-serif;
           }
 
           .app-progress {
@@ -310,7 +310,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           .brand-mark {
             width: 38px;
             height: 38px;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             display: grid;
             place-items: center;
             color: white;
@@ -321,7 +321,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           .icon-btn {
             width: 38px;
             height: 38px;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--muted);
@@ -351,9 +351,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           }
 
           .page-wrap {
-            width: min(100%, 1220px);
+            width: min(100%, var(--page-max));
             margin: 0 auto;
-            padding: clamp(16px, 2.4vw, 28px) clamp(14px, 3vw, 28px) calc(132px + env(safe-area-inset-bottom));
+            padding: clamp(16px, 2.4vw, 28px) var(--page-pad) calc(132px + env(safe-area-inset-bottom));
           }
 
           .page-heading {
@@ -377,7 +377,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             padding: 7px 10px;
             border: 1px solid var(--border);
             background: var(--surface);
@@ -713,7 +713,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                       border: "1px solid var(--border)",
                       background: "var(--surface)",
                       borderRadius: 8,
-                      boxShadow: "0 24px 70px rgba(15,23,42,.2)",
+                      boxShadow: "var(--shadow-lg)",
                       overflow: "hidden",
                     }}
                   >
@@ -807,7 +807,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 <div>
                   <h1
                     style={{
-                      fontFamily: "var(--font-lora), serif",
+                      fontFamily: "var(--font-dm-serif), var(--font-lora), serif",
                       color: "var(--text)",
                       fontSize: 26,
                       fontWeight: 800,

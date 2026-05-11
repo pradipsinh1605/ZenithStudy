@@ -20,7 +20,7 @@ type DifyConfig = {
   user: string;
 };
 
-const DIFY_TIMEOUT_MS = 8000;
+const DIFY_TIMEOUT_MS = 15000;
 const DIFY_RATE_LIMIT = 60;
 const DIFY_WINDOW_MS = 60 * 60 * 1000;
 
@@ -96,6 +96,31 @@ async function uploadDifyFile(
   };
 }
 
+function extractDifyText(data: any): string {
+  if (typeof data?.answer === "string") return data.answer;
+  if (typeof data?.text === "string") return data.text;
+  if (typeof data?.data?.answer === "string") return data.data.answer;
+  if (typeof data?.data?.text === "string") return data.data.text;
+  if (typeof data?.message === "string") return data.message;
+  return "";
+}
+
+async function postDifyMessage(
+  config: DifyConfig,
+  endpoint: "chat-messages" | "completion-messages",
+  payload: Record<string, unknown>,
+  signal: AbortSignal
+) {
+  return fetch(`${config.baseUrl}/${endpoint}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
 async function callDify(
   req: NextRequest,
   query: string,
@@ -115,21 +140,19 @@ async function callDify(
     const file = await uploadDifyFile(config, attachment, controller.signal);
     const files = file ? [file] : [];
 
-    const response = await fetch(`${config.baseUrl}/chat-messages`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        inputs,
-        query,
-        response_mode: "blocking",
-        user: config.user,
-        files,
-      }),
-      signal: controller.signal,
-    });
+    const payload = {
+      inputs,
+      query,
+      response_mode: "blocking",
+      user: config.user,
+      files,
+    };
+
+    let response = await postDifyMessage(config, "chat-messages", payload, controller.signal);
+
+    if (!response.ok && (response.status === 400 || response.status === 404 || response.status === 405)) {
+      response = await postDifyMessage(config, "completion-messages", payload, controller.signal);
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -140,7 +163,7 @@ async function callDify(
     }
 
     const data = await response.json();
-    const text = typeof data?.answer === "string" ? data.answer : "";
+    const text = extractDifyText(data);
 
     if (!text.trim()) {
       return apiError("AI_EMPTY_RESPONSE", "AI returned an empty response.", 502);

@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Sora, Lora } from "next/font/google";
+import { DM_Sans, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
-const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
-const lora = Lora({ subsets: ["latin"], variable: "--font-lora", display: "swap" });
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
+const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-dm-serif", weight: "400", display: "swap" });
+const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "StudyBuddy AI", template: "%s | StudyBuddy AI" },
@@ -61,7 +62,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body
-        className={`${sora.variable} ${lora.variable} font-sora antialiased`}
+        className={`${dmSans.variable} ${dmSerif.variable} ${jetBrainsMono.variable} font-dm-sans antialiased`}
         style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh" }}
       >
         <ThemeProvider

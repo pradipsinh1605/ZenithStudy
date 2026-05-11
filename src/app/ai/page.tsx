@@ -160,11 +160,12 @@ export default function AITutorPage() {
     }catch(e:any){
       const msg = e.message.includes("401")||e.message.includes("403")
         ?"AI service is not configured. Please check server env."
-        :`❌ Error: ${e.message}`;
+        :`Error: ${e.message}`;
       setMsgs(p=>p.map(m=>m.id===aid?{...m,content:msg,loading:false}:m));
-      toast.error("AI error — check console");
+      toast.error("AI response failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const saveChat = async() => {
