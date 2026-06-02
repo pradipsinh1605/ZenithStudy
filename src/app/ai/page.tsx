@@ -244,17 +244,9 @@ export default function AITutorPage() {
 
         {/* ── Header ── */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:46,height:46,borderRadius:14,background:"var(--surface)",border:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <Brain size={24} color="var(--primary)"/>
-            </div>
-            <div>
-              <h2 style={{fontFamily:"var(--font-lora),serif",fontSize:20,fontWeight:700,color:"var(--text)"}}>AI Study Tutor</h2>
-              <div style={{display:"flex",alignItems:"center",gap:6,marginTop:2}}>
-                <div style={{width:6,height:6,borderRadius:"50%",background:"#34D399",animation:"pulse 2s infinite"}}/>
-                <span style={{fontSize:11,color:"var(--muted)"}}>Groq (Llama 3.3) · PDF & Image Upload · 100% Free ✅</span>
-              </div>
-            </div>
+          <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",borderRadius:12,border:"1px solid var(--border)",background:"var(--surface)"}}>
+            <div style={{width:6,height:6,borderRadius:"50%",background:"#34D399",animation:"pulse 2s infinite"}}/>
+            <span style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>Groq (Llama 3.3) · Free</span>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
             {subjects.length>0&&(
