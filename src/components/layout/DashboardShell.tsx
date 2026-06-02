@@ -98,6 +98,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     [pathname]
   );
   const CurrentIcon = current.icon;
+  const isAIPage = pathname === "/ai";
 
   useEffect(() => {
     setMounted(true);
@@ -630,6 +631,18 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
             .student-strip { gap: 6px; }
           }
+
+          .page-wrap.ai-mode {
+            padding: 16px 20px 16px 20px !important;
+            height: calc(100vh - 72px);
+            display: flex;
+            flex-direction: column;
+          }
+          @media (max-width: 560px) {
+            .page-wrap.ai-mode {
+              padding: 12px !important;
+            }
+          }
         `}</style>
 
         <div className="app-progress" />
@@ -803,9 +816,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           </div>
         </header>
 
-        <main className="page-wrap">
-          <section className="page-heading">
-            <div>
+        <main className={`page-wrap${isAIPage ? " ai-mode" : ""}`}>
+          {!isAIPage && (
+            <section className="page-heading">
+              <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
                 <div
                   style={{
@@ -875,14 +889,17 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               </div>
             </div>
           </section>
+          )}
 
           <PageTransition>{children}</PageTransition>
         </main>
 
-        <div className="nav-hit-zone" onMouseEnter={() => { setNavHidden(false); setNavIdle(false); }} />
+        {!isAIPage && (
+          <>
+            <div className="nav-hit-zone" onMouseEnter={() => { setNavHidden(false); setNavIdle(false); }} />
 
-        <nav
-          className={`bottom-nav${navHidden ? " nav-hidden" : ""}${navIdle ? " nav-idle" : ""}`}
+            <nav
+              className={`bottom-nav${navHidden ? " nav-hidden" : ""}${navIdle ? " nav-idle" : ""}`}
           aria-label="Primary navigation"
           onMouseEnter={() => { setNavHidden(false); setNavIdle(false); }}
         >
@@ -911,6 +928,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             })}
           </div>
         </nav>
+        </>
+        )}
       </div>
     </TimerProvider>
   );

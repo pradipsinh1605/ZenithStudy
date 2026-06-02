@@ -240,7 +240,7 @@ export default function AITutorPage() {
       <input ref={fileRef} type="file" accept=".pdf,image/*" style={{display:"none"}}
         onChange={e=>{if(e.target.files?.[0])handleFile(e.target.files[0]);e.target.value="";}}/>
 
-      <div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}}>
+      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
 
         {/* ── Header ── */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
