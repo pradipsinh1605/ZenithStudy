@@ -245,8 +245,8 @@ export default function AITutorPage() {
         {/* ── Header ── */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:46,height:46,borderRadius:14,background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(79,142,247,.4)"}}>
-              <Brain size={24} color="#fff"/>
+            <div style={{width:46,height:46,borderRadius:14,background:"var(--surface)",border:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <Brain size={24} color="var(--primary)"/>
             </div>
             <div>
               <h2 style={{fontFamily:"var(--font-lora),serif",fontSize:20,fontWeight:700,color:"var(--text)"}}>AI Study Tutor</h2>
@@ -325,14 +325,12 @@ export default function AITutorPage() {
 
         {/* ── Chat Area ── */}
         <div style={{flex:1,overflowY:"auto",borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",padding:20,display:"flex",flexDirection:"column",gap:20}}>
-          <div style={{position:"sticky",top:0,zIndex:2,padding:"9px 12px",borderRadius:12,border:"1px solid rgba(245,166,35,.28)",background:"rgba(245,166,35,.08)",color:"#F5A623",fontSize:12,fontWeight:700,textAlign:"center"}}>
-            AI answers may contain errors. Verify before exams.
-          </div>
+
 
           {/* Empty state */}
           {msgs.length===0&&(
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px 0"}}>
-              <div style={{width:80,height:80,borderRadius:22,background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:18,boxShadow:"0 10px 32px rgba(79,142,247,.35)"}}>🤖</div>
+              <div style={{width:80,height:80,borderRadius:22,background:"var(--surface)",border:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:18}}>🤖</div>
               <h3 style={{fontFamily:"var(--font-lora),serif",fontSize:22,color:"var(--text)",marginBottom:8,fontWeight:700}}>Ask me anything!</h3>
               <p style={{fontSize:14,color:"var(--muted)",textAlign:"center",maxWidth:460,lineHeight:1.8,marginBottom:16}}>
                 Upload a <strong style={{color:"#F87171"}}>PDF</strong> or <strong style={{color:"#34D399"}}>Image</strong> and ask questions, or type any study topic!
@@ -368,7 +366,7 @@ export default function AITutorPage() {
 
               {/* User message */}
               {msg.role==="user"&&(
-                <div style={{maxWidth:"72%",padding:"12px 18px",borderRadius:"18px 18px 4px 18px",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",fontSize:14,lineHeight:1.7,boxShadow:"0 4px 18px rgba(79,142,247,.35)"}}>
+                <div style={{maxWidth:"72%",padding:"12px 18px",borderRadius:"18px 18px 4px 18px",background:"var(--primary)",color:"#fff",fontSize:14,lineHeight:1.7}}>
                   {msg.attachment&&(
                     <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8,padding:"6px 10px",borderRadius:8,background:"rgba(255,255,255,.15)"}}>
                       {msg.attachment.type==="pdf"?<FileText size={13}/>:<ImageIcon size={13}/>}
@@ -384,7 +382,7 @@ export default function AITutorPage() {
               {msg.role==="assistant"&&(
                 <div style={{width:"100%",maxWidth:"95%"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8,flexWrap:"wrap"}}>
-                    <div style={{width:28,height:28,borderRadius:9,background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>
+                    <div style={{width:28,height:28,borderRadius:9,background:"var(--surface)",border:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>
                     <span style={{fontSize:12,fontWeight:700,color:"#4F8EF7"}}>AI Tutor</span>
                     {sub&&<span style={{fontSize:10,padding:"2px 9px",borderRadius:20,background:`${sc(sub)}18`,color:sc(sub),fontWeight:700}}>{sub}</span>}
                     <span style={{fontSize:10,color:"var(--muted)"}}>{tf(msg.timestamp)}</span>
@@ -475,7 +473,7 @@ export default function AITutorPage() {
               onInput={e=>{const t=e.target as HTMLTextAreaElement;t.style.height="auto";t.style.height=Math.min(t.scrollHeight,130)+"px";}}/>
           </div>
           <button className="sb" onClick={send} disabled={loading||(!input.trim()&&!attachment)}
-            style={{width:52,height:52,borderRadius:15,border:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:loading||(!input.trim()&&!attachment)?"not-allowed":"pointer",background:loading||(!input.trim()&&!attachment)?"var(--border)":"linear-gradient(135deg,#4F8EF7,#6366F1)",color:loading||(!input.trim()&&!attachment)?"var(--muted)":"#fff",transition:"all .2s",boxShadow:(!loading&&(input.trim()||attachment))?"0 4px 20px rgba(79,142,247,.4)":"none"}}>
+            style={{width:52,height:52,borderRadius:15,border:"none",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,cursor:loading||(!input.trim()&&!attachment)?"not-allowed":"pointer",background:loading||(!input.trim()&&!attachment)?"var(--border)":"var(--primary)",color:loading||(!input.trim()&&!attachment)?"var(--muted)":"#fff",transition:"all .2s"}}>
             {loading?<Loader size={20} style={{animation:"spin .55s linear infinite"}}/>:<Send size={20}/>}
           </button>
         </div>
