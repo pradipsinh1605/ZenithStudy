@@ -89,6 +89,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const [navLoading, setNavLoading] = useState(false);
   const [navHidden, setNavHidden] = useState(false);
   const [navIdle, setNavIdle] = useState(false);
+  const [isScrolledEnd, setIsScrolledEnd] = useState(false);
   const lastScrollY = useRef(0);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -149,7 +150,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const wakeNav = () => {
       setNavIdle(false);
       if (idleTimer.current) clearTimeout(idleTimer.current);
-      idleTimer.current = setTimeout(() => setNavIdle(true), 3200);
+      idleTimer.current = setTimeout(() => setNavIdle(true), 2000);
     };
 
     const onScroll = () => {
@@ -267,11 +268,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           .app-shell {
             min-height: 100vh;
             overflow-x: hidden;
-            background:
-              radial-gradient(circle at 16% 0%, rgba(56,189,248,.16), transparent 34%),
-              radial-gradient(circle at 84% 6%, rgba(139,92,246,.17), transparent 34%),
-              linear-gradient(180deg, rgba(3,7,17,.96), rgba(7,21,39,.94)),
-              var(--bg);
+            background: var(--bg);
             color: var(--text);
             font-family: var(--font-dm-sans), var(--font-sora), sans-serif;
           }
@@ -314,8 +311,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             display: grid;
             place-items: center;
             color: white;
-            background: linear-gradient(135deg, #2563EB, #14B8A6);
-            box-shadow: 0 12px 28px rgba(37,99,235,.22);
+            background: var(--primary);
           }
 
           .icon-btn {
@@ -391,29 +387,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             left: 50%;
             bottom: max(14px, env(safe-area-inset-bottom));
             z-index: 70;
-            width: min(760px, calc(100vw - 24px));
-            min-height: 74px;
+            width: min(600px, calc(100vw - 24px));
+            min-height: 60px;
             transform: translateX(-50%);
-            display: grid;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(58px, 1fr);
-            align-items: center;
-            gap: 2px;
-            overflow-x: auto;
-            padding: 8px 10px;
-            border: 1px solid rgba(139,92,246,.48);
-            border-radius: 999px;
-            background:
-              linear-gradient(135deg, rgba(15,23,42,.72), rgba(17,24,39,.42)),
-              rgba(3,7,18,.52);
-            backdrop-filter: blur(28px) saturate(1.45);
-            box-shadow:
-              inset 0 1px 0 rgba(255,255,255,.16),
-              0 0 0 1px rgba(56,189,248,.16),
-              0 22px 70px rgba(2,6,23,.55),
-              0 0 46px rgba(124,58,237,.26),
-              0 0 34px rgba(56,189,248,.16);
-            scrollbar-width: none;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(120, 120, 120, 0.15);
+            backdrop-filter: blur(32px);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
             animation: navFloatIn .55s cubic-bezier(.2,1,.22,1) both;
             transition:
               transform .34s cubic-bezier(.2,1,.22,1),
@@ -422,9 +404,29 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               box-shadow .24s ease;
           }
 
+          .bottom-nav-scroll {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 6px 8px;
+            width: 100%;
+            height: 100%;
+            scrollbar-width: none;
+            mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+          }
+
+          .bottom-nav-scroll::-webkit-scrollbar {
+            display: none;
+          }
+
+          .bottom-nav.nav-hidden,
           .bottom-nav.nav-idle {
-            opacity: .48;
-            filter: saturate(.88);
+            transform: translateX(-50%) translateY(110px) scale(.98);
+            opacity: 0;
+            pointer-events: none;
           }
 
           .bottom-nav:hover,
@@ -440,24 +442,16 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             bottom: 0;
             height: 124px;
             z-index: 60;
-            pointer-events: none;
+            pointer-events: auto;
           }
 
-          .bottom-nav.nav-hidden {
-            transform: translateX(-50%) translateY(110px) scale(.98);
-            opacity: 0;
-            pointer-events: none;
-          }
 
-          .bottom-nav::-webkit-scrollbar {
-            display: none;
-          }
 
           .bottom-link {
-            min-width: 0;
-            width: 100%;
-            height: 58px;
-            border-radius: 24px;
+            flex: 0 0 72px;
+            height: 48px;
+            padding: 0 4px;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -480,6 +474,18 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               border-color .22s ease;
           }
 
+          .bottom-link:not(:last-child)::before {
+            content: "";
+            position: absolute;
+            right: -10.5px;
+            top: 25%;
+            height: 50%;
+            width: 1px;
+            background: var(--border);
+            opacity: 0.6;
+            pointer-events: none;
+          }
+
           .bottom-link:hover {
             color: #fff;
             background: rgba(255,255,255,.07);
@@ -487,21 +493,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           }
 
           .bottom-link.active {
-            color: #fff;
-            background:
-              radial-gradient(circle at 50% 0%, rgba(168,85,247,.45), transparent 58%),
-              linear-gradient(180deg, rgba(99,102,241,.28), rgba(15,23,42,.34));
-            border-color: rgba(139,92,246,.34);
-            box-shadow:
-              inset 0 1px 0 rgba(255,255,255,.16),
-              0 12px 30px rgba(79,70,229,.22),
-              0 0 28px rgba(124,58,237,.36),
-              inset 0 -4px 0 rgba(139,92,246,.75);
+            color: var(--primary);
+            background: var(--primary-soft);
+            border-color: transparent;
+            box-shadow: none;
           }
 
           .bottom-link svg {
             flex: 0 0 auto;
-            filter: drop-shadow(0 2px 12px rgba(124,58,237,.22));
             transition: transform .24s cubic-bezier(.2,1,.22,1);
           }
 
@@ -571,14 +570,23 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }
 
             .bottom-nav {
-              width: min(680px, calc(100vw - 20px));
-              min-height: 70px;
-              grid-auto-columns: minmax(56px, 1fr);
+              width: min(560px, calc(100vw - 20px));
+              min-height: 56px;
+              border-radius: 14px;
+            }
+
+            .bottom-nav-scroll {
+              gap: 16px;
+            }
+
+            .bottom-link:not(:last-child)::before {
+              right: -8.5px;
             }
 
             .bottom-link {
-              height: 54px;
-              border-radius: 21px;
+              flex: 0 0 64px;
+              height: 44px;
+              border-radius: 10px;
               font-size: 10px;
             }
           }
@@ -593,16 +601,24 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }
 
             .bottom-nav {
-              width: min(100vw - 14px, 430px);
-              min-height: 66px;
-              grid-auto-columns: minmax(54px, 1fr);
-              gap: 0;
-              padding: 7px;
+              width: min(100vw - 20px, 420px);
+              min-height: 52px;
+              border-radius: 12px;
+            }
+
+            .bottom-nav-scroll {
+              gap: 14px;
+              padding: 6px;
+            }
+
+            .bottom-link:not(:last-child)::before {
+              right: -7.5px;
             }
 
             .bottom-link {
-              height: 52px;
-              border-radius: 19px;
+              flex: 0 0 58px;
+              height: 42px;
+              border-radius: 10px;
               font-size: 9px;
             }
 
@@ -643,7 +659,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     borderRadius: 8,
                     display: "grid",
                     placeItems: "center",
-                    background: "linear-gradient(135deg,#2563EB,#14B8A6)",
+                    background: "var(--primary)",
                     color: "#fff",
                     fontSize: 12,
                     fontWeight: 900,
@@ -870,21 +886,30 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           aria-label="Primary navigation"
           onMouseEnter={() => { setNavHidden(false); setNavIdle(false); }}
         >
-          {NAV.map(({ href, icon: Icon, label }) => {
-            const active = isActive(pathname, href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`bottom-link${active ? " active" : ""}`}
-                data-label={label}
-                title={label}
-              >
-                <Icon size={17} />
-                {label}
-              </Link>
-            );
-          })}
+          <div 
+            className="bottom-nav-scroll"
+            onScroll={(e) => {
+              const t = e.currentTarget;
+              setIsScrolledEnd(t.scrollLeft + t.clientWidth >= t.scrollWidth - 10);
+            }}
+            style={isScrolledEnd ? { maskImage: 'none', WebkitMaskImage: 'none' } : undefined}
+          >
+            {NAV.map(({ href, icon: Icon, label }) => {
+              const active = isActive(pathname, href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`bottom-link${active ? " active" : ""}`}
+                  data-label={label}
+                  title={label}
+                >
+                  <Icon size={17} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
       </div>
     </TimerProvider>
