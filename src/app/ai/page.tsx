@@ -244,9 +244,11 @@ export default function AITutorPage() {
 
         {/* ── Header ── */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:10}}>
-          <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",borderRadius:12,border:"1px solid var(--border)",background:"var(--surface)"}}>
-            <div style={{width:6,height:6,borderRadius:"50%",background:"#34D399",animation:"pulse 2s infinite"}}/>
-            <span style={{fontSize:11,color:"var(--muted)",fontWeight:600}}>Groq (Llama 3.3) · Free</span>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:36,height:36,borderRadius:10,background:"var(--surface)",border:"1px solid var(--border)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <Brain size={18} color="var(--primary)"/>
+            </div>
+            <h2 style={{fontFamily:"var(--font-lora),serif",fontSize:18,fontWeight:700,color:"var(--text)"}}>AI Tutor</h2>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
             {subjects.length>0&&(
@@ -260,14 +262,7 @@ export default function AITutorPage() {
               style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid var(--border)",background:"var(--card)",color:"var(--muted)",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit"}}>
               <BookOpen size={13}/> History{history.length>0?` (${history.length})`:""}{showHist?<ChevronUp size={11}/>:<ChevronDown size={11}/>}
             </button>
-            {msgs.length>0&&(
-              <button onClick={saveChat}
-                style={{display:"flex",alignItems:"center",gap:5,padding:"7px 13px",borderRadius:10,border:"1px solid rgba(52,211,153,.3)",background:"rgba(52,211,153,.08)",color:"#34D399",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"inherit"}}
-                onMouseEnter={e=>{e.currentTarget.style.background="rgba(52,211,153,.18)"}}
-                onMouseLeave={e=>{e.currentTarget.style.background="rgba(52,211,153,.08)"}}>
-                💾 Save
-              </button>
-            )}
+
             <div style={{display:"flex",alignItems:"center",gap:7,padding:"7px 13px",borderRadius:10,border:`1px solid ${autoVis?"rgba(167,139,250,.4)":"var(--border)"}`,background:autoVis?"rgba(167,139,250,.08)":"var(--card)",cursor:"pointer",transition:"all .2s"}}
               onClick={()=>setAutoVis(!autoVis)}>
               <Sparkles size={13} color={autoVis?"#A78BFA":"var(--muted)"}/>
