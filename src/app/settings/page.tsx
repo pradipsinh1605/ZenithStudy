@@ -68,12 +68,12 @@ export default function SettingsPage() {
             <Brain size={22} color="#fff"/>
           </div>
           <div>
-            <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>AI Study Tutor — Groq (Llama 3.3)</h3>
-            <p style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>Powered by Groq — Llama 3.3 70B Model</p>
+            <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>AI Study Tutor — OpenAI (GPT-4o)</h3>
+            <p style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>Powered by OpenAI — GPT-4o Model</p>
           </div>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {[["🤖","Bot Status","Groq · Llama 3.3 Active","#34D399"],["📄","File Support","PDF, Images, Documents","var(--muted)"],["💬","Memory","Persistent conversation","var(--muted)"],["🎓","Capabilities","Explain, Quiz, Plan, Summarise","var(--muted)"]].map(([ico,lbl,val,color]) => (
+          {[["🤖","Bot Status","OpenAI · GPT-4o Active","#34D399"],["📄","File Support","Images and Text","var(--muted)"],["💬","Memory","Persistent conversation","var(--muted)"],["🎓","Capabilities","Explain, Quiz, Plan, Summarise","var(--muted)"]].map(([ico,lbl,val,color]) => (
             <div key={lbl as string} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", background:"var(--bg)", borderRadius:12 }}>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 <span style={{ fontSize:18 }}>{ico}</span>
@@ -84,7 +84,7 @@ export default function SettingsPage() {
           ))}
         </div>
         <div style={{ marginTop:14, display:"flex", alignItems:"center", gap:7, fontSize:13, color:"#34D399" }}>
-          <CheckCircle2 size={15}/> Your Dify bot is configured and ready
+          <CheckCircle2 size={15}/> Your OpenAI bot is configured and ready
         </div>
       </div>
 
