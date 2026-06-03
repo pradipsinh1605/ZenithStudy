@@ -265,7 +265,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   return (
     <TimerProvider>
       <div className="app-shell">
-        <style>{`
+        <style dangerouslySetInnerHTML={{ __html: `
           .app-shell {
             min-height: 100vh;
             overflow-x: hidden;
@@ -643,7 +643,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               padding: 12px !important;
             }
           }
-        `}</style>
+        `}} />
 
         <div className="app-progress" />
 
