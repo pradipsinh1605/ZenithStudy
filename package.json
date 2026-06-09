@@ -10,22 +10,20 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
     "clsx": "^2.1.1",
-    "date-fns": "^3.6.0",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.383.0",
     "next": "14.2.3",
     "next-themes": "^0.3.0",
-    "openai": "^6.41.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
     "recharts": "^2.12.7",
     "tailwind-merge": "^2.3.0",
-    "zod": "^3.23.8",
-    "zustand": "^4.5.2"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",

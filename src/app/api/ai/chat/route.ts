@@ -2,19 +2,14 @@ import { NextRequest } from "next/server";
 import { apiError, apiSuccess } from "@/lib/ai-api-responses";
 import { filterPrompt, sanitizePrompt } from "@/lib/ai-prompt-filter";
 import { checkRateLimit, getClientIp } from "@/lib/ai-rate-limit";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-type ChatMessage = {
-  role: "user" | "assistant" | "system";
-  content: string;
-};
-
-const OPENAI_RATE_LIMIT = 60;
-const OPENAI_WINDOW_MS = 60 * 60 * 1000;
+const RATE_LIMIT = 60;
+const WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req.headers);
-  const limit = checkRateLimit(ip, OPENAI_RATE_LIMIT, OPENAI_WINDOW_MS);
+  const limit = checkRateLimit(ip, RATE_LIMIT, WINDOW_MS);
 
   if (!limit.allowed) {
     return apiError(
@@ -24,7 +19,7 @@ export async function POST(req: NextRequest) {
       {
         headers: {
           "Retry-After": String(limit.retryAfter),
-          "X-RateLimit-Limit": String(OPENAI_RATE_LIMIT),
+          "X-RateLimit-Limit": String(RATE_LIMIT),
           "X-RateLimit-Remaining": "0",
           "X-RateLimit-Reset": String(Math.ceil(limit.resetAt / 1000)),
         },
@@ -32,12 +27,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return apiError("AI_NOT_CONFIGURED", "OpenAI service is not configured.", 500);
+    return apiError("AI_NOT_CONFIGURED", "Gemini service is not configured. Please add GEMINI_API_KEY.", 500);
   }
 
-  const openai = new OpenAI({ apiKey });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  // Using gemini-2.5-flash for speed and full multimodal support
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   let body: any;
   try {
@@ -66,79 +63,66 @@ export async function POST(req: NextRequest) {
   const lastMessage = normalizedMessages[normalizedMessages.length - 1];
   const filtered = filterPrompt(lastMessage.content);
 
-  if (!filtered.sanitized) {
+  if (!filtered.sanitized && !attachment) {
     return apiError("BAD_REQUEST", "Message cannot be empty.", 400);
-  }
-
-  if (!filtered.allowed) {
-    return apiError(
-      "PROMPT_REJECTED",
-      "Please ask a study question without requesting hidden instructions or role changes.",
-      400
-    );
   }
 
   normalizedMessages[normalizedMessages.length - 1] = {
     ...lastMessage,
-    content: filtered.sanitized,
+    content: filtered.sanitized || "Please analyze this attachment.",
   };
 
-  const openAIMessages: any[] = [];
-
-  if (system) {
-    openAIMessages.push({ role: "system", content: sanitizePrompt(system) });
-  }
-
-  // Add history
+  // Format messages for Gemini (only "user" and "model" are allowed in history)
+  const formattedHistory = [];
+  let userMessageText = "";
+  
   for (let i = 0; i < normalizedMessages.length - 1; i++) {
-    openAIMessages.push({
-      role: normalizedMessages[i].role,
-      content: normalizedMessages[i].content,
+    const msg = normalizedMessages[i];
+    if(msg.role === "system") continue;
+    formattedHistory.push({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }]
     });
   }
 
-  // Handle the latest message, which might have an attachment
-  const finalMessageContent: any[] = [
-    { type: "text", text: normalizedMessages[normalizedMessages.length - 1].content }
-  ];
+  userMessageText = normalizedMessages[normalizedMessages.length - 1].content;
 
-  if (attachment?.data && attachment?.type === "image") {
-    // Determine mime type
-    const ext = attachment.name?.split(".").pop()?.toLowerCase();
+  const chat = model.startChat({
+    history: formattedHistory,
+    systemInstruction: system ? { role: "system", parts: [{ text: system }] } : undefined,
+  });
+
+  const parts: any[] = [{ text: userMessageText }];
+
+  if (attachment?.data) {
     let mimeType = "image/jpeg";
-    if (ext === "png") mimeType = "image/png";
-    if (ext === "webp") mimeType = "image/webp";
-
-    finalMessageContent.push({
-      type: "image_url",
-      image_url: {
-        url: `data:${mimeType};base64,${attachment.data}`
+    if (attachment.type === "pdf") {
+      mimeType = "application/pdf";
+    } else if (attachment.type === "image") {
+      const ext = attachment.name?.split(".").pop()?.toLowerCase();
+      if (ext === "png") mimeType = "image/png";
+      if (ext === "webp") mimeType = "image/webp";
+    }
+    parts.push({
+      inlineData: {
+        data: attachment.data,
+        mimeType
       }
     });
   }
 
-  openAIMessages.push({
-    role: "user",
-    content: finalMessageContent,
-  });
-
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: openAIMessages,
-      temperature: 0.7,
-      max_tokens: 1500,
-    });
+    const result = await chat.sendMessage(parts);
+    const text = result.response.text();
 
-    const text = response.choices[0]?.message?.content || "";
-    
-    if (!text.trim()) {
+    if (!text?.trim()) {
       return apiError("AI_EMPTY_RESPONSE", "AI returned an empty response.", 502);
     }
 
     return apiSuccess(text);
   } catch (error: any) {
-    if (error?.status === 429) {
+    console.error("Gemini API Error:", error);
+    if (error?.status === 429 || error?.message?.includes("429")) {
       return apiError("RATE_LIMITED", "AI service is busy. Please try again soon.", 429);
     }
     return apiError("AI_PROVIDER_ERROR", "AI service error. Please try again.", 502);

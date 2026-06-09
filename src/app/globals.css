@@ -27,8 +27,12 @@
     --sidebar-active: rgba(37,99,235,.11);
     --sidebar-hover: rgba(37,99,235,.075);
     --xp-bar: rgba(15,23,42,.08);
-    --hero-bg: linear-gradient(135deg,#1E3A8A 0%,#312E81 55%,#0E7490 100%);
-    --glass-card: rgba(255,255,255,.72);
+    --hero-bg: linear-gradient(135deg, #E0E7FF 0%, #F3E8FF 50%, #E0F2FE 100%);
+    --hero-text: #0F172A;
+    --hero-text-muted: #475569;
+    --hero-card-bg: rgba(255,255,255,.5);
+    --hero-card-hover: rgba(255,255,255,.7);
+    --glass-card: rgba(255,255,255,.75);
     --glow-cyan: rgba(6,182,212,.18);
     --glow-purple: rgba(124,58,237,.16);
     --shadow-sm: 0 8px 24px rgba(15,23,42,.08);
@@ -69,13 +73,17 @@
     --sidebar-hover: rgba(96,165,250,.1);
     --xp-bar: rgba(255,255,255,.085);
     --hero-bg: linear-gradient(135deg,#020617 0%,#071527 46%,#160B2D 100%);
+    --hero-text: #FFFFFF;
+    --hero-text-muted: rgba(255,255,255,.6);
+    --hero-card-bg: rgba(255,255,255,.07);
+    --hero-card-hover: rgba(255,255,255,.12);
     --glass-card: rgba(9,16,31,.64);
     --glow-cyan: rgba(34,211,238,.2);
     --glow-purple: rgba(167,139,250,.22);
     --shadow-sm: 0 8px 28px rgba(0,0,0,.22);
     --shadow-md: 0 18px 60px rgba(0,0,0,.3);
     --shadow-lg: 0 30px 100px rgba(0,0,0,.38);
-    --shadow-glow: 0 0 46px rgba(96,165,250,.18), 0 0 74px rgba(167,139,250,.16);
+    --shadow-glow: 0 0 46px rgba(96,165,250,.28), 0 0 74px rgba(167,139,250,.25);
   }
 
   * { box-sizing: border-box; min-width: 0; }
@@ -98,6 +106,19 @@
 
   main { background: transparent; color: var(--text); }
   img, svg, canvas, video, iframe { max-width: 100%; }
+
+  /* Globally remove ugly square focus boxes/rings on input fields */
+  input, textarea, select, button, [type='text'], [type='email'], [type='password'], [type='number'], [type='search'] {
+    outline: none !important;
+  }
+  
+  input:focus, textarea:focus, select:focus, button:focus,
+  input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible {
+    outline: none !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+    border-color: transparent;
+  }
   button, input, textarea, select { font: inherit; }
   button, a, select, input, textarea {
     transition: transform .2s cubic-bezier(.2,1,.22,1), box-shadow .2s ease, border-color .2s ease, background-color .2s ease, color .2s ease, opacity .2s ease, filter .2s ease;
@@ -189,7 +210,7 @@
   transition: transform .22s cubic-bezier(.2,1,.22,1), box-shadow .22s ease, border-color .22s ease !important;
   will-change: transform;
 }
-.hv-card:hover { transform: translateY(-5px) !important; box-shadow: var(--shadow-md), var(--shadow-glow) !important; border-color: color-mix(in srgb, var(--primary) 42%, var(--border)) !important; }
+.hv-card:hover { transform: translateY(-5px) !important; box-shadow: var(--shadow-md), var(--shadow-glow) !important; border-color: color-mix(in srgb, var(--primary) 60%, var(--border)) !important; }
 .hv-lift { transition: transform .2s cubic-bezier(.2,1,.22,1) !important; }
 .hv-lift:hover { transform: translateY(-3px) !important; }
 .hv-btn { transition: transform .2s cubic-bezier(.2,1,.22,1), box-shadow .2s ease, filter .2s ease !important; }
@@ -248,6 +269,15 @@ main > div, main section, main [style*="var(--card)"] { animation: slidePop .32s
     animation-duration: .001ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
-    transition-duration: .001ms !important;
   }
 }
+
+/* Mermaid Custom Colors */
+.mermaid .node:nth-of-type(6n+1) rect, .mermaid .node:nth-of-type(6n+1) circle, .mermaid .node:nth-of-type(6n+1) polygon { fill: #FFB3BA !important; stroke: #ff99a3 !important; }
+.mermaid .node:nth-of-type(6n+2) rect, .mermaid .node:nth-of-type(6n+2) circle, .mermaid .node:nth-of-type(6n+2) polygon { fill: #FFDFBA !important; stroke: #ffcc99 !important; }
+.mermaid .node:nth-of-type(6n+3) rect, .mermaid .node:nth-of-type(6n+3) circle, .mermaid .node:nth-of-type(6n+3) polygon { fill: #FFFFBA !important; stroke: #e6e699 !important; }
+.mermaid .node:nth-of-type(6n+4) rect, .mermaid .node:nth-of-type(6n+4) circle, .mermaid .node:nth-of-type(6n+4) polygon { fill: #BAFFC9 !important; stroke: #99e6ab !important; }
+.mermaid .node:nth-of-type(6n+5) rect, .mermaid .node:nth-of-type(6n+5) circle, .mermaid .node:nth-of-type(6n+5) polygon { fill: #BAE1FF !important; stroke: #99ccee !important; }
+.mermaid .node:nth-of-type(6n+0) rect, .mermaid .node:nth-of-type(6n+0) circle, .mermaid .node:nth-of-type(6n+0) polygon { fill: #E8BAFF !important; stroke: #cc99ee !important; }
+.mermaid .node * { color: #111 !important; font-weight: 600 !important; }
+svg[id^="d3-error"], .error-icon, #d3-error-box { display: none !important; opacity: 0 !important; }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, Fragment } from "react";
 import type { CSSProperties } from "react";
 import { TimerProvider } from "@/lib/TimerContext";
 import Link from "next/link";
@@ -72,6 +72,7 @@ function isActive(pathname: string, href: string) {
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  console.log("DASHBOARD SHELL LOADED V2");
   const supabase = createClient();
   const { theme, setTheme } = useTheme();
   const bellRef = useRef<HTMLDivElement>(null);
@@ -319,20 +320,47 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             width: 38px;
             height: 38px;
             border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-            background: var(--surface);
+            background: transparent;
             color: var(--muted);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: color .18s ease, border-color .18s ease, background .18s ease;
+            border: none;
+            transition: color .18s ease, background .18s ease, transform .18s ease;
+          }
+
+          .icon-btn.standalone {
+            border: 1px solid var(--border);
+            background: var(--surface);
           }
 
           .icon-btn:hover {
             color: var(--primary);
-            border-color: var(--primary);
             background: var(--primary-soft);
+          }
+
+          .icon-btn:active {
+            transform: scale(0.92);
+          }
+
+          .top-pill-container-v2 {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 4px;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            background: var(--glass-card);
+            backdrop-filter: blur(18px);
+          }
+
+          .pill-divider-v2 {
+            width: 1px;
+            height: 16px;
+            background: var(--border);
+            margin: 0 4px;
+            opacity: 0.8;
           }
 
           .profile-chip {
@@ -386,35 +414,28 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           .bottom-nav {
             position: fixed;
             left: 50%;
-            bottom: max(14px, env(safe-area-inset-bottom));
+            bottom: max(20px, env(safe-area-inset-bottom));
             z-index: 70;
-            width: min(600px, calc(100vw - 24px));
-            min-height: 60px;
+            width: max-content;
+            max-width: 550px;
             transform: translateX(-50%);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            background: rgba(120, 120, 120, 0.15);
-            backdrop-filter: blur(32px);
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
+            border-radius: 24px;
+            background: color-mix(in srgb, var(--glass-card) 50%, transparent);
+            backdrop-filter: blur(10px) saturate(1.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.15);
             animation: navFloatIn .55s cubic-bezier(.2,1,.22,1) both;
-            transition:
-              transform .34s cubic-bezier(.2,1,.22,1),
-              opacity .24s ease,
-              filter .24s ease,
-              box-shadow .24s ease;
+            transition: transform .34s cubic-bezier(.2,1,.22,1), opacity .24s ease;
           }
 
           .bottom-nav-scroll {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 2px;
+            padding: 8px;
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding: 6px 8px;
-            width: 100%;
-            height: 100%;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
             mask-image: linear-gradient(to right, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
           }
@@ -430,12 +451,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             pointer-events: none;
           }
 
-          .bottom-nav:hover,
-          .bottom-nav:focus-within {
-            opacity: 1;
-            filter: saturate(1.12);
-          }
-
           .nav-hit-zone {
             position: fixed;
             left: 0;
@@ -446,110 +461,53 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             pointer-events: auto;
           }
 
-
-
           .bottom-link {
-            flex: 0 0 72px;
-            height: 48px;
-            padding: 0 4px;
-            border-radius: 12px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 4px;
-            color: rgba(226,232,240,.76);
+            width: 62px;
+            height: 50px;
+            border-radius: 12px;
+            color: var(--muted);
             text-decoration: none;
             font-size: 11px;
-            font-weight: 900;
+            font-weight: 700;
             white-space: nowrap;
-            overflow: hidden;
-            flex: 0 0 auto;
-            border: 1px solid transparent;
-            position: relative;
-            transition:
-              background .22s ease,
-              color .22s ease,
-              transform .22s ease,
-              box-shadow .22s ease,
-              border-color .22s ease;
-          }
-
-          .bottom-link:not(:last-child)::before {
-            content: "";
-            position: absolute;
-            right: -10.5px;
-            top: 25%;
-            height: 50%;
-            width: 1px;
-            background: var(--border);
-            opacity: 0.6;
-            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.2, 1, 0.2, 1);
+            user-select: none;
+            flex-shrink: 0;
           }
 
           .bottom-link:hover {
-            color: #fff;
-            background: rgba(255,255,255,.07);
+            color: var(--text);
+            background: rgba(120, 120, 120, 0.1);
             transform: translateY(-2px);
           }
 
           .bottom-link.active {
             color: var(--primary);
             background: var(--primary-soft);
-            border-color: transparent;
             box-shadow: none;
           }
 
           .bottom-link svg {
-            flex: 0 0 auto;
-            transition: transform .24s cubic-bezier(.2,1,.22,1);
+            transition: transform 0.3s cubic-bezier(0.2, 1, 0.2, 1);
           }
 
-          .bottom-link:hover svg,
-          .bottom-link.active svg {
-            transform: translateY(-1px) scale(1.12);
-          }
-
-          .bottom-link::after {
-            content: attr(data-label);
-            position: fixed;
-            left: 50%;
-            bottom: 88px;
-            transform: translateX(-50%) translateY(8px);
-            pointer-events: none;
-            opacity: 0;
-            padding: 7px 10px;
-            border-radius: 10px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text);
-            box-shadow: 0 14px 40px rgba(0,0,0,.2);
-            font-size: 12px;
-            font-weight: 900;
-            white-space: nowrap;
-            transition: opacity .18s ease, transform .18s ease;
-          }
-
-          .bottom-link:not(.active):hover::after {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
+          .bottom-link:hover svg {
+            transform: scale(1.1);
           }
 
           @keyframes navFloatIn {
             from {
               opacity: 0;
-              transform: translateX(-50%) translateY(22px) scale(.96);
+              transform: translateX(-50%) translateY(30px) scale(.96);
             }
             to {
               opacity: 1;
               transform: translateX(-50%) translateY(0) scale(1);
-            }
-          }
-
-          @media (min-width: 901px) {
-            .bottom-nav {
-              grid-auto-columns: minmax(68px, 1fr);
-              padding: 10px 16px;
             }
           }
 
@@ -569,26 +527,18 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             .student-strip {
               justify-content: flex-start;
             }
-
-            .bottom-nav {
-              width: min(560px, calc(100vw - 20px));
-              min-height: 56px;
-              border-radius: 14px;
-            }
-
-            .bottom-nav-scroll {
-              gap: 16px;
-            }
-
-            .bottom-link:not(:last-child)::before {
-              right: -8.5px;
-            }
-
+            
             .bottom-link {
-              flex: 0 0 64px;
-              height: 44px;
-              border-radius: 10px;
+              width: 58px;
+              height: 46px;
               font-size: 10px;
+              gap: 3px;
+            }
+            
+            .bottom-nav {
+              max-width: 510px;
+              bottom: max(16px, env(safe-area-inset-bottom));
+              border-radius: 20px;
             }
           }
 
@@ -601,54 +551,47 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               padding: 16px 12px calc(112px + env(safe-area-inset-bottom));
             }
 
-            .bottom-nav {
-              width: min(100vw - 20px, 420px);
-              min-height: 52px;
-              border-radius: 12px;
-            }
-
-            .bottom-nav-scroll {
-              gap: 14px;
-              padding: 6px;
-            }
-
-            .bottom-link:not(:last-child)::before {
-              right: -7.5px;
-            }
-
-            .bottom-link {
-              flex: 0 0 58px;
-              height: 42px;
-              border-radius: 10px;
-              font-size: 9px;
-            }
-
-            .bottom-link svg { width: 17px; height: 17px; }
-
             .brand-copy p {
               display: none;
             }
 
             .student-strip { gap: 6px; }
+            
+            .bottom-link {
+              width: 54px;
+              height: 44px;
+              font-size: 9px;
+              gap: 2px;
+              border-radius: 12px;
+            }
+            
+            .bottom-nav {
+              max-width: 420px;
+              border-radius: 18px;
+            }
           }
 
           .page-wrap.ai-mode {
-            padding: 16px 20px 16px 20px !important;
-            height: calc(100vh - 72px);
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            height: 100vh;
             display: flex;
             flex-direction: column;
           }
           @media (max-width: 560px) {
             .page-wrap.ai-mode {
-              padding: 12px !important;
+              padding: 0 !important;
             }
           }
         `}} />
 
         <div className="app-progress" />
 
-        <header className="app-header">
-          <div className="app-header-inner">
+        {!isAIPage && (
+          <header className="app-header">
+            <div className="app-header-inner">
             <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
               <div className="brand-mark">
                 <BookOpen size={20} />
@@ -683,7 +626,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 <div style={{ minWidth: 0 }}>
                   <div
                     style={{
-                      maxWidth: 130,
+                      maxWidth: 180,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -700,52 +643,65 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 </div>
               </div>
 
-              <div ref={bellRef} style={{ position: "relative" }}>
-                <button
-                  className="icon-btn"
-                  onClick={() => setBellOpen((value) => !value)}
-                  aria-label="Notifications"
-                  type="button"
-                >
-                  <Bell size={17} />
-                  {unread > 0 && (
-                    <span
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "2px",
+                  padding: "4px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "24px",
+                  background: "var(--glass-card, rgba(120, 120, 120, 0.15))",
+                  backdropFilter: "blur(18px)",
+                }}
+              >
+                <div ref={bellRef} style={{ position: "relative" }}>
+                  <button
+                    className="icon-btn"
+                    style={{ width: 34, height: 34, borderRadius: 20, background: "transparent", border: "none" }}
+                    onClick={() => setBellOpen((value) => !value)}
+                    aria-label="Notifications"
+                    type="button"
+                  >
+                    <Bell size={17} />
+                    {unread > 0 && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: -2,
+                          right: -2,
+                          minWidth: 16,
+                          height: 16,
+                          borderRadius: 8,
+                          background: "var(--danger)",
+                          color: "#fff",
+                          display: "grid",
+                          placeItems: "center",
+                          fontSize: 9,
+                          fontWeight: 900,
+                          border: "2px solid var(--glass-card)",
+                        }}
+                      >
+                        {unread > 9 ? "9+" : unread}
+                      </span>
+                    )}
+                  </button>
+
+                  {bellOpen && (
+                    <div
                       style={{
                         position: "absolute",
-                        top: -5,
-                        right: -5,
-                        minWidth: 17,
-                        height: 17,
-                        borderRadius: 9,
-                        background: "var(--danger)",
-                        color: "#fff",
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 9,
-                        fontWeight: 900,
-                        border: "2px solid var(--surface)",
+                        top: 46,
+                        right: 0,
+                        width: 330,
+                        maxWidth: "calc(100vw - 28px)",
+                        border: "1px solid var(--border)",
+                        background: "var(--surface)",
+                        borderRadius: 12,
+                        boxShadow: "var(--shadow-lg)",
+                        overflow: "hidden",
                       }}
                     >
-                      {unread > 9 ? "9+" : unread}
-                    </span>
-                  )}
-                </button>
-
-                {bellOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 46,
-                      right: 0,
-                      width: 330,
-                      maxWidth: "calc(100vw - 28px)",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface)",
-                      borderRadius: 8,
-                      boxShadow: "var(--shadow-lg)",
-                      overflow: "hidden",
-                    }}
-                  >
                     <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
                       <div style={{ color: "var(--text)", fontWeight: 900, fontSize: 14 }}>Today</div>
                       <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 3 }}>
@@ -799,22 +755,35 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               </div>
 
               {mounted && (
-                <button
-                  className="icon-btn"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  aria-label="Toggle theme"
-                  type="button"
-                >
-                  {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-                </button>
+                <>
+                  <div style={{ width: 1, height: 16, background: "color-mix(in srgb, var(--text) 25%, transparent)", margin: "0 4px" }} />
+                  <button
+                    className="icon-btn"
+                    style={{ width: 34, height: 34, borderRadius: 20, background: "transparent", border: "none" }}
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    aria-label="Toggle theme"
+                    type="button"
+                  >
+                    {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+                  </button>
+                </>
               )}
 
-              <button className="icon-btn" onClick={logout} aria-label="Sign out" type="button">
+              <div style={{ width: 1, height: 16, background: "color-mix(in srgb, var(--text) 25%, transparent)", margin: "0 4px" }} />
+              <button 
+                className="icon-btn" 
+                style={{ width: 34, height: 34, borderRadius: 20, background: "transparent", border: "none" }} 
+                onClick={logout} 
+                aria-label="Sign out" 
+                type="button"
+              >
                 <LogOut size={17} />
               </button>
+              </div>
             </div>
           </div>
         </header>
+        )}
 
         <main className={`page-wrap${isAIPage ? " ai-mode" : ""}`}>
           {!isAIPage && (
@@ -911,19 +880,22 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }}
             style={isScrolledEnd ? { maskImage: 'none', WebkitMaskImage: 'none' } : undefined}
           >
-            {NAV.map(({ href, icon: Icon, label }) => {
+            {NAV.map(({ href, icon: Icon, label }, index) => {
               const active = isActive(pathname, href);
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`bottom-link${active ? " active" : ""}`}
-                  data-label={label}
-                  title={label}
-                >
-                  <Icon size={17} />
-                  {label}
-                </Link>
+                <Fragment key={href}>
+                  <Link
+                    href={href}
+                    className={`bottom-link${active ? " active" : ""}`}
+                    title={label}
+                  >
+                    <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+                    <span>{label}</span>
+                  </Link>
+                  {index < NAV.length - 1 && (
+                    <div style={{ width: 1, height: 20, background: "color-mix(in srgb, var(--text) 25%, transparent)", margin: "0 2px", flexShrink: 0 }} />
+                  )}
+                </Fragment>
               );
             })}
           </div>

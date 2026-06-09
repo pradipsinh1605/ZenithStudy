@@ -131,14 +131,14 @@ export default function DashboardPage() {
 
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", position:"relative" }}>
             <div>
-              <p style={{ color:"var(--muted)", fontSize:13, marginBottom:6 }}>{greeting} 👋</p>
-              <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:36, color:"#fff", marginBottom:8, fontWeight:700, textShadow:"0 2px 20px rgba(79,142,247,.3)" }}>
+              <p style={{ color:"var(--hero-text-muted)", fontSize:13, marginBottom:6 }}>{greeting} 👋</p>
+              <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:36, color:"var(--hero-text)", marginBottom:8, fontWeight:700, textShadow:"0 2px 20px rgba(79,142,247,.3)" }}>
                 {name}
               </h2>
               {profile?.institution && (
-                <p style={{ color:"var(--muted)", fontSize:13, marginBottom:8 }}>🏫 {profile.institution}</p>
+                <p style={{ color:"var(--hero-text-muted)", fontSize:13, marginBottom:8 }}>🏫 {profile.institution}</p>
               )}
-              <p style={{ color:"var(--muted)", fontSize:14 }}>
+              <p style={{ color:"var(--hero-text-muted)", fontSize:14 }}>
                 You have <strong style={{ color:"#F5A623", textShadow:"0 0 12px rgba(245,166,35,.5)" }}>{pending.length} tasks</strong> pending today!
               </p>
             </div>
@@ -160,9 +160,9 @@ export default function DashboardPage() {
               ["📝", `${notes.length} notes`, "#A78BFA"],
             ].map(([ico, lbl, color]) => (
               <div key={lbl as string}
-                style={{ background:"rgba(255,255,255,.07)", backdropFilter:"blur(8px)", borderRadius:12, padding:"8px 16px", display:"flex", alignItems:"center", gap:7, border:"1px solid var(--border)", transition:"all .2s", cursor:"default" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,.12)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,.07)"; e.currentTarget.style.transform = "translateY(0)"; }}>
+                style={{ background:"var(--hero-card-bg)", backdropFilter:"blur(8px)", borderRadius:12, padding:"8px 16px", display:"flex", alignItems:"center", gap:7, border:"1px solid var(--border)", transition:"all .2s", cursor:"default" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--hero-card-hover)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "var(--hero-card-bg)"; e.currentTarget.style.transform = "translateY(0)"; }}>
                 <span style={{ fontSize:16 }}>{ico}</span>
                 <span style={{ color: color as string, fontWeight:800, fontSize:13 }}>{lbl}</span>
               </div>
@@ -172,11 +172,11 @@ export default function DashboardPage() {
           {/* Animated XP progress bar */}
           <div style={{ marginTop:16 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-              <span style={{ fontSize:11, color:"rgba(255,255,255,.3)", fontWeight:600 }}>Level {level}</span>
-              <span style={{ fontSize:11, color:"rgba(255,255,255,.3)" }}>{xpInLv}/500 XP to Level {level+1}</span>
+              <span style={{ fontSize:11, color:"var(--hero-text-muted)", fontWeight:600 }}>Level {level}</span>
+              <span style={{ fontSize:11, color:"var(--hero-text-muted)" }}>{xpInLv}/500 XP to Level {level+1}</span>
             </div>
-            <div style={{ height:6, borderRadius:3, background:"rgba(255,255,255,.08)", overflow:"hidden" }}>
-              <div style={{ height:"100%", background:"linear-gradient(90deg,#4F8EF7,#A78BFA,#34D399)", backgroundSize:"200% 100%", borderRadius:3, width:`${(xpInLv/500)*100}%`, transition:"width .8s cubic-bezier(.4,0,.2,1)", animation:"shimmer 2s linear infinite" }}/>
+            <div style={{ height:6, borderRadius:3, background:"var(--xp-bar)", overflow:"hidden", border:"1px solid var(--border)", boxShadow:"inset 0 1px 3px rgba(0,0,0,.08)" }}>
+              <div style={{ height:"100%", background:"linear-gradient(90deg,#4F8EF7,#22D3EE,#A78BFA)", boxShadow:"0 0 10px rgba(34,211,238,.4)", backgroundSize:"200% 100%", borderRadius:3, width:`${(xpInLv/500)*100}%`, transition:"width .8s cubic-bezier(.4,0,.2,1)", animation:"shimmer 2s linear infinite" }}/>
             </div>
           </div>
         </div>
