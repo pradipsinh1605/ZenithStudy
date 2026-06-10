@@ -382,17 +382,17 @@ export default function AITutorPage() {
 
       {/* Floating Header Controls */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
-        <a href="/dashboard" className="pointer-events-auto flex items-center justify-center w-10 h-10 bg-white/80 dark:bg-[#2A2A2A]/80 backdrop-blur-md rounded-full border border-gray-200 dark:border-gray-700/50 shadow-sm hover:scale-105 active:scale-95 transition-all text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white group">
+        <a href="/dashboard" className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white/80 dark:bg-[#2A2A2A]/80 backdrop-blur-md rounded-full border border-gray-200 dark:border-gray-700/50 shadow-sm hover:scale-105 active:scale-95 transition-all text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white group">
           <ArrowLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
         </a>
         
         <div className="pointer-events-auto flex items-center gap-1 bg-white/80 dark:bg-[#2A2A2A]/80 backdrop-blur-md rounded-full border border-gray-200 dark:border-gray-700/50 shadow-sm p-1">
-          <button onClick={() => setShowHistory(true)} className="flex items-center justify-center w-8 h-8 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors" title="Chat History">
-            <History size={16} />
+          <button onClick={() => setShowHistory(true)} className="flex items-center justify-center w-11 h-11 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors" title="Chat History">
+            <History size={20} />
           </button>
-          <div className="w-[1px] h-4 bg-gray-300 dark:bg-gray-600 mx-1"></div>
-          <button onClick={startNewChat} className="flex items-center justify-center w-8 h-8 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors" title="New Chat">
-            <Plus size={18} />
+          <div className="w-[1px] h-6 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+          <button onClick={startNewChat} className="flex items-center justify-center w-11 h-11 text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors" title="New Chat">
+            <Plus size={22} />
           </button>
         </div>
       </div>
@@ -404,7 +404,7 @@ export default function AITutorPage() {
           <div className="relative w-[300px] h-full bg-white dark:bg-[#212121] shadow-2xl flex flex-col border-r border-gray-200 dark:border-gray-800">
             <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#1E1E1E]">
               <h3 className="font-bold text-lg flex items-center gap-2 text-gray-800 dark:text-gray-200"><History size={18}/> Chat History</h3>
-              <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors text-gray-500"><X size={18}/></button>
+              <button onClick={() => setShowHistory(false)} className="w-11 h-11 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors text-gray-500"><X size={20}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {threads.length === 0 ? (
@@ -413,7 +413,7 @@ export default function AITutorPage() {
                 threads.map(t => (
                   <div key={t.id} onClick={() => loadThread(t.id)} className={`group cursor-pointer p-3 rounded-xl flex items-center justify-between border transition-all ${currentThreadId === t.id ? 'bg-blue-50 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20 shadow-sm' : 'border-transparent hover:bg-gray-50 dark:hover:bg-[#2A2A2A]'}`}>
                     <div className="truncate text-sm font-medium flex-1 mr-2 text-gray-800 dark:text-gray-200">{t.title || 'New Chat'}</div>
-                    <button onClick={(e) => deleteThread(e, t.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-md transition-all"><Trash2 size={14}/></button>
+                    <button onClick={(e) => deleteThread(e, t.id)} className="opacity-0 group-hover:opacity-100 w-11 h-11 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-md transition-all"><Trash2 size={18}/></button>
                   </div>
                 ))
               )}

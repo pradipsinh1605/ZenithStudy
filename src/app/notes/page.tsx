@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addXP } from "@/lib/xp-utils";
 import toast from "react-hot-toast";
+import Loader from "@/components/ui/Loader";
 import { sanitizeFilename, validateFile } from "@/lib/validateFile";
 
 // ── Icons (inline SVG to avoid import issues) ──
@@ -242,7 +243,7 @@ export default function NotesPage() {
     setActiveNote(data); setView("note-view");
     toast.success("Saved!");
   };
-  if(loading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:300,color:"var(--muted)"}}>Loading…</div>;
+  if(loading) return <Loader />;
 
   // ════════════════════════════════════════
   // RENDER
@@ -267,7 +268,7 @@ export default function NotesPage() {
         onChange={e=>{if(e.target.files?.[0])handlePdfSelect(e.target.files[0]);e.target.value="";}}/>
 
       {/* ── TOP BAR ── */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24,flexWrap:"wrap",gap:16}}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           {/* Back button */}
           {view!=="folders"&&(

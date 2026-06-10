@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { CheckSquare, TrendingUp, Clock } from "lucide-react";
 import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Cell
 } from "recharts";
+import Loader from "@/components/ui/Loader";
 
 export default function ProgressPage() {
   const supabase  = createClient();
@@ -81,9 +81,7 @@ export default function ProgressPage() {
     color: subjects.find(s => s.name === name)?.color || "#4F8EF7",
   })).sort((a, b) => b.hours - a.hours);
 
-  if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:300, color:"var(--muted)" }}>Loading...</div>
-  );
+  if (loading) return <Loader />;
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>

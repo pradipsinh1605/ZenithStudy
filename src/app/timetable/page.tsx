@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Plus, X, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import Loader from "@/components/ui/Loader";
 
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const TYPES = ["class","lab","study","exam"];
@@ -100,9 +101,7 @@ export default function TimetablePage() {
     boxSizing:"border-box" as const,
   };
 
-  if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:300, color:"var(--muted)" }}>Loading…</div>
-  );
+  if (loading) return <Loader />;
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
@@ -131,8 +130,8 @@ export default function TimetablePage() {
                 📚 New Subject Add Karo
               </h3>
               <button onClick={() => setShowNewSubject(false)}
-                style={{ background:"none", border:"none", cursor:"pointer", color:"var(--muted)" }}>
-                <X size={18}/>
+                style={{ background:"none", border:"none", cursor:"pointer", color:"var(--muted)", width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center", marginRight: -12 }}>
+                <X size={20}/>
               </button>
             </div>
 
@@ -163,7 +162,7 @@ export default function TimetablePage() {
                     key={color}
                     onClick={() => setNewSubjectColor(color)}
                     style={{
-                      width:30, height:30, borderRadius:"50%", background:color,
+                      width:44, height:44, borderRadius:"50%", background:color,
                       border: newSubjectColor === color ? "3px solid white" : "3px solid transparent",
                       cursor:"pointer", outline: newSubjectColor === color ? `2px solid ${color}` : "none",
                       transition:"all .15s"
@@ -209,7 +208,7 @@ export default function TimetablePage() {
       )}
 
       {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:16, marginBottom:24 }}>
         <p style={{ color:"var(--muted)", fontSize:14 }}>
           Your weekly class schedule · Today is <strong style={{ color:"#4F8EF7" }}>{todayName}</strong>
         </p>
@@ -236,9 +235,10 @@ export default function TimetablePage() {
                   onClick={() => setShowNewSubject(true)}
                   title="New Subject Add Karo"
                   style={{
-                    padding:"9px 10px", borderRadius:10, border:"1px dashed #4F8EF7",
+                    padding:"0", minWidth: 44, minHeight: 44, borderRadius:10, border:"1px dashed #4F8EF7",
                     background:"#4F8EF711", color:"#4F8EF7", cursor:"pointer",
-                    fontSize:16, lineHeight:1, fontWeight:700, flexShrink:0
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize:20, lineHeight:1, fontWeight:700, flexShrink:0
                   }}>
                   +
                 </button>
@@ -325,8 +325,8 @@ export default function TimetablePage() {
                         background:`${typeCol}22`, color:typeCol,
                       }}>{entry.type}</span>
                       <button onClick={() => deleteEntry(entry.id)}
-                        style={{ position:"absolute", top:6, right:6, background:"none", border:"none", cursor:"pointer", color:"var(--muted)", opacity:.5, display:"flex", padding:2 }}>
-                        <X size={11}/>
+                        style={{ position:"absolute", top:0, right:0, width: 44, height: 44, background:"none", border:"none", cursor:"pointer", color:"var(--muted)", opacity:.5, display:"flex", alignItems: "center", justifyContent: "center" }}>
+                        <X size={14}/>
                       </button>
                     </div>
                   );

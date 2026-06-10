@@ -255,6 +255,7 @@ export default function StudyCalendar() {
               type="button"
               onClick={() => setMonth((value) => new Date(value.getFullYear(), value.getMonth() - 1, 1))}
               aria-label="Previous month"
+              style={{ minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
             >
               <ChevronLeft size={16} />
             </button>
@@ -266,6 +267,7 @@ export default function StudyCalendar() {
               type="button"
               onClick={() => setMonth((value) => new Date(value.getFullYear(), value.getMonth() + 1, 1))}
               aria-label="Next month"
+              style={{ minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
             >
               <ChevronRight size={16} />
             </button>
@@ -334,7 +336,7 @@ export default function StudyCalendar() {
             type="button"
             onClick={addReminder}
             aria-label="Add reminder"
-            style={{ width: 42, height: 42 }}
+            style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             <Plus size={17} />
           </button>
@@ -393,8 +395,8 @@ export default function StudyCalendar() {
                   type="button"
                   onClick={() => deleteReminder(reminder.id)}
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 44,
+                    height: 44,
                     borderRadius: 8,
                     border: "1px solid rgba(248,113,113,.25)",
                     background: "rgba(248,113,113,.08)",

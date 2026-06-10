@@ -24,6 +24,8 @@ import {
   Timer,
   Trophy,
   User,
+  Menu,
+  X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
@@ -82,14 +84,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const [xp, setXp] = useState(0);
   const [streak, setStreak] = useState(0);
   const [eduLevel, setEduLevel] = useState("");
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [timetable, setTimetable] = useState<any[]>([]);
+  const [tasks, setTasks] = useState([] as any[]);
+  const [timetable, setTimetable] = useState([] as any[]);
   const [bellOpen, setBellOpen] = useState(false);
   const [uid, setUid] = useState("");
   const [navPct, setNavPct] = useState(0);
   const [navLoading, setNavLoading] = useState(false);
   const [navHidden, setNavHidden] = useState(false);
   const [navIdle, setNavIdle] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolledEnd, setIsScrolledEnd] = useState(false);
   const lastScrollY = useRef(0);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -262,7 +265,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     await supabase.auth.signOut();
     window.location.href = "/auth/login";
   };
-
   return (
     <TimerProvider>
       <div className="app-shell">
@@ -300,10 +302,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             max-width: 1240px;
             margin: 0 auto;
             padding: 12px 22px;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 18px;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            gap: 18px;
           }
 
           .brand-mark {
@@ -317,8 +319,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           }
 
           .icon-btn {
-            width: 38px;
-            height: 38px;
+            width: 44px;
+            height: 44px;
             border-radius: var(--radius-sm);
             background: transparent;
             color: var(--muted);
@@ -500,6 +502,46 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             transform: scale(1.1);
           }
 
+          .hamburger-btn {
+            display: none;
+          }
+
+          .mobile-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+          }
+          
+          .mobile-drawer-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+          }
+
+          .mobile-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 280px;
+            background: var(--nav-bg);
+            border-left: 1px solid var(--border);
+            z-index: 101;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.2, 1, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+          }
+
+          .mobile-drawer.open {
+            transform: translateX(0);
+          }
+
           @keyframes navFloatIn {
             from {
               opacity: 0;
@@ -513,32 +555,23 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
           @media (max-width: 900px) {
             .app-header-inner {
-              grid-template-columns: minmax(0, 1fr) auto;
+              padding: 12px 16px;
             }
 
             .profile-chip {
               display: none;
             }
-
-            .page-heading {
-              grid-template-columns: 1fr;
-            }
-
+            
             .student-strip {
               justify-content: flex-start;
             }
             
-            .bottom-link {
-              width: 58px;
-              height: 46px;
-              font-size: 10px;
-              gap: 3px;
-            }
-            
             .bottom-nav {
-              max-width: 510px;
-              bottom: max(16px, env(safe-area-inset-bottom));
-              border-radius: 20px;
+              display: none;
+            }
+
+            .hamburger-btn {
+              display: inline-flex;
             }
           }
 
@@ -548,7 +581,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }
 
             .page-wrap {
-              padding: 16px 12px calc(112px + env(safe-area-inset-bottom));
+              padding: 16px 12px calc(40px + env(safe-area-inset-bottom));
             }
 
             .brand-copy p {
@@ -557,17 +590,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
             .student-strip { gap: 6px; }
             
-            .bottom-link {
-              width: 54px;
-              height: 44px;
-              font-size: 9px;
-              gap: 2px;
-              border-radius: 12px;
-            }
+            .bottom-nav { display: none; }
             
-            .bottom-nav {
-              max-width: 420px;
-              border-radius: 18px;
+            .notification-dropdown {
+              position: fixed !important;
+              top: 60px !important;
+              right: 10px !important;
+              left: 10px !important;
+              width: auto !important;
+              max-width: none !important;
             }
           }
 
@@ -594,11 +625,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             <div className="app-header-inner">
             <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
               <div className="brand-mark">
-                <BookOpen size={20} />
+                <Brain size={22} />
               </div>
               <div className="brand-copy" style={{ minWidth: 0 }}>
                 <div style={{ color: "var(--text)", fontSize: 16, fontWeight: 900, lineHeight: 1 }}>
-                  StudyBuddy
+                  StudyBuddy AI
                 </div>
                 <p style={{ color: "var(--muted)", fontSize: 11, marginTop: 4, fontWeight: 700 }}>
                   Learn, plan, revise
@@ -689,10 +720,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
                   {bellOpen && (
                     <div
+                      className="notification-dropdown"
                       style={{
                         position: "absolute",
                         top: 46,
-                        right: 0,
+                        right: -60,
                         width: 330,
                         maxWidth: "calc(100vw - 28px)",
                         border: "1px solid var(--border)",
@@ -700,6 +732,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         borderRadius: 12,
                         boxShadow: "var(--shadow-lg)",
                         overflow: "hidden",
+                        zIndex: 100,
                       }}
                     >
                     <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
@@ -759,25 +792,35 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                   <div style={{ width: 1, height: 16, background: "color-mix(in srgb, var(--text) 25%, transparent)", margin: "0 4px" }} />
                   <button
                     className="icon-btn"
-                    style={{ width: 34, height: 34, borderRadius: 20, background: "transparent", border: "none" }}
+                    style={{ width: 44, height: 44, borderRadius: 22, background: "transparent", border: "none" }}
                     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                     aria-label="Toggle theme"
                     type="button"
                   >
-                    {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+                    {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
                   </button>
                 </>
               )}
 
               <div style={{ width: 1, height: 16, background: "color-mix(in srgb, var(--text) 25%, transparent)", margin: "0 4px" }} />
               <button 
+                className="icon-btn hamburger-btn" 
+                style={{ width: 44, height: 44, borderRadius: 22, background: "transparent", border: "none" }} 
+                onClick={() => setMobileMenuOpen(true)} 
+                aria-label="Menu" 
+                type="button"
+              >
+                <Menu size={22} />
+              </button>
+              
+              <button 
                 className="icon-btn" 
-                style={{ width: 34, height: 34, borderRadius: 20, background: "transparent", border: "none" }} 
+                style={{ width: 44, height: 44, borderRadius: 22, background: "transparent", border: "none" }} 
                 onClick={logout} 
                 aria-label="Sign out" 
                 type="button"
               >
-                <LogOut size={17} />
+                <LogOut size={19} />
               </button>
               </div>
             </div>
@@ -902,6 +945,39 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         </nav>
         </>
         )}
+
+        {/* Mobile Drawer */}
+        <div className={`mobile-drawer-overlay ${mobileMenuOpen ? 'open' : ''}`} onClick={() => setMobileMenuOpen(false)} />
+        <div className={`mobile-drawer ${mobileMenuOpen ? 'open' : ''}`}>
+          <div style={{ padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border)" }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text)" }}>Menu</div>
+            <button className="icon-btn" style={{ width: 44, height: 44, borderRadius: 22 }} onClick={() => setMobileMenuOpen(false)}>
+              <X size={22} />
+            </button>
+          </div>
+          <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 8, overflowY: "auto" }}>
+            {NAV.map(({ href, icon: Icon, label, full }) => {
+              const active = isActive(pathname, href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 14, padding: "14px 18px",
+                    borderRadius: 12, textDecoration: "none", fontWeight: 700, fontSize: 16,
+                    color: active ? "var(--primary)" : "var(--text)",
+                    background: active ? "var(--primary-soft)" : "transparent",
+                  }}
+                >
+                  <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+                  <span>{full}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </TimerProvider>
   );

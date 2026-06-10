@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Loader from "@/components/ui/Loader";
 import { Check } from "lucide-react";
 import { calculateBadges, updateStreak, onXPUpdate } from "@/lib/xp-utils";
 import toast from "react-hot-toast";
@@ -102,7 +103,7 @@ export default function AchievementsPage() {
   const earned    = badges.filter(b=>b.earned).length;
   const fadeUp = (d=0) => ({ opacity:visible?1:0, transform:visible?"translateY(0)":"translateY(16px)", transition:`opacity .3s ease ${d}ms, transform .3s cubic-bezier(.34,1.3,.64,1) ${d}ms` });
 
-  if (loading) return <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:300,color:"var(--muted)" }}>Loading…</div>;
+  if (loading) return <Loader />;
 
   return (
     <>

@@ -31,7 +31,7 @@ export default function TimerPage() {
     <div style={{ maxWidth: 560, margin: "0 auto", display: "flex", flexDirection: "column", gap: 24 }}>
 
       {/* Mode Tabs */}
-      <div style={{ display: "flex", gap: 8, background: "var(--card)", borderRadius: 16, padding: 6, border: "1px solid var(--border)" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, background: "var(--card)", borderRadius: 16, padding: 6, border: "1px solid var(--border)" }}>
         {(Object.keys(MODES) as (keyof typeof MODES)[]).map(m => (
           <button key={m} onClick={() => setMode(m)}
             style={{
@@ -114,20 +114,20 @@ export default function TimerPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", borderRadius: 14, border: "1px solid var(--border)", background: "var(--card)" }}>
             <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>Duration</span>
             <button onClick={() => setCustom(Math.max(5, custom - 5))} disabled={running}
-              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--bg)", cursor: running ? "not-allowed" : "pointer", color: "var(--muted)", display: "flex", alignItems: "center", justifyContent: "center", opacity: running ? .5 : 1 }}>
-              <Minus size={14}/>
+              style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--bg)", cursor: running ? "not-allowed" : "pointer", color: "var(--muted)", display: "flex", alignItems: "center", justifyContent: "center", opacity: running ? .5 : 1 }}>
+              <Minus size={16}/>
             </button>
             <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text)", minWidth: 48, textAlign: "center" }}>{custom}m</span>
             <button onClick={() => setCustom(Math.min(120, custom + 5))} disabled={running}
-              style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--bg)", cursor: running ? "not-allowed" : "pointer", color: "var(--muted)", display: "flex", alignItems: "center", justifyContent: "center", opacity: running ? .5 : 1 }}>
-              <Plus size={14}/>
+              style={{ width: 44, height: 44, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--bg)", cursor: running ? "not-allowed" : "pointer", color: "var(--muted)", display: "flex", alignItems: "center", justifyContent: "center", opacity: running ? .5 : 1 }}>
+              <Plus size={16}/>
             </button>
           </div>
         )}
       </div>
 
       {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12 }}>
         {[
           { label:"Sessions Today", value: sessions, color:"#4F8EF7", icon:"🍅" },
           { label:"Minutes Studied", value: totalMins, color:"#34D399", icon:"⏱️" },

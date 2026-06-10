@@ -287,10 +287,7 @@ export default function HomePage() {
       <nav className="sticky top-0 z-40 border-b border-white/10 bg-[#030711]/65 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <button onClick={() => router.push("/")} className="group flex items-center gap-3" aria-label="StudyBuddy AI home">
-            <span className="relative grid h-10 w-10 place-items-center rounded-xl border border-cyan-200/25 bg-white/10 shadow-[0_0_32px_rgba(79,142,247,0.28)]">
-              <img src="/icon-192.png" alt="" className="h-7 w-7 rounded-lg" />
-              <span className="absolute inset-0 rounded-xl border border-white/20 opacity-0 transition-opacity group-hover:opacity-100" />
-            </span>
+            <img src="/icon-192.png" alt="StudyBuddy AI Logo" className="h-9 w-9 rounded-xl shadow-[0_0_24px_rgba(79,142,247,0.25)]" />
             <span className="text-sm font-extrabold tracking-normal text-white sm:text-base">StudyBuddy AI</span>
           </button>
 

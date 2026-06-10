@@ -7,6 +7,7 @@ import { CheckSquare, FileText, Flame, Zap, Check, ArrowRight } from "lucide-rea
 import { onXPUpdate } from "@/lib/xp-utils";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import StudyCalendar from "@/components/dashboard/StudyCalendar";
+import Loader from "@/components/ui/Loader";
 
 const weeklyData = [
   { day:"Mon", hours:3.5 }, { day:"Tue", hours:2 },
@@ -96,15 +97,7 @@ export default function DashboardPage() {
     transition: `opacity .35s ease ${delay}ms, transform .35s cubic-bezier(.34,1.3,.64,1) ${delay}ms`,
   });
 
-  if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:400 }}>
-      <div style={{ textAlign:"center" }}>
-        <div style={{ fontSize:36, animation:"spin .6s linear infinite" }}>⚡</div>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-        <p style={{ color:"var(--muted)", marginTop:12, fontSize:14 }}>Loading...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <Loader />;
 
   return (
     <>

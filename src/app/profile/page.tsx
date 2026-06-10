@@ -244,6 +244,19 @@ export default function ProfilePage() {
 
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", fontFamily: "inherit" }}>
+      <style>{`
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-2col-sm { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .hero-banner { display: flex; align-items: center; gap: 20px; position: relative; }
+        .tabs-container { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        @media (max-width: 768px) {
+          .grid-2col { grid-template-columns: 1fr; }
+          .grid-2col-sm { grid-template-columns: 1fr; }
+          .hero-banner { flex-direction: column; align-items: center; text-align: center; }
+          .hero-banner > div:last-child { margin: 0 auto; width: 100%; display: flex; justify-content: center; }
+        }
+      `}</style>
 
       {/* ── Hero Banner ── */}
       <div style={{
@@ -256,7 +269,7 @@ export default function ProfilePage() {
           width: 200, height: 200, borderRadius: "50%",
           background: "radial-gradient(circle,rgba(79,142,247,.2) 0%,transparent 70%)",
         }}/>
-        <div style={{ display: "flex", alignItems: "center", gap: 20, position: "relative" }}>
+        <div className="hero-banner">
           <div style={{
             width: 72, height: 72, borderRadius: 20, flexShrink: 0,
             background: "linear-gradient(135deg,#4F8EF7,#A78BFA)",
@@ -303,7 +316,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Tabs ── */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div className="tabs-container">
         {tabs.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setTab(id)}
             style={{
@@ -322,7 +335,7 @@ export default function ProfilePage() {
 
       {/* ── Personal Info ── */}
       {tab === "personal" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div className="grid-2col">
           <div style={{ borderRadius: 20, padding: 24, border: "1px solid var(--border)", background: "var(--card)" }}>
             <h3 style={{ fontFamily: "var(--font-lora),serif", fontSize: 18, color: "var(--text)", marginBottom: 20 }}>
               Basic Information
@@ -385,7 +398,7 @@ export default function ProfilePage() {
             Academic Details
           </h3>
           {edit ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
+            <div className="grid-2col">
               <FormInput   label="School / College / University" value={institution} onChange={setInstitution} placeholder="Institution name"/>
               <FormSelect  label="Education Level" value={eduLevel} onChange={setEduLevel} options={EDU_LEVELS}/>
               <FormSelect  label="Stream / Field"  value={stream}   onChange={setStream}   options={STREAMS}/>
@@ -397,7 +410,7 @@ export default function ProfilePage() {
               </div>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="grid-2col-sm">
               {[
                 ["🏫","Institution",   institution],
                 ["🎓","Education Level",eduLevel],

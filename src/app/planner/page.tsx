@@ -4,6 +4,7 @@ import { Plus, Trash2, Check, CheckSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { validate } from "@/lib/validation";
 import toast from "react-hot-toast";
+import Loader from "@/components/ui/Loader";
 
 const XP_EVENT = "studybuddy:xp-updated";
 function fireXPUpdate() { if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(XP_EVENT)); }
@@ -81,7 +82,7 @@ export default function PlannerPage() {
   const counts   = { all:tasks.length, pending:tasks.filter(t=>!t.done).length, done:tasks.filter(t=>t.done).length };
   const fadeUp   = (d=0) => ({ opacity:visible?1:0, transform:visible?"translateY(0)":"translateY(16px)", transition:`opacity .3s ease ${d}ms, transform .3s cubic-bezier(.34,1.3,.64,1) ${d}ms` });
 
-  if (loading) return <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:300,color:"var(--muted)" }}>Loading…</div>;
+  if (loading) return <Loader />;
 
   return (
     <>
@@ -99,8 +100,8 @@ export default function PlannerPage() {
 
       <div style={{ maxWidth:780, margin:"0 auto" }}>
         {/* Header */}
-        <div style={{ ...fadeUp(0), display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-          <div style={{ display:"flex", gap:8 }}>
+        <div style={{ ...fadeUp(0), display:"flex", flexWrap:"wrap", gap:16, justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
             {(["all","pending","done"] as const).map(f => (
               <button key={f} className="filter-btn" onClick={() => setFilter(f)} style={{
                 padding:"8px 20px", borderRadius:20, fontSize:13, fontWeight:700,
@@ -188,14 +189,14 @@ export default function PlannerPage() {
                 }}>
                   {/* Checkbox */}
                   <button onClick={() => toggleTask(task)} style={{
-                    width:26, height:26, borderRadius:"50%",
+                    width:36, height:36, borderRadius:"50%",
                     border:`2px solid ${task.done?"#34D399":p.color}`,
                     background:task.done?"#34D399":"transparent",
                     cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
                     flexShrink:0, outline:"none", transition:"all .2s",
                     boxShadow:task.done?`0 0 12px #34D39966`:p.glow?"0 0 8px "+p.glow:"none",
                   }}>
-                    {task.done && <Check size={13} color="#fff"/>}
+                    {task.done && <Check size={18} color="#fff"/>}
                   </button>
 
                   {/* Content */}
@@ -212,13 +213,13 @@ export default function PlannerPage() {
                   </div>
 
                   {/* Delete */}
-                  <button className="del-btn" onClick={() => deleteTask(task.id)} style={{
+                  <button className="del-btn lg:opacity-0 lg:group-hover:opacity-100" onClick={() => deleteTask(task.id)} style={{
                     background:"none", border:"none", cursor:"pointer", color:"#F87171",
-                    display:"flex", opacity:0, padding:6, transition:"opacity .2s, transform .2s", borderRadius:8,
+                    display:"flex", padding:12, transition:"opacity .2s, transform .2s", borderRadius:8,
                   }}
                     onMouseEnter={e=>{(e.currentTarget.style.transform="scale(1.2)")}}
                     onMouseLeave={e=>{(e.currentTarget.style.transform="scale(1)")}}>
-                    <Trash2 size={15}/>
+                    <Trash2 size={18}/>
                   </button>
                 </div>
               );

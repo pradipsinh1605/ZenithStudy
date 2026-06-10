@@ -440,7 +440,7 @@ export default function LandingPage() {
           100% { transform:translateX(-50%); }
         }
         .testi-card {
-          width:320px; flex-shrink:0; padding:24px; border-radius:18px;
+          width:min(320px, 85vw); flex-shrink:0; padding:24px; border-radius:18px;
           border:1px solid #1A2E4A;
           background:rgba(14,30,56,.7);
           backdrop-filter:blur(10px);
@@ -533,6 +533,8 @@ export default function LandingPage() {
           .btn-ghost { color:#1A1A2E; border-color:#E8E4DD; }
         }
 
+        .how-it-works-grid { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; }
+
         /* ── Mobile responsive ── */
         @media (max-width:768px) {
           #navbar { padding:14px 20px; }
@@ -542,10 +544,12 @@ export default function LandingPage() {
           .stats-grid { grid-template-columns:1fr 1fr; }
           .price-grid { grid-template-columns:1fr; }
           .hero { padding:110px 24px 60px; }
+          .how-it-works-grid { grid-template-columns:1fr; gap: 40px; }
         }
         @media (max-width:520px) {
           .feat-grid { grid-template-columns:1fr; }
           .stats-grid { grid-template-columns:1fr 1fr; }
+          .hero h1 { font-size: 32px; }
         }
       `}</style>
 
@@ -644,7 +648,7 @@ export default function LandingPage() {
 
         {/* ── HOW IT WORKS ── */}
         <div className="sec" style={{ paddingTop:40 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:56, alignItems:"center" }}>
+          <div className="how-it-works-grid">
             <div>
               <div className="sec-label reveal from-left">How it works</div>
               <h2 className="sec-title reveal from-left delay-1">Study smarter,<br/>not harder</h2>

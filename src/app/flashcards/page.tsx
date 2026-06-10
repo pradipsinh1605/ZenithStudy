@@ -4,6 +4,7 @@ import { Plus, ChevronLeft, ChevronRight, Check, X, Trash2, Layers, Sparkles, Br
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import { z, ZodError } from "zod";
+import Loader from "@/components/ui/Loader";
 
 type CardType = "flashcard" | "quiz";
 const mcqResponseSchema = z.array(
@@ -215,9 +216,9 @@ export default function FlashcardsPage() {
 
   const getOptionStyle = (optIdx: number, options: string[], correctAnswer: string) => {
     const base: React.CSSProperties = {
-      padding:"12px 16px", borderRadius:12, fontSize:14, cursor: answerShown?"default":"pointer",
+      padding:"14px 16px", borderRadius:12, fontSize:14, cursor: answerShown?"default":"pointer",
       fontFamily:"inherit", textAlign:"left" as const, transition:"all .2s", width:"100%",
-      display:"flex", alignItems:"center", gap:10, fontWeight:600,
+      display:"flex", alignItems:"center", gap:10, fontWeight:600, minHeight: 44,
     };
     if(!answerShown) {
       return { ...base, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)" };
@@ -235,7 +236,7 @@ export default function FlashcardsPage() {
     return { ...base, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--muted)", opacity:.5 };
   };
 
-  if(loading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:300,color:"var(--muted)"}}>Loading…</div>;
+  if(loading) return <Loader />;
 
   return (
     <div style={{maxWidth:720,margin:"0 auto"}}>
@@ -251,7 +252,7 @@ export default function FlashcardsPage() {
                 </div>
                 <h3 style={{color:"var(--text)",fontSize:17,fontWeight:700}}>AI Generate</h3>
               </div>
-              <button onClick={()=>setShowAI(false)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--muted)"}}><X size={18}/></button>
+              <button onClick={()=>setShowAI(false)} style={{width: 44, height: 44, display:"flex", alignItems:"center", justifyContent:"center", marginRight:-12, background:"none",border:"none",cursor:"pointer",color:"var(--muted)"}}><X size={20}/></button>
             </div>
 
             {/* Type Toggle */}
@@ -325,7 +326,7 @@ export default function FlashcardsPage() {
           const count = allCards.filter(c=>t==="flashcard"?(c.card_type==="flashcard"||!c.card_type):c.card_type==="quiz").length;
           return (
             <button key={t} onClick={()=>{ setActiveTab(t); setQuizMode(t==="quiz"); }}
-              style={{flex:1,padding:"10px 16px",borderRadius:12,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,
+              style={{flex:1,padding:"10px 16px", minHeight: 44, borderRadius:12,border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:14,fontWeight:700,
                 background:activeTab===t?"linear-gradient(135deg,#4F8EF7,#6366F1)":"transparent",
                 color:activeTab===t?"#fff":"var(--muted)",transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               {t==="flashcard"?"⚡ Flashcards":"🎯 Quiz MCQ"}
@@ -430,7 +431,7 @@ export default function FlashcardsPage() {
               </div>
 
               <div style={{display:"flex",justifyContent:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
-                <button onClick={goPrev} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 20px",borderRadius:12,border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",cursor:"pointer",fontWeight:600,fontSize:13,fontFamily:"inherit"}}>
+                <button onClick={goPrev} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 20px", minHeight:44, borderRadius:12,border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",cursor:"pointer",fontWeight:600,fontSize:13,fontFamily:"inherit"}}>
                   <ChevronLeft size={18}/> Prev
                 </button>
                 {flipped?(
@@ -447,8 +448,8 @@ export default function FlashcardsPage() {
                     Next <ChevronRight size={18}/>
                   </button>
                 )}
-                <button onClick={()=>deleteCard(card?.id)} style={{padding:"10px 14px",borderRadius:12,border:"1px solid #F8717144",background:"#F8717111",color:"#F87171",cursor:"pointer",display:"flex",alignItems:"center",fontSize:13,fontFamily:"inherit"}}>
-                  <Trash2 size={15}/>
+                <button onClick={()=>deleteCard(card?.id)} style={{padding:"10px 14px", minHeight:44, borderRadius:12,border:"1px solid #F8717144",background:"#F8717111",color:"#F87171",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontFamily:"inherit"}}>
+                  <Trash2 size={18}/>
                 </button>
               </div>
             </>
