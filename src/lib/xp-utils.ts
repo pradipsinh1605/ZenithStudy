@@ -4,16 +4,17 @@
 
 export const XP_EVENT = "studybuddy:xp-updated";
 
-export function fireXPUpdate() {
+export function fireXPUpdate(newXp?: number, newStreak?: number) {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent(XP_EVENT));
+    window.dispatchEvent(new CustomEvent(XP_EVENT, { detail: { xp: newXp, streak: newStreak } }));
   }
 }
 
-export function onXPUpdate(cb: () => void) {
+export function onXPUpdate(cb: (detail?: { xp?: number, streak?: number }) => void) {
   if (typeof window === "undefined") return () => {};
-  window.addEventListener(XP_EVENT, cb);
-  return () => window.removeEventListener(XP_EVENT, cb);
+  const handler = (e: any) => cb(e.detail);
+  window.addEventListener(XP_EVENT, handler);
+  return () => window.removeEventListener(XP_EVENT, handler);
 }
 
 // ── Atomic XP Add (no race condition) ──
@@ -36,11 +37,12 @@ export async function addXP(
       const newLevel = Math.floor(newXp / 500) + 1;
       await supabase.from("user_xp")
         .update({ total_xp: newXp, level: newLevel }).eq("user_id", userId);
-      fireXPUpdate();
+      fireXPUpdate(newXp);
       return newXp;
     }
-    fireXPUpdate();
-    return data?.[0]?.total_xp || 0;
+    const finalXp = data?.[0]?.total_xp || 0;
+    fireXPUpdate(finalXp);
+    return finalXp;
   } catch (e) {
     return 0;
   }
@@ -88,9 +90,10 @@ export async function updateStreak(
 
     if (bonusXP > 0) {
       await addXP(supabase, userId, bonusXP);
+    } else {
+      fireXPUpdate(data?.total_xp || 0, newStreak);
     }
 
-    fireXPUpdate();
     return { streak: newStreak, isNew: true, milestone };
   } catch (e) {
     return { streak: 0, isNew: false, milestone: null };

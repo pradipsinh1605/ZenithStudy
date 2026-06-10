@@ -173,3 +173,38 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- 11. STORAGE BUCKET & RLS
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Insert note-pdfs bucket if not exists
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('note-pdfs', 'note-pdfs', true) 
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage RLS Policies
+CREATE POLICY "Users can upload their own PDFs" 
+ON storage.objects FOR INSERT 
+WITH CHECK (bucket_id = 'note-pdfs' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can update their own PDFs" 
+ON storage.objects FOR UPDATE 
+USING (bucket_id = 'note-pdfs' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can delete their own PDFs" 
+ON storage.objects FOR DELETE 
+USING (bucket_id = 'note-pdfs' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Anyone can read public PDFs" 
+ON storage.objects FOR SELECT 
+USING (bucket_id = 'note-pdfs');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- 12. PERFORMANCE INDEXES
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_user_id ON timetable(user_id);
+CREATE INDEX IF NOT EXISTS idx_flashcards_user_id ON flashcards(user_id);
+CREATE INDEX IF NOT EXISTS idx_study_sessions_user_id ON study_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subjects_user_id ON subjects(user_id);

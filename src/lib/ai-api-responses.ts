@@ -8,7 +8,9 @@ export type ApiErrorCode =
   | "AI_TIMEOUT"
   | "AI_PROVIDER_ERROR"
   | "AI_EMPTY_RESPONSE"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN";
 
 export type ApiErrorResponse = {
   ok: false;

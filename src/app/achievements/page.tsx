@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Loader from "@/components/ui/Loader";
 import { Check } from "lucide-react";
-import { calculateBadges, updateStreak, onXPUpdate } from "@/lib/xp-utils";
+import { calculateBadges, updateStreak, onXPUpdate, addXP } from "@/lib/xp-utils";
 import toast from "react-hot-toast";
 
 const CATS = ["All","Tasks","Notes","Streak","XP","Focus","Flashcards"];
@@ -89,9 +89,7 @@ export default function AchievementsPage() {
       let totalBonus = 0;
       newlyEarned.forEach(b => { totalBonus += b.xpReward; });
       if (totalBonus > 0) {
-        const { data: xpData } = await supabase.from("user_xp").select("total_xp").eq("user_id", userId).single();
-        const newXp = (xpData?.total_xp || 0) + totalBonus;
-        await supabase.from("user_xp").update({ total_xp: newXp, level: Math.floor(newXp/500)+1 }).eq("user_id", userId);
+        const newXp = await addXP(supabase, userId, totalBonus);
         setXp(newXp);
         toast.success(`🏆 Badge bonus! +${totalBonus} XP`);
       }

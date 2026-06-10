@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import { Brain, Bell, Moon, Sun, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
+import { Brain, Bell, Moon, Sun, CheckCircle2, AlertCircle, Trash2, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function SettingsPage() {
@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [mounted,   setMounted]   = useState(false);
   const [notifPerm, setNotifPerm] = useState("default");
   const [email,     setEmail]     = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -54,8 +55,15 @@ export default function SettingsPage() {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/auth/login";
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace("/auth/login");
+    }
   };
 
   return (
@@ -155,9 +163,9 @@ export default function SettingsPage() {
           <div style={{ fontSize:11, color:"var(--muted)", fontWeight:600, textTransform:"uppercase" as const, marginBottom:4 }}>Logged in as</div>
           <div style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>{email}</div>
         </div>
-        <button onClick={logout}
-          style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 18px", borderRadius:12, border:"1px solid #F8717144", background:"#F8717111", color:"#F87171", cursor:"pointer", fontWeight:600, fontSize:13, fontFamily:"inherit" }}>
-          <Trash2 size={15}/> Sign Out
+        <button onClick={logout} disabled={loggingOut}
+          style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 18px", borderRadius:12, border:"1px solid #F8717144", background:"#F8717111", color:"#F87171", cursor:"pointer", fontWeight:600, fontSize:13, fontFamily:"inherit", opacity: loggingOut ? 0.6 : 1 }}>
+          {loggingOut ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={15}/>} {loggingOut ? "Signing Out..." : "Sign Out"}
         </button>
       </div>
     </div>

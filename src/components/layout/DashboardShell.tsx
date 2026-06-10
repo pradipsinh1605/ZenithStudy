@@ -26,6 +26,7 @@ import {
   User,
   Menu,
   X,
+  Loader2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
@@ -95,6 +96,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const [isScrolledEnd, setIsScrolledEnd] = useState(false);
   const lastScrollY = useRef(0);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const current = useMemo(
     () => NAV.find((item) => isActive(pathname, item.href)) ?? NAV[0],
@@ -136,17 +138,22 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   useEffect(() => {
     if (!uid) return;
-    return onXPUpdate(() => {
-      supabase
-        .from("user_xp")
-        .select("total_xp,streak")
-        .eq("user_id", uid)
-        .single()
-        .then(({ data }) => {
-          if (!data) return;
-          setXp(data.total_xp || 0);
-          setStreak(data.streak || 0);
-        });
+    return onXPUpdate((detail) => {
+      if (detail && typeof detail.xp === 'number') {
+        setXp(detail.xp);
+        if (typeof detail.streak === 'number') setStreak(detail.streak);
+      } else {
+        supabase
+          .from("user_xp")
+          .select("total_xp,streak")
+          .eq("user_id", uid)
+          .single()
+          .then(({ data }) => {
+            if (!data) return;
+            setXp(data.total_xp || 0);
+            setStreak(data.streak || 0);
+          });
+      }
     });
   }, [uid, supabase]);
 
@@ -261,8 +268,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const unread = dueTasks.length + classesToday.length;
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/auth/login";
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace("/auth/login");
+    }
   };
   return (
     <TimerProvider>
@@ -809,12 +823,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               
               <button 
                 className="icon-btn" 
-                style={{ width: 44, height: 44, borderRadius: 22, background: "transparent", border: "none" }} 
+                style={{ width: 44, height: 44, borderRadius: 22, background: "transparent", border: "none", opacity: loggingOut ? 0.5 : 1 }} 
                 onClick={logout} 
                 aria-label="Sign out" 
+                disabled={loggingOut}
                 type="button"
               >
-                <LogOut size={19} />
+                {loggingOut ? <Loader2 size={19} style={{ animation: "spin 1s linear infinite" }} /> : <LogOut size={19} />}
               </button>
               </div>
             </div>

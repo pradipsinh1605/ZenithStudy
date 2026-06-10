@@ -47,6 +47,7 @@ export default function LoginPage() {
   }, [reduceMotion]);
 
   const handleSignup = async () => {
+    if (loading) return;
     const nameErr = validate.name(name);
     const emailErr = validate.email(email);
     const passErr = validate.password(password);
@@ -54,67 +55,90 @@ export default function LoginPage() {
     if (emailErr) { toast.error(emailErr); return; }
     if (passErr) { toast.error(passErr); return; }
     setLoading(true);
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      toast.error(error.message);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        toast.error(error.message);
+        setLoading(false);
+        return;
+      }
+      if (data.user) {
+        await supabase.from("profiles").upsert({ user_id: data.user.id, name, edu_level: "Student" });
+        await supabase.from("user_xp").upsert({ user_id: data.user.id, total_xp: 0, level: 1, streak: 0 });
+      }
+      toast.success("✅ Account created successfully! Please sign in.");
+      setPassword("");
+      setName("");
+      setMode("login");
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-    if (data.user) {
-      await supabase.from("profiles").upsert({ user_id: data.user.id, name, edu_level: "Student" });
-      await supabase.from("user_xp").upsert({ user_id: data.user.id, total_xp: 0, level: 1, streak: 0 });
-    }
-    toast.success("Account created. Now sign in.");
-    setPassword("");
-    setName("");
-    setMode("login");
-    setLoading(false);
   };
 
   const handleLogin = async () => {
+    if (loading) return;
     const emailErr = validate.email(email);
     if (emailErr) { toast.error(emailErr); return; }
     if (!password) { toast.error("Password is required"); return; }
     setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error("Invalid credentials. Please try again.");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message === "Invalid login credentials" ? "Invalid email or password." : error.message);
+        setLoading(false);
+        return;
+      }
+      toast.success("Welcome back.");
+      setTimeout(() => window.location.replace("/dashboard"), 300);
+    } catch (err) {
+      toast.error("Network error. Please try again.");
       setLoading(false);
-      return;
     }
-    toast.success("Welcome back.");
-    setTimeout(() => window.location.replace("/dashboard"), 300);
   };
 
   const handleGoogle = async () => {
+    if (googleLoading) return;
     setGoogleLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: { access_type: "offline", prompt: "consent" },
-      },
-    });
-    if (error) {
-      toast.error(error.message);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { access_type: "offline", prompt: "consent" },
+        },
+      });
+      if (error) {
+        toast.error(error.message);
+        setGoogleLoading(false);
+      }
+    } catch (err) {
+      toast.error("Network error. Please try again.");
       setGoogleLoading(false);
     }
   };
 
   const handleForgot = async () => {
+    if (loading) return;
     const emailErr = validate.email(email);
     if (emailErr) { toast.error(emailErr); return; }
     setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    });
-    if (error) toast.error(error.message);
-    else { setForgotSent(true); toast.success("Reset link sent. Check your email."); }
-    setLoading(false);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      if (error) toast.error(error.message);
+      else { setForgotSent(true); toast.success("Reset link sent. Check your email."); }
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const switchMode = (next: "login" | "signup") => {
@@ -224,8 +248,8 @@ export default function LoginPage() {
                     </div>
                   ) : (
                     <div className="mt-6 space-y-4">
-                      <Field icon={<Mail size={17} />} value={email} onChange={setEmail} type="email" placeholder="Email address" />
-                      <PrimaryButton loading={loading} onClick={handleForgot}>Send reset link</PrimaryButton>
+                      <Field icon={<Mail size={17} />} value={email} onChange={setEmail} type="email" placeholder="Email address" onEnter={handleForgot} />
+                      <PrimaryButton loading={loading} loadingText="Sending reset email..." onClick={handleForgot}>Send reset link</PrimaryButton>
                     </div>
                   )}
                 </motion.div>
@@ -243,8 +267,8 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
                   } />
-                  {mode === "login" && <button onClick={() => setMode("forgot")} className="ml-auto block text-sm font-bold text-cyan-100 hover:text-white">Forgot password?</button>}
-                  <PrimaryButton loading={loading} onClick={mode === "login" ? handleLogin : handleSignup}>
+                  {mode === "login" && <button type="button" onClick={() => setMode("forgot")} className="ml-auto block text-sm font-bold text-cyan-100 hover:text-white">Forgot password?</button>}
+                  <PrimaryButton loading={loading} loadingText={mode === "login" ? "Signing in..." : "Creating account..."} onClick={mode === "login" ? handleLogin : handleSignup}>
                     {mode === "login" ? "Enter dashboard" : "Create account"}
                   </PrimaryButton>
                 </motion.div>
@@ -274,12 +298,12 @@ function Field({ icon, value, onChange, placeholder, type = "text", right, onEnt
   );
 }
 
-function PrimaryButton({ children, loading, onClick }: { children: React.ReactNode; loading: boolean; onClick: () => void }) {
+function PrimaryButton({ children, loading, loadingText, onClick }: { children: React.ReactNode; loading: boolean; loadingText?: string; onClick: () => void }) {
   return (
     <button onClick={onClick} disabled={loading} className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-5 py-3.5 text-sm font-black text-white shadow-[0_0_42px_rgba(79,142,247,.35)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
       <span className="absolute inset-y-0 left-0 w-1/3 -translate-x-full bg-white/25 blur-xl transition group-hover:translate-x-[320%]" />
       {loading ? <Loader2 size={17} className="animate-spin" /> : <Sparkles size={17} />}
-      <span className="relative">{loading ? "Please wait..." : children}</span>
+      <span className="relative">{loading ? (loadingText || "Please wait...") : children}</span>
       {!loading && <ArrowRight size={16} className="relative" />}
     </button>
   );

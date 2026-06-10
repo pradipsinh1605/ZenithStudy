@@ -5,9 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { validate } from "@/lib/validation";
 import toast from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
-
-const XP_EVENT = "studybuddy:xp-updated";
-function fireXPUpdate() { if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(XP_EVENT)); }
+import { addXP } from "@/lib/xp-utils";
 
 const PRIOS: Record<string,{label:string;color:string;glow:string}> = {
   high:   { label:"High",   color:"#F87171", glow:"rgba(248,113,113,.4)" },
@@ -73,11 +71,10 @@ export default function PlannerPage() {
     }
 
     if (newDone) {
-      const { data: xpData } = await supabase.from("user_xp").select("total_xp").eq("user_id",curUser.id).single();
-      const newXp = (xpData?.total_xp||0)+25;
-      await supabase.from("user_xp").update({ total_xp:newXp, level:Math.floor(newXp/500)+1 }).eq("user_id",curUser.id);
-      fireXPUpdate();
+      await addXP(supabase, curUser.id, 25);
       toast.success("✅ Task Done! +25 XP 🎉");
+    } else {
+      await addXP(supabase, curUser.id, -25);
     }
   };
 
