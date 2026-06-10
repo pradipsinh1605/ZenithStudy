@@ -57,38 +57,33 @@ function parseMarkdown(t: string): string {
   return html;
 }
 
-const SYS_PROMPT = `You are StudyBuddy AI, a helpful study assistant for students.
+const SYS_PROMPT = `You are StudyBuddy AI, an incredibly enthusiastic, friendly, and super smart study assistant! 🚀
 
-Your job is to answer student questions in simple, clear, and exam-friendly language.
+YOUR PERSONA & TONE (CRITICAL):
+1. You must act exactly like an energetic, caring human friend and study buddy. Call the user "દોસ્ત" (friend) or "buddy".
+2. Use lots of emojis (😄, 🚀, 🧠, 💡, 💯) to make your answers feel alive and highly expressive!
+3. Never be robotic or boring. Be highly conversational, empathetic, and always show excitement about learning.
+4. If a user is frustrated, be extremely apologizing, humble, and warmly encouraging.
 
 CRITICAL LANGUAGE RULE: 
-You MUST ALWAYS answer completely in ENGLISH by default. 
-ONLY switch to Gujarati or Hinglish IF the user EXPLICITLY asks you to answer in Gujarati or Hinglish. Otherwise, keep your responses 100% in English.
+You should naturally mix English and a friendly, conversational tone. If the user asks in Gujarati or Hinglish, you MUST reply in the same warm, expressive Gujarati/Hinglish!
 
 Rules:
-1. Always understand the user's question first. Give logical answers.
+1. Always understand the user's question first. Give logical, practical answers.
 2. If the question is related to study, give a step-by-step explanation.
 3. Give a short answer first, then a detailed explanation. Explain in a way a student can easily understand.
-4. For exam questions, answer according to marks:
-   - 2/3 marks: short and direct answer
-   - 4/5 marks: medium answer with points
-   - 7/10 marks: detailed answer with diagram/flow if possible
-5. Use examples whenever helpful.
+4. For exam questions, answer according to marks (Short for 2 marks, Detailed with points for larger marks).
+5. REAL-LIFE EXAMPLES: EVERY single time you explain a concept, you MUST provide at least one logical, relatable, real-life example to make it easy to understand.
 6. For coding questions, give working code + explanation + common mistakes + output.
-7. For MCQ, give the correct option and reason.
-8. For viva questions, give short and easy answers.
-9. If the user asks a non-study question, answer politely and clearly.
-10. Never give harmful, illegal, or unsafe guidance.
-11. Highlight important points. Format answers with headings, bullets, tables, and examples.
-12. Motivate the student at the end when useful.
-13. REMEMBER USER CONTEXT: Pay close attention to any details the user shares about themselves (standard, subject, learning speed, etc.) and tailor future answers.
+7. Highlight important points. Format answers beautifully with headings, bullets, and tables.
+8. Motivate the student at the end with extremely positive energy! 🌟
+9. REMEMBER USER CONTEXT: Pay close attention to any details the user shares about themselves and tailor future answers.
 
 Answer style:
-- Simple language
-- Student-friendly
-- Practical
-- Not too robotic
-- Like a smart teacher
+- Super energetic and friendly!
+- Like a smart best friend
+- Practical and simple
+- ABSOLUTELY NOT robotic
 
 Whenever explaining a core concept, try to include these two helpful sections at the end:
 
@@ -123,54 +118,78 @@ export default function AITutorPage() {
     return () => { window.speechSynthesis.cancel(); };
   }, []);
 
-  // Load Threads from localStorage
+  // Load Threads from Supabase
   useEffect(() => {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         setUserId(user.id);
-        try { 
-          const saved = localStorage.getItem(`sb-ai-threads-${user.id}`); 
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            setThreads(parsed);
-            if (parsed.length > 0) {
-               setCurrentThreadId(parsed[0].id);
-               setMsgs(parsed[0].messages);
-            }
-          } else {
-            // Migrate old single chat history if exists
-            const old = localStorage.getItem(`sb-ai-v3-${user.id}`);
-            if (old) {
-              const oldMsgs = JSON.parse(old);
-              if (oldMsgs.length > 0) {
-                const newT = [{ id: Date.now().toString(), title: "Previous Chat", messages: oldMsgs, updatedAt: Date.now() }];
-                setThreads(newT);
-                setCurrentThreadId(newT[0].id);
-                setMsgs(oldMsgs);
-                localStorage.setItem(`sb-ai-threads-${user.id}`, JSON.stringify(newT));
+        
+        // Fetch from Supabase
+        const { data: threadsData, error } = await supabase
+          .from("ai_threads")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false });
+
+        if (!error && threadsData && threadsData.length > 0) {
+          const mappedThreads = threadsData.map(t => ({
+            id: t.id,
+            title: t.title,
+            messages: t.messages || [],
+            updatedAt: t.updated_at
+          }));
+          setThreads(mappedThreads);
+          setCurrentThreadId(mappedThreads[0].id);
+          setMsgs(mappedThreads[0].messages);
+        } else {
+          // If no threads in supabase, try to migrate from localStorage
+          try {
+            const saved = localStorage.getItem(`sb-ai-threads-${user.id}`); 
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              setThreads(parsed);
+              if (parsed.length > 0) {
+                 setCurrentThreadId(parsed[0].id);
+                 setMsgs(parsed[0].messages);
+                 // Upload migrated data to Supabase
+                 for (const t of parsed) {
+                   await supabase.from("ai_threads").upsert({
+                     id: t.id, user_id: user.id, title: t.title, messages: t.messages, updated_at: t.updatedAt || Date.now()
+                   });
+                 }
+                 localStorage.removeItem(`sb-ai-threads-${user.id}`);
               }
             }
-          }
-        } catch {}
+          } catch {}
+        }
       } catch {}
     })();
   }, []);
 
-  // Save current thread whenever msgs change
+  // Save current thread to Supabase whenever msgs change
   useEffect(() => {
     if (userId && currentThreadId && msgs.length > 0) {
       setThreads(prev => {
         const existing = prev.find(t => t.id === currentThreadId);
+        const title = existing?.title || (msgs.find(m => m.role === 'user')?.content.slice(0, 30) || "New Chat");
         let updated;
         if (existing) {
-          updated = prev.map(t => t.id === currentThreadId ? { ...t, messages: msgs, updatedAt: Date.now() } : t);
+          updated = prev.map(t => t.id === currentThreadId ? { ...t, messages: msgs, updatedAt: Date.now(), title } : t);
         } else {
-           const firstUserMsg = msgs.find(m => m.role === 'user')?.content || "New Chat";
-           updated = [{ id: currentThreadId, title: firstUserMsg.slice(0, 30) + (firstUserMsg.length>30?'...':''), messages: msgs, updatedAt: Date.now() }, ...prev];
+           updated = [{ id: currentThreadId, title, messages: msgs, updatedAt: Date.now() }, ...prev];
         }
-        localStorage.setItem(`sb-ai-threads-${userId}`, JSON.stringify(updated));
+        
+        // Upsert to Supabase asynchronously
+        supabase.from("ai_threads").upsert({
+          id: currentThreadId,
+          user_id: userId,
+          title: title,
+          messages: msgs,
+          updated_at: Date.now()
+        }).then();
+
         return updated;
       });
     }
@@ -200,11 +219,13 @@ export default function AITutorPage() {
     if (t) { setMsgs(t.messages); setCurrentThreadId(t.id); setShowHistory(false); }
   };
 
-  const deleteThread = (e: any, id: string) => {
+  const deleteThread = async (e: any, id: string) => {
     e.stopPropagation();
     const filtered = threads.filter(t => t.id !== id);
     setThreads(filtered);
-    if (userId) localStorage.setItem(`sb-ai-threads-${userId}`, JSON.stringify(filtered));
+    if (userId) {
+      await supabase.from("ai_threads").delete().eq("id", id);
+    }
     if (currentThreadId === id) startNewChat();
   };
 

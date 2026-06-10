@@ -93,7 +93,7 @@ export default function PlannerPage() {
         .filter-btn:hover { transform:translateY(-1px); }
       `}</style>
 
-      <div style={{ maxWidth:780 }}>
+      <div style={{ maxWidth:780, margin:"0 auto" }}>
         {/* Header */}
         <div style={{ ...fadeUp(0), display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div style={{ display:"flex", gap:8 }}>

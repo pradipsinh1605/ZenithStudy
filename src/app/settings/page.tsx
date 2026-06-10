@@ -59,7 +59,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div style={{ maxWidth: 640, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* AI Bot Status */}
       <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>

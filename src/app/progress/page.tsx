@@ -86,7 +86,7 @@ export default function ProgressPage() {
   );
 
   return (
-    <div style={{ maxWidth: 900, display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
 
       {/* Stats */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>

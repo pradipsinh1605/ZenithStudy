@@ -243,7 +243,7 @@ export default function ProfilePage() {
   );
 
   return (
-    <div style={{ maxWidth: 860, fontFamily: "inherit" }}>
+    <div style={{ maxWidth: 860, margin: "0 auto", fontFamily: "inherit" }}>
 
       {/* ── Hero Banner ── */}
       <div style={{

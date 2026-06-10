@@ -114,7 +114,7 @@ export default function AchievementsPage() {
         .cat-btn:hover{transform:translateY(-1px);}
       `}</style>
 
-      <div style={{ maxWidth:900 }}>
+      <div style={{ maxWidth:900, margin:"0 auto" }}>
 
         {/* ── Level Hero ── */}
         <div style={{ ...fadeUp(0), borderRadius:22, padding:28, marginBottom:22, position:"relative", overflow:"hidden",

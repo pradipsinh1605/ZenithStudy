@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { apiError, apiSuccess } from "@/lib/ai-api-responses";
 import { filterPrompt, sanitizePrompt } from "@/lib/ai-prompt-filter";
 import { checkRateLimit, getClientIp } from "@/lib/ai-rate-limit";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 
 const RATE_LIMIT = 60;
 const WINDOW_MS = 60 * 60 * 1000;
@@ -27,14 +27,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return apiError("AI_NOT_CONFIGURED", "Gemini service is not configured. Please add GEMINI_API_KEY.", 500);
+    return apiError("AI_NOT_CONFIGURED", "Groq service is not configured. Please add GROQ_API_KEY.", 500);
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  // Using gemini-2.5-flash for speed and full multimodal support
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const groq = new Groq({ apiKey });
 
   let body: any;
   try {
@@ -49,12 +47,18 @@ export async function POST(req: NextRequest) {
     return apiError("BAD_REQUEST", "Messages are required.", 400);
   }
 
-  const normalizedMessages = messages
+  let normalizedMessages = messages
     .filter((message: any) => typeof message?.content === "string")
     .map((message: any) => ({
       role: message.role === "assistant" || message.role === "system" ? message.role : "user",
       content: sanitizePrompt(message.content),
     }));
+
+  // TRUNCATE HISTORY to avoid hitting Groq's Token Per Minute limit.
+  // We keep only the last 6 messages (3 interactions).
+  if (normalizedMessages.length > 6) {
+    normalizedMessages = normalizedMessages.slice(-6);
+  }
 
   if (normalizedMessages.length === 0) {
     return apiError("BAD_REQUEST", "A text message is required.", 400);
@@ -69,51 +73,48 @@ export async function POST(req: NextRequest) {
 
   normalizedMessages[normalizedMessages.length - 1] = {
     ...lastMessage,
-    content: filtered.sanitized || "Please analyze this attachment.",
+    content: filtered.sanitized || "Please analyze this image.",
   };
 
-  // Format messages for Gemini (only "user" and "model" are allowed in history)
-  const formattedHistory = [];
-  let userMessageText = "";
-  
-  for (let i = 0; i < normalizedMessages.length - 1; i++) {
-    const msg = normalizedMessages[i];
-    if(msg.role === "system") continue;
-    formattedHistory.push({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }]
-    });
+  const formattedHistory: any[] = [];
+  if (system) {
+    formattedHistory.push({ role: "system", content: system });
   }
-
-  userMessageText = normalizedMessages[normalizedMessages.length - 1].content;
-
-  const chat = model.startChat({
-    history: formattedHistory,
-    systemInstruction: system ? { role: "system", parts: [{ text: system }] } : undefined,
-  });
-
-  const parts: any[] = [{ text: userMessageText }];
-
-  if (attachment?.data) {
-    let mimeType = "image/jpeg";
-    if (attachment.type === "pdf") {
-      mimeType = "application/pdf";
-    } else if (attachment.type === "image") {
-      const ext = attachment.name?.split(".").pop()?.toLowerCase();
-      if (ext === "png") mimeType = "image/png";
-      if (ext === "webp") mimeType = "image/webp";
-    }
-    parts.push({
-      inlineData: {
-        data: attachment.data,
-        mimeType
+  
+  for (let i = 0; i < normalizedMessages.length; i++) {
+    const msg = normalizedMessages[i];
+    if (msg.role === "system") continue;
+    
+    // Groq requires standard roles: user, assistant, system.
+    const mappedRole = msg.role === "model" || msg.role === "assistant" ? "assistant" : "user";
+    let textContent = msg.content;
+    
+    // Handle image attachment formatting for the last message
+    if (i === normalizedMessages.length - 1 && attachment?.data) {
+      // Groq has temporarily removed Vision models! We must fallback to text.
+      textContent += "\n[System note: The user tried to upload an image or document, but the current backend AI (Groq) does not have eyes! Please politely explain to the user that you can only read text right now, and ask them to type out the content of their image.]";
+      formattedHistory.push({ role: mappedRole, content: textContent });
+    } else {
+      // Standard text message merging
+      if (formattedHistory.length > 0 && formattedHistory[formattedHistory.length - 1].role === mappedRole && typeof formattedHistory[formattedHistory.length - 1].content === "string") {
+         formattedHistory[formattedHistory.length - 1].content += "\n\n" + textContent;
+      } else {
+         formattedHistory.push({ role: mappedRole, content: textContent });
       }
-    });
+    }
   }
 
   try {
-    const result = await chat.sendMessage(parts);
-    const text = result.response.text();
+    const targetModel = "llama-3.1-8b-instant"; // Only use text model since Vision is gone
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: formattedHistory,
+      model: targetModel,
+      temperature: 0.7,
+      max_tokens: 1500,
+    });
+
+    const text = chatCompletion.choices[0]?.message?.content || "";
 
     if (!text?.trim()) {
       return apiError("AI_EMPTY_RESPONSE", "AI returned an empty response.", 502);
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     return apiSuccess(text);
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
+    console.error("Groq API Error:", error);
     if (error?.status === 429 || error?.message?.includes("429")) {
       return apiError("RATE_LIMITED", "AI service is busy. Please try again soon.", 429);
     }

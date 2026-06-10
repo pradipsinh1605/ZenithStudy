@@ -105,7 +105,7 @@ export default function TimetablePage() {
   );
 
   return (
-    <div>
+    <div style={{ maxWidth: 1000, margin: "0 auto" }}>
       {/* New Subject Modal */}
       {showNewSubject && (
         <div style={{
