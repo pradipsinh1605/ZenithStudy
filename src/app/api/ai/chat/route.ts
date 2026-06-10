@@ -3,11 +3,19 @@ import { apiError, apiSuccess } from "@/lib/ai-api-responses";
 import { filterPrompt, sanitizePrompt } from "@/lib/ai-prompt-filter";
 import { checkRateLimit, getClientIp } from "@/lib/ai-rate-limit";
 import Groq from "groq-sdk";
+import { createClient } from "@/lib/supabase/server";
 
 const RATE_LIMIT = 60;
 const WINDOW_MS = 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return apiError("UNAUTHORIZED", "Authentication required.", 401);
+  }
+
   const ip = getClientIp(req.headers);
   const limit = checkRateLimit(ip, RATE_LIMIT, WINDOW_MS);
 
@@ -67,6 +75,10 @@ export async function POST(req: NextRequest) {
   const lastMessage = normalizedMessages[normalizedMessages.length - 1];
   const filtered = filterPrompt(lastMessage.content);
 
+  if (!filtered.allowed) {
+    return apiError("FORBIDDEN", filtered.reason || "Prompt injection detected.", 403);
+  }
+
   if (!filtered.sanitized && !attachment) {
     return apiError("BAD_REQUEST", "Message cannot be empty.", 400);
   }
@@ -77,9 +89,12 @@ export async function POST(req: NextRequest) {
   };
 
   const formattedHistory: any[] = [];
-  if (system) {
-    formattedHistory.push({ role: "system", content: system });
-  }
+  
+  // HARDCODED PERSONA
+  const HARDCODED_SYSTEM_PROMPT = `You are StudyBuddy AI, a helpful, encouraging, and highly knowledgeable educational tutor. 
+Your goal is to help students understand concepts, not just give them the answers. 
+Always explain things clearly and concisely. Never use foul language or discuss topics inappropriate for an educational setting.`;
+  formattedHistory.push({ role: "system", content: HARDCODED_SYSTEM_PROMPT });
   
   for (let i = 0; i < normalizedMessages.length; i++) {
     const msg = normalizedMessages[i];

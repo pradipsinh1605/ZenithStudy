@@ -31,17 +31,26 @@ export async function POST(request: Request) {
   }
 
   if (data.user) {
-    await supabase.from("profiles").upsert({ 
+    const { error: profileError } = await supabase.from("profiles").upsert({ 
       user_id: data.user.id, 
       name, 
       edu_level: "Student" 
     });
-    await supabase.from("user_xp").upsert({ 
+
+    if (profileError) {
+      return NextResponse.json({ error: "Failed to create user profile." }, { status: 500 });
+    }
+
+    const { error: xpError } = await supabase.from("user_xp").upsert({ 
       user_id: data.user.id, 
       total_xp: 0, 
       level: 1, 
       streak: 0 
     });
+
+    if (xpError) {
+      return NextResponse.json({ error: "Failed to initialize user XP." }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ success: true, user: data.user });

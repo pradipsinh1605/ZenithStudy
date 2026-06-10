@@ -106,7 +106,6 @@ const testimonials = [
 ];
 
 const studentTypes = ["Engineering", "Medical", "UPSC", "Productivity", "Late-night learner", "College topper", "Other"];
-const testimonialLoop = [...testimonials, ...testimonials];
 
 const faqs = [
   { q: "Is StudyBuddy AI free?", a: "Yes. You can start with the free plan, then upgrade when you need unlimited AI tools, uploads, and advanced analytics." },
@@ -153,6 +152,28 @@ export default function HomePage() {
   const [testimonialSubmitted, setTestimonialSubmitted] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [cursor, setCursor] = useState({ x: -200, y: -200 });
+  const [liveTestimonials, setLiveTestimonials] = useState(testimonials);
+
+  useEffect(() => {
+    async function loadTestimonials() {
+      const { data } = await supabase
+        .from("testimonial_submissions")
+        .select("name, student_type, message")
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(10);
+        
+      if (data && data.length > 0) {
+        const formatted = data.map((t: any) => ({
+          name: t.name,
+          role: t.student_type,
+          quote: t.message,
+        }));
+        setLiveTestimonials([...formatted, ...testimonials].slice(0, 10));
+      }
+    }
+    loadTestimonials();
+  }, [supabase]);
 
   const particles = useMemo(
     () =>
@@ -188,16 +209,22 @@ export default function HomePage() {
 
   const submitContact = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     setContactLoading(true);
     try {
-      const { error } = await supabase.from("feedback").insert({
-        name: String(form.get("name") || "").trim(),
-        email: String(form.get("email") || "").trim(),
-        message: String(form.get("message") || "").trim(),
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(form.get("name") || "").trim(),
+          email: String(form.get("email") || "").trim(),
+          message: String(form.get("message") || "").trim(),
+        }),
       });
-      if (error) throw error;
-      event.currentTarget.reset();
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to submit");
+      formElement.reset();
       setSubmitted(true);
     } catch (error: any) {
       toast.error(error?.message || "Feedback could not be saved.");
@@ -208,19 +235,32 @@ export default function HomePage() {
 
   const submitTestimonial = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     setTestimonialLoading(true);
     try {
-      const { error } = await supabase.from("testimonial_submissions").insert({
+      const newTestimonial = {
         name: String(form.get("name") || "").trim(),
         email: String(form.get("email") || "").trim(),
         student_type: String(form.get("student_type") || "Other"),
         message: String(form.get("message") || "").trim(),
         rating: Number(form.get("rating") || 5),
-        status: "pending",
+        status: "approved",
+      };
+      const response = await fetch("/api/testimonials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTestimonial),
       });
-      if (error) throw error;
-      event.currentTarget.reset();
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.error || "Failed to submit");
+      
+      setLiveTestimonials((prev) => [
+        { name: newTestimonial.name, role: newTestimonial.student_type, quote: newTestimonial.message },
+        ...prev
+      ].slice(0, 10));
+      
+      formElement.reset();
       setTestimonialSubmitted(true);
     } catch (error: any) {
       toast.error(error?.message || "Testimonial could not be saved.");
@@ -721,7 +761,7 @@ export default function HomePage() {
 
         <div className="relative overflow-hidden py-2 [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
           <div className="testimonial-track flex w-max gap-4 px-4 sm:gap-5">
-            {testimonialLoop.map((item, index) => (
+            {[...liveTestimonials, ...liveTestimonials].map((item, index) => (
               <article
                 key={item.name + "-" + index}
                 className="w-[82vw] max-w-[360px] shrink-0 rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl transition hover:-translate-y-1 hover:border-cyan-200/25 hover:bg-white/[0.085] sm:w-[360px]"
@@ -759,7 +799,7 @@ export default function HomePage() {
               </div>
               {testimonialSubmitted && (
                 <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="mb-4 rounded-2xl border border-emerald-200/20 bg-emerald-300/10 px-4 py-3 text-sm font-black text-emerald-100">
-                  Sent for moderation
+                  Thanks! Your feedback is now live.
                 </motion.div>
               )}
               <div className="grid gap-4 sm:grid-cols-2">

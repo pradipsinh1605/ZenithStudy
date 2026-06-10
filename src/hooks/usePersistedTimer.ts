@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export const TIMER_MODES = {
   work:  { label:"Focus",       duration:25*60, color:"#4F8EF7" },
@@ -55,12 +55,30 @@ function readPersistedState(): PersistedTimerState {
 
 export function usePersistedTimer() {
   const [state, setState] = useState<PersistedTimerState>(readPersistedState);
+  const stateRef = useRef(state);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, savedAt: Date.now() }));
-    } catch {}
+    stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, savedAt: Date.now() }));
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...stateRef.current, savedAt: Date.now() }));
+      } catch {}
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   return [state, setState] as const;
 }

@@ -74,8 +74,7 @@ function isActive(pathname: string, href: string) {
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  console.log("DASHBOARD SHELL LOADED V2");
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { theme, setTheme } = useTheme();
   const bellRef = useRef<HTMLDivElement>(null);
 
@@ -219,8 +218,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         await Promise.all([
           supabase.from("profiles").select("name,edu_level").eq("user_id", user.id).single(),
           supabase.from("user_xp").select("total_xp,streak").eq("user_id", user.id).single(),
-          supabase.from("tasks").select("*").eq("user_id", user.id).eq("done", false),
-          supabase.from("timetable").select("*").eq("user_id", user.id),
+          supabase.from("tasks").select("id,title,deadline,done,user_id").eq("user_id", user.id).eq("done", false),
+          supabase.from("timetable").select("id,subject,start_time,end_time,room,day,type,user_id").eq("user_id", user.id),
         ]);
 
       const nextName = profile?.name || user.email?.split("@")[0] || "Student";
@@ -277,17 +276,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             font-family: var(--font-dm-sans), var(--font-sora), sans-serif;
           }
 
-          .app-progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            width: ${navPct}%;
-            opacity: ${navLoading ? 1 : 0};
-            z-index: 9999;
-            background: linear-gradient(90deg, var(--primary), #14B8A6, #F59E0B);
-            transition: width .18s ease, opacity .22s ease;
-          }
+          /* .app-progress moved to inline styles to prevent layout thrashing */
 
           .app-header {
             position: sticky;
@@ -618,7 +607,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           }
         `}} />
 
-        <div className="app-progress" />
+        <div className="app-progress" style={{
+          position: "fixed", top: 0, left: 0, height: "3px", zIndex: 9999,
+          background: "linear-gradient(90deg, var(--primary), #14B8A6, #F59E0B)",
+          transition: "width .18s ease, opacity .22s ease",
+          width: `${navPct}%`, opacity: navLoading ? 1 : 0
+        }} />
 
         {!isAIPage && (
           <header className="app-header">

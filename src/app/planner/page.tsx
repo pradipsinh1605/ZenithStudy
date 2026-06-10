@@ -61,8 +61,17 @@ export default function PlannerPage() {
 
   const toggleTask = async (task: any) => {
     const newDone = !task.done;
-    await supabase.from("tasks").update({ done:newDone }).eq("id",task.id);
+    
+    // Optimistic Update
     setTasks(prev => prev.map(t => t.id===task.id ? {...t,done:newDone} : t));
+
+    const { error } = await supabase.from("tasks").update({ done:newDone }).eq("id",task.id);
+    if (error) {
+      toast.error("Failed to update task. Reverting...");
+      setTasks(prev => prev.map(t => t.id===task.id ? {...t,done:task.done} : t));
+      return;
+    }
+
     if (newDone) {
       const { data: xpData } = await supabase.from("user_xp").select("total_xp").eq("user_id",curUser.id).single();
       const newXp = (xpData?.total_xp||0)+25;
@@ -73,8 +82,20 @@ export default function PlannerPage() {
   };
 
   const deleteTask = async (id: string) => {
-    await supabase.from("tasks").delete().eq("id",id);
+    const taskToDelete = tasks.find(t => t.id === id);
+    if (!taskToDelete) return;
+
+    // Optimistic Update
     setTasks(prev => prev.filter(t => t.id!==id));
+
+    const { error } = await supabase.from("tasks").delete().eq("id",id);
+    if (error) {
+      toast.error("Failed to delete task. Reverting...");
+      setTasks(prev => {
+        const newTasks = [...prev, taskToDelete];
+        return newTasks.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      });
+    }
   };
 
   const subjectColor = (n: string) => subjects.find(s=>s.name===n)?.color||"#4F8EF7";

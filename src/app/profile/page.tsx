@@ -186,11 +186,22 @@ export default function ProfilePage() {
     setLoading(true);
     const { data: { user }, error: authErr } = await supabase.auth.getUser().catch(() => ({ data: { user: null }, error: new Error("auth") }));
     if (authErr || !user) return;
+    let parsedHours: number | null = null;
+    if (dailyHours) {
+      const h = parseInt(dailyHours);
+      if (isNaN(h) || h < 0 || h > 24) {
+        toast.error("Invalid daily hours. Please enter a number between 0 and 24.");
+        setLoading(false);
+        return;
+      }
+      parsedHours = h;
+    }
+
     const { error } = await supabase.from("profiles").upsert({
       user_id:     user.id,
       name,   dob,      phone,   city,
       country, bio,    goals,
-      daily_hours: dailyHours ? parseInt(dailyHours) : null,
+      daily_hours: parsedHours,
       exam_date:   examDate || null,
       institution, edu_level: eduLevel, stream,
       roll_no: rollNo, year_sem: yearSem,

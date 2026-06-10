@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateFile, type FileValidationErrorCode } from "@/lib/validateFile";
+import { createClient } from "@/lib/supabase/server";
 
 type UploadValidationError = {
   ok: false;
@@ -19,6 +20,13 @@ function errorResponse(code: UploadValidationError["error"]["code"], message: st
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return errorResponse("BAD_REQUEST", "Authentication required.", 401);
+  }
+
   let body: any;
 
   try {
