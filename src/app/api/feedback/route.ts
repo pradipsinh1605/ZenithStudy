@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit, getClientIp } from "@/lib/ai-rate-limit";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const RATE_LIMIT = 5;
 const WINDOW_MS = 60 * 60 * 1000;
@@ -41,6 +44,22 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: "Failed to submit feedback" }, { status: 500 });
+  }
+
+  // ── Send Email Alert via Resend ──
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await resend.emails.send({
+        from: "StudyBuddy Feedback <onboarding@resend.dev>",
+        to: process.env.OWNER_EMAIL || "your-email@example.com", // Replace with owner email in env
+        subject: `New Feedback from ${name.trim()}`,
+        reply_to: email.trim(),
+        text: `Name: ${name.trim()}\nEmail: ${email.trim()}\n\nMessage:\n${message.trim()}`,
+      });
+    } catch (err) {
+      console.error("Failed to send email alert:", err);
+      // We don't return an error here because the feedback was already saved to the database.
+    }
   }
 
   return NextResponse.json({ success: true });
