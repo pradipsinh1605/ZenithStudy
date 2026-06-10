@@ -115,6 +115,23 @@ export default function DashboardPage() {
         .stat-card:hover { transform:translateY(-6px) scale(1.02) !important; }
         .task-row:hover  { background:rgba(79,142,247,.08) !important; border-color:rgba(79,142,247,.3) !important; }
         .note-card:hover { transform:translateY(-3px) !important; border-color:rgba(79,142,247,.4) !important; }
+
+        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .grid-main  { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+        .grid-sub   { display: grid; grid-template-columns: ${subjects.length>0 ? "220px 1fr" : "1fr"}; gap: 16px; }
+        .grid-notes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .hero-layout { display: flex; justify-content: space-between; align-items: flex-start; position: relative; }
+
+        @media (max-width: 1024px) {
+          .grid-stats { grid-template-columns: repeat(2, 1fr); }
+          .grid-main  { grid-template-columns: 1fr; }
+          .grid-sub   { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+          .grid-stats { grid-template-columns: 1fr; }
+          .grid-notes { grid-template-columns: 1fr; }
+          .hero-layout { flex-direction: column; gap: 16px; }
+        }
       `}</style>
 
       <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
@@ -129,7 +146,7 @@ export default function DashboardPage() {
           <div style={{ position:"absolute", top:-60, right:-60, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(79,142,247,.18) 0%,transparent 70%)", pointerEvents:"none" }}/>
           <div style={{ position:"absolute", bottom:-40, left:100, width:150, height:150, borderRadius:"50%", background:"radial-gradient(circle,rgba(167,139,250,.1) 0%,transparent 70%)", pointerEvents:"none" }}/>
 
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", position:"relative" }}>
+          <div className="hero-layout">
             <div>
               <p style={{ color:"var(--hero-text-muted)", fontSize:13, marginBottom:6 }}>{greeting} 👋</p>
               <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:36, color:"var(--hero-text)", marginBottom:8, fontWeight:700, textShadow:"0 2px 20px rgba(79,142,247,.3)" }}>
@@ -182,7 +199,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Stat Cards ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 }}>
+        <div className="grid-stats">
           {[
             { icon:CheckSquare, label:"Pending",  value:pending.length, sub:"Due this week", color:"#4F8EF7", delay:80  },
             { icon:FileText,    label:"Notes",    value:notes.length,   sub:"Total created", color:"#A78BFA", delay:140 },
@@ -220,7 +237,7 @@ export default function DashboardPage() {
         {/* ── Chart + Tasks ── */}
         <StudyCalendar />
 
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 340px", gap:16 }}>
+        <div className="grid-main">
           <div style={{
             ...fadeUp(320),
             borderRadius:20, padding:22,
@@ -294,7 +311,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Subjects + Notes ── */}
-        <div style={{ display:"grid", gridTemplateColumns:subjects.length>0?"220px 1fr":"1fr", gap:16 }}>
+        <div className="grid-sub">
           {subjects.length > 0 && (
             <div style={{
               ...fadeUp(440),
@@ -337,7 +354,7 @@ export default function DashboardPage() {
               <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)" }}>Recent Notes</h3>
               <a href="/notes" style={{ color:"#4F8EF7", fontSize:12, fontWeight:700, textDecoration:"none" }}>View all →</a>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div className="grid-notes">
               {notes.slice(0,4).map((note, i) => (
                 <div key={note.id} className="note-card hv-card" style={{
                   padding:14, borderRadius:14,

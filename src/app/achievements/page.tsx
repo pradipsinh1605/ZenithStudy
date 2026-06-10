@@ -112,6 +112,18 @@ export default function AchievementsPage() {
         @keyframes badgeEarn{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
         .badge-card:hover{transform:translateY(-5px) scale(1.02) !important;border-color:rgba(79,142,247,.4) !important;}
         .cat-btn:hover{transform:translateY(-1px);}
+        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+        .grid-badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .hero-layout { display: flex; alignItems: center; gap: 22px; position: relative; margin-bottom: 20px; }
+        @media (max-width: 768px) {
+          .grid-stats { grid-template-columns: repeat(2, 1fr); }
+          .grid-badges { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 500px) {
+          .grid-stats { grid-template-columns: 1fr; }
+          .grid-badges { grid-template-columns: 1fr; }
+          .hero-layout { flex-direction: column; text-align: center; }
+        }
       `}</style>
 
       <div style={{ maxWidth:900, margin:"0 auto" }}>
@@ -125,7 +137,7 @@ export default function AchievementsPage() {
           <div style={{ position:"absolute",right:-40,top:-40,width:240,height:240,borderRadius:"50%",background:"radial-gradient(circle,rgba(245,166,35,.12) 0%,transparent 70%)",pointerEvents:"none" }}/>
           <div style={{ position:"absolute",left:80,bottom:-60,width:180,height:180,borderRadius:"50%",background:"radial-gradient(circle,rgba(79,142,247,.08) 0%,transparent 70%)",pointerEvents:"none" }}/>
 
-          <div style={{ display:"flex",alignItems:"center",gap:22,position:"relative",marginBottom:20 }}>
+          <div className="hero-layout">
             <div style={{ width:80,height:80,borderRadius:20,display:"flex",alignItems:"center",justifyContent:"center",fontSize:38,background:"linear-gradient(135deg,#F5A623,#F87171)",boxShadow:"0 8px 28px rgba(245,166,35,.4)",flexShrink:0 }}>
               ⭐
             </div>
@@ -160,7 +172,7 @@ export default function AchievementsPage() {
         </div>
 
         {/* ── Stats Row ── */}
-        <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:22 }}>
+        <div className="grid-stats">
           {[
             ["🔥","Streak",    `${animStreak}d`, "#F5A623", 80 ],
             ["⚡","Total XP",  animXp,           "#4F8EF7", 130],
@@ -227,7 +239,7 @@ export default function AchievementsPage() {
         <h3 style={{ ...fadeUp(350), fontFamily:"var(--font-lora),serif",fontSize:20,color:"var(--text)",marginBottom:16 }}>
           Badges — {earned}/{badges.length} earned
         </h3>
-        <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16 }}>
+        <div className="grid-badges">
           {filtered.map((badge, i) => (
             <div key={badge.id} className="badge-card" style={{
               borderRadius:18,padding:22,

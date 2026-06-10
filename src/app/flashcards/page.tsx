@@ -273,7 +273,7 @@ export default function FlashcardsPage() {
                   placeholder={aiType==="flashcard"?"e.g. Python loops and functions":"e.g. 10 quiz questions on Python loops"}
                   style={{width:"100%",borderRadius:10,padding:"10px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",resize:"none",boxSizing:"border-box" as const}}/>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div className="grid-2col">
                 <div>
                   <label style={{display:"block",fontSize:11,fontWeight:600,color:"var(--muted)",textTransform:"uppercase" as const,marginBottom:6}}>Subject</label>
                   <select value={aiSubject} onChange={e=>setAiSubject(e.target.value)}
@@ -308,7 +308,16 @@ export default function FlashcardsPage() {
         </div>
       )}
 
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .opt-btn:hover{opacity:.85!important}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}} 
+        .opt-btn:hover{opacity:.85!important}
+        .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        @media (max-width: 600px) {
+          .grid-2col { grid-template-columns: 1fr; }
+          .grid-options { grid-template-columns: 1fr; }
+        }
+      `}</style>
 
       {/* Tab switcher — Flashcards vs Quiz */}
       <div style={{display:"flex",gap:0,background:"var(--card)",borderRadius:16,padding:5,border:"1px solid var(--border)",marginBottom:20}}>
@@ -368,7 +377,7 @@ export default function FlashcardsPage() {
               {subjects.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
             </select>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+          <div className="grid-2col" style={{marginBottom:12}}>
             <textarea value={newFront} onChange={e=>setNewFront(e.target.value)} rows={3} placeholder="Question (Front)"
               style={{borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit",resize:"none"}}/>
             <textarea value={newBack} onChange={e=>setNewBack(e.target.value)} rows={3} placeholder="Answer (Back)"
@@ -457,7 +466,7 @@ export default function FlashcardsPage() {
 
               {/* Options */}
               {card?.options&&Array.isArray(card.options)&&card.options.length===4?(
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
+                <div className="grid-options">
                   {card.options.map((opt:string,i:number)=>{
                     const labels=["A","B","C","D"];
                     const style = getOptionStyle(i, card.options, card.back);

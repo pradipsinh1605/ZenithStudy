@@ -91,6 +91,10 @@ export default function PlannerPage() {
         .task-item:hover .del-btn { opacity:1 !important; }
         .task-item:hover { border-color:rgba(79,142,247,.25) !important; }
         .filter-btn:hover { transform:translateY(-1px); }
+        .grid-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+        @media (max-width: 600px) {
+          .grid-form { grid-template-columns: 1fr; }
+        }
       `}</style>
 
       <div style={{ maxWidth:780, margin:"0 auto" }}>
@@ -132,7 +136,7 @@ export default function PlannerPage() {
               onKeyDown={e=>e.key==="Enter"&&addTask()}
               style={{ width:"100%", borderRadius:12, padding:"11px 16px", fontSize:14, fontFamily:"inherit", outline:"none", border:"1px solid rgba(79,142,247,.25)", background:"var(--bg)", color:"var(--text)", marginBottom:12, transition:"border-color .2s" }}
               onFocus={e=>e.target.style.borderColor="#4F8EF7"} onBlur={e=>e.target.style.borderColor="rgba(79,142,247,.25)"}/>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:14 }}>
+            <div className="grid-form">
               {[
                 ["Subject", <select value={formSubject} onChange={e=>setFormSubject(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit" }}>
                   <option value="">No subject</option>

@@ -106,6 +106,15 @@ export default function TimetablePage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+      <style>{`
+        .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+        @media (max-width: 768px) {
+          .grid-form { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 500px) {
+          .grid-form { grid-template-columns: 1fr; }
+        }
+      `}</style>
       {/* New Subject Modal */}
       {showNewSubject && (
         <div style={{
@@ -213,7 +222,7 @@ export default function TimetablePage() {
       {/* Add Form */}
       {showForm && (
         <div style={{ marginBottom:20, padding:20, borderRadius:16, border:"1px solid #4F8EF744", background:"var(--card)" }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:12 }}>
+          <div className="grid-form">
             {/* Subject */}
             <div>
               <label style={{ display:"block", fontSize:11, fontWeight:600, color:"var(--muted)", textTransform:"uppercase" as const, marginBottom:6 }}>Subject</label>

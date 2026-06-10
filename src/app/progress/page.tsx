@@ -88,8 +88,16 @@ export default function ProgressPage() {
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
 
+      <style>{`
+        .grid-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .grid-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) {
+          .grid-stats { grid-template-columns: 1fr; }
+          .grid-charts { grid-template-columns: 1fr; }
+        }
+      `}</style>
       {/* Stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
+      <div className="grid-stats">
         {[
           { icon:CheckSquare, label:"Tasks Done",       value:done,             sub:`of ${total} total`,  color:"#34D399" },
           { icon:TrendingUp,  label:"Completion Rate",  value:`${rate}%`,       sub:"Overall progress",   color:"#4F8EF7" },
@@ -111,7 +119,7 @@ export default function ProgressPage() {
       </div>
 
       {/* Charts */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+      <div className="grid-charts">
         <div style={{ borderRadius:20, padding:20, border:"1px solid var(--border)", background:"var(--card)" }}>
           <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:18, color:"var(--text)", marginBottom:4 }}>Daily Study Hours</h3>
           <p style={{ fontSize:12, color:"var(--muted)", marginBottom:16 }}>Last 7 days · Real data</p>
