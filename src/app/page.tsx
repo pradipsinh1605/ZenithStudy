@@ -856,7 +856,7 @@ export default function HomePage() {
         <div className="grid gap-5 lg:grid-cols-[0.8fr_1fr]">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {[
-              { icon: Mail, label: "Email", value: "support@studybuddy.ai" },
+              { icon: Mail, label: "Email", value: "studybuddyaisupport@gmail.com" },
               { icon: Instagram, label: "Instagram", value: "@studybuddy.ai" },
               { icon: Github, label: "GitHub", value: "StudyBuddy-AI" },
               { icon: Linkedin, label: "LinkedIn", value: "StudyBuddy AI" },
