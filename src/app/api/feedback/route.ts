@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         from: "StudyBuddy Feedback <onboarding@resend.dev>",
         to: process.env.OWNER_EMAIL || "your-email@example.com", // Replace with owner email in env
         subject: `New Feedback from ${name.trim()}`,
-        reply_to: email.trim(),
+        replyTo: email.trim(),
         text: `Name: ${name.trim()}\nEmail: ${email.trim()}\n\nMessage:\n${message.trim()}`,
       });
     } catch (err) {
