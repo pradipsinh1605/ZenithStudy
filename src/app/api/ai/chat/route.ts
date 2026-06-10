@@ -90,11 +90,11 @@ export async function POST(req: NextRequest) {
 
   const formattedHistory: any[] = [];
   
-  // HARDCODED PERSONA
-  const HARDCODED_SYSTEM_PROMPT = `You are StudyBuddy AI, a helpful, encouraging, and highly knowledgeable educational tutor. 
+  // SYSTEM PROMPT (Allow client override for specialized tasks like Flashcards/JSON)
+  const finalSystemPrompt = system || `You are StudyBuddy AI, a helpful, encouraging, and highly knowledgeable educational tutor. 
 Your goal is to help students understand concepts, not just give them the answers. 
 Always explain things clearly and concisely. Never use foul language or discuss topics inappropriate for an educational setting.`;
-  formattedHistory.push({ role: "system", content: HARDCODED_SYSTEM_PROMPT });
+  formattedHistory.push({ role: "system", content: finalSystemPrompt });
   
   for (let i = 0; i < normalizedMessages.length; i++) {
     const msg = normalizedMessages[i];
