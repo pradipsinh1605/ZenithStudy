@@ -183,7 +183,7 @@ export default function NotesPage() {
 
   // ── Delete note ──
   const deleteNote = async (note:any) => {
-    if(!confirm(`"${note.title}" delete karvu chhe?`)) return;
+    if(!confirm(`Are you sure you want to delete "${note.title}"?`)) return;
     // Remove from storage if PDF
     if(note.pdf_url&&note.pdf_url.startsWith("http")&&!note.pdf_url.startsWith("data:")) {
       const path = note.pdf_url.split("/note-pdfs/")[1];
@@ -197,17 +197,15 @@ export default function NotesPage() {
 
   // Auto save for text notes
   const autoSaveFn = useCallback(
-    debounce(async (noteId:string, body:string, expectedVersion:number) => {
+    debounce(async (noteId:string, body:string) => {
       setAutoSaving(true);
-      const nextVersion = expectedVersion + 1;
       const {data,error} = await supabase.from("notes")
-        .update({content:body,updated_at:new Date().toISOString(),version:nextVersion})
+        .update({content:body,updated_at:new Date().toISOString()})
         .eq("id",noteId)
-        .eq("version",expectedVersion)
         .select()
         .single();
       setAutoSaving(false);
-      if(error||!data){toast.error("This note changed elsewhere. Reload before saving.");return;}
+      if(error||!data){toast.error("Failed to auto-save note.");return;}
       setLastSaved(new Date());
       setNotes(p=>p.map(n=>n.id===noteId?data:n));
       setActiveNote((n:any)=>n?.id===noteId?data:n);
@@ -216,15 +214,12 @@ export default function NotesPage() {
 
   const saveEdit = async () => {
     if(!activeNote) return;
-    const expectedVersion = Number(activeNote.version||0);
-    const nextVersion = expectedVersion + 1;
     const {data,error} = await supabase.from("notes")
-      .update({content:editContent,updated_at:new Date().toISOString(),version:nextVersion})
+      .update({content:editContent,updated_at:new Date().toISOString()})
       .eq("id",activeNote.id)
-      .eq("version",expectedVersion)
       .select()
       .single();
-    if(error||!data){toast.error("This note changed elsewhere. Reload before saving.");return;}
+    if(error||!data){toast.error("Failed to save note.");return;}
     setNotes(p=>p.map(n=>n.id===activeNote.id?data:n));
     setActiveNote(data); setView("note-view");
     toast.success("Saved!");
@@ -516,7 +511,7 @@ export default function NotesPage() {
             </div>
           </div>
           <textarea value={editContent}
-            onChange={e=>{setEditContent(e.target.value); autoSaveFn(activeNote.id,e.target.value,Number(activeNote.version||0));}}
+            onChange={e=>{setEditContent(e.target.value); autoSaveFn(activeNote.id,e.target.value);}}
             autoFocus
             style={{width:"100%",minHeight:"60vh",background:"none",border:"none",outline:"none",color:"var(--text)",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.9,padding:"24px 28px",boxSizing:"border-box"}}
             placeholder="Write your note here…"/>
