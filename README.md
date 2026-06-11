@@ -1,4 +1,4 @@
-# 📚 StudyBuddy AI
+# 📚 Learnixio AI
 
 **Production-grade student productivity platform**
 

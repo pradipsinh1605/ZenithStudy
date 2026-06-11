@@ -5,7 +5,7 @@ interface LoaderProps {
   fullScreen?: boolean;
 }
 
-export default function Loader({ text = "Loading StudyBuddy AI...", fullScreen = false }: LoaderProps) {
+export default function Loader({ text = "Loading Learnixio AI...", fullScreen = false }: LoaderProps) {
   const content = (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
       <div style={{ position: "relative", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center" }}>

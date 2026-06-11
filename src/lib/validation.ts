@@ -1,4 +1,4 @@
-// Input validation utilities for StudyBuddy AI
+// Input validation utilities for Learnixio AI
 
 export const validate = {
   // Email

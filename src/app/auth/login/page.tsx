@@ -193,7 +193,7 @@ export default function LoginPage() {
             <Brain size={42} className="text-cyan-100" />
           </div>
           <p className="mb-4 inline-flex rounded-full border border-cyan-200/20 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase text-cyan-100">
-            StudyBuddy AI
+            Learnixio AI
           </p>
           <h1 className="font-lora text-6xl font-bold leading-tight text-white">
             {typed}<span className="text-cyan-200">|</span>
@@ -216,9 +216,9 @@ export default function LoginPage() {
           <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-slate-950/70 p-6 shadow-[0_28px_110px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-8">
             <div className="mb-7 text-center">
               <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl border border-cyan-200/20 bg-white/10 shadow-[0_0_40px_rgba(56,189,248,.22)]">
-                <img src="/icon-192.png" alt="StudyBuddy AI" className="h-10 w-10 rounded-xl" />
+                <img src="/icon-192.png" alt="Learnixio AI" className="h-10 w-10 rounded-xl" />
               </div>
-              <h2 className="font-lora text-2xl font-bold text-white">StudyBuddy AI</h2>
+              <h2 className="font-lora text-2xl font-bold text-white">Learnixio AI</h2>
               <p className="mt-2 text-sm font-semibold text-slate-400">Smarter Study. Better You.</p>
             </div>
 

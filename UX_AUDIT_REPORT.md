@@ -1,4 +1,4 @@
-# StudyBuddy AI - Complete UX & Beta Testing Audit
+# Learnixio AI - Complete UX & Beta Testing Audit
 
 ## 1. Critical UX Problems
 *   **Authentication State Bugs:** Logging out occasionally exhibits sluggishness and has a tendency to default immediately to a pre-authenticated `test_user` session if the state is invalidated. This breaks the mental model of a clean sign-out.

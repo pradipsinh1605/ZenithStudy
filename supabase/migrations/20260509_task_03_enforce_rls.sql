@@ -1,4 +1,4 @@
--- TASK-03: Enforce user-isolated RLS on StudyBuddy public tables.
+-- TASK-03: Enforce user-isolated RLS on Learnixio public tables.
 -- Safe to rerun: only creates policies when they are missing.
 
 DO $$

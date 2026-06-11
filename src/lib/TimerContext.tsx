@@ -96,7 +96,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     toast.success(`Session complete! +${xpGain} XP 🎉`);
     // Browser notification
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      new Notification("StudyBuddy AI 🍅", { body: `Focus session complete! +${xpGain} XP earned!` });
+      new Notification("Learnixio AI 🍅", { body: `Focus session complete! +${xpGain} XP earned!` });
     }
   };
 

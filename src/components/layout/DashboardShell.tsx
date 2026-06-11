@@ -637,7 +637,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               </div>
               <div className="brand-copy" style={{ minWidth: 0 }}>
                 <div style={{ color: "var(--text)", fontSize: 16, fontWeight: 900, lineHeight: 1 }}>
-                  StudyBuddy AI
+                  Learnixio AI
                 </div>
                 <p style={{ color: "var(--muted)", fontSize: 11, marginTop: 4, fontWeight: 700 }}>
                   Learn, plan, revise

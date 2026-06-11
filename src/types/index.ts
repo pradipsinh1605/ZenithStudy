@@ -1,5 +1,5 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// StudyBuddy AI — TypeScript Types
+// Learnixio AI — TypeScript Types
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // ── User & Profile ──

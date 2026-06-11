@@ -1,8 +1,8 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// StudyBuddy AI — XP, Streak & Badge System
+// Learnixio AI — XP, Streak & Badge System
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-export const XP_EVENT = "studybuddy:xp-updated";
+export const XP_EVENT = "learnixio:xp-updated";
 
 export function fireXPUpdate(newXp?: number, newStreak?: number) {
   if (typeof window !== "undefined") {

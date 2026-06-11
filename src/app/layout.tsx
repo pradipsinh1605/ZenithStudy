@@ -11,11 +11,11 @@ const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-dm-seri
 const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "StudyBuddy AI", template: "%s | StudyBuddy AI" },
+  title: { default: "Learnixio AI", template: "%s | Learnixio AI" },
   description:
-    "StudyBuddy AI is an AI-powered student productivity platform for smart notes, timetable planning, quizzes, doubt solving, reminders, analytics, and gamified studying.",
+    "Learnixio AI is an AI-powered student productivity platform for smart notes, timetable planning, quizzes, doubt solving, reminders, analytics, and gamified studying.",
   keywords: [
-    "StudyBuddy AI",
+    "Learnixio AI",
     "AI study assistant",
     "student productivity",
     "AI notes",
@@ -24,10 +24,10 @@ export const metadata: Metadata = {
     "study reminders",
   ],
   openGraph: {
-    title: "StudyBuddy AI - Study Smarter with AI",
+    title: "Learnixio AI - Study Smarter with AI",
     description:
       "AI-powered notes, timetable planning, quizzes, doubt solving, productivity tracking, and gamified studying in one intelligent platform.",
-    siteName: "StudyBuddy AI",
+    siteName: "Learnixio AI",
     type: "website",
   },
   manifest: "/manifest.json",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "StudyBuddy AI",
+    title: "Learnixio AI",
   },
 };
 
@@ -59,7 +59,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="StudyBuddy AI" />
+        <meta name="apple-mobile-web-app-title" content="Learnixio AI" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
@@ -70,7 +70,7 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          storageKey="studybuddy-theme"
+          storageKey="learnixio-theme"
           enableSystem={false}
           disableTransitionOnChange
         >

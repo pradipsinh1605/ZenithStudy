@@ -36,7 +36,7 @@ export default function SettingsPage() {
       setNotifPerm(result);
       if (result === "granted") {
         toast.success("Notifications enabled! 🔔");
-        new Notification("StudyBuddy AI", { body: "Notifications are now active! 🎉" });
+        new Notification("Learnixio AI", { body: "Notifications are now active! 🎉" });
       } else {
         toast.error("Please allow notifications in browser settings");
       }
@@ -49,7 +49,7 @@ export default function SettingsPage() {
     toast.success("🔔 Test notification sent!");
     try {
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        new Notification("⏰ Test Reminder", { body: "StudyBuddy AI notification is working!" });
+        new Notification("⏰ Test Reminder", { body: "Learnixio AI notification is working!" });
       }
     } catch {}
   };

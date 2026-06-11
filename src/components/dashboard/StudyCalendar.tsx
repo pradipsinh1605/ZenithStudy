@@ -11,7 +11,7 @@ type Reminder = {
   time: string;
 };
 
-const STORAGE_KEY = "studybuddy-reminders-v1";
+const STORAGE_KEY = "learnixio-reminders-v1";
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function toDateKey(date: Date) {

@@ -1,4 +1,4 @@
-# 🚀 StudyBuddy AI — Complete Setup Guide
+# 🚀 Learnixio AI — Complete Setup Guide
 
 ### (Step-by-step — Coding knowledge વગર!)
 
@@ -35,7 +35,7 @@
 ### 2.2 New Project બનાવો
 
 1. **"New Project"** click કરો
-2. Name: `studybuddy-ai`
+2. Name: `learnixio-ai`
 3. Password: strong password type કરો (save it!)
 4. Region: **South Asia (Mumbai)** select કરો
 5. **"Create new project"** click કરો
@@ -64,12 +64,12 @@
 
 ### 3.1 ZIP Extract કરો
 
-1. Download કરેલ `studybuddy-ai.zip` extract કરો
-2. Folder name: `studybuddy-ai`
+1. Download કરેલ `learnixio-ai.zip` extract કરો
+2. Folder name: `learnixio-ai`
 
 ### 3.2 .env.local File બનાવો
 
-1. `studybuddy-ai` folder open કરો
+1. `learnixio-ai` folder open કરો
 2. `.env.example` file copy કરો
 3. Copy ની name change કરો: `.env.local`
 4. File open કરો (Notepad/TextEdit)
@@ -93,7 +93,7 @@ Save કરો! ✅
 
 ### 3.4 Dependencies Install
 
-1. `studybuddy-ai` folder ની address copy કરો
+1. `learnixio-ai` folder ની address copy કરો
 2. cmd/Terminal open કરો
 3. Type: `cd` (space સાથે) + folder address paste
 4. Enter press કરો
@@ -122,7 +122,7 @@ Browser open કરો: **http://localhost:3000**
 ### 5.1 GitHub Account
 
 1. **https://github.com** → Sign up (Google use)
-2. **New Repository** → Name: `studybuddy-ai`
+2. **New Repository** → Name: `learnixio-ai`
 3. **"uploading an existing file"** click
 4. Project files upload કરો (**⚠️ .env.local upload ના કરો!**)
 5. **Commit changes** click
@@ -142,7 +142,7 @@ DIFY_BASE_URL              = https://api.dify.ai/v1
 
 4. **"Deploy"** click
 5. ⏳ 2 minutes...
-6. ✅ Live URL મળશે! (e.g. studybuddy-ai.vercel.app)
+6. ✅ Live URL મળશે! (e.g. learnixio-ai.vercel.app)
 
 ---
 

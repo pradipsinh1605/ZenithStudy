@@ -23,8 +23,8 @@ export default function TimerPage() {
 
   // Update page title with timer
   useEffect(() => {
-    document.title = running ? `${fmt(timeLeft)} — StudyBuddy AI` : "Focus Timer — StudyBuddy AI";
-    return () => { document.title = "StudyBuddy AI"; };
+    document.title = running ? `${fmt(timeLeft)} — Learnixio AI` : "Focus Timer — Learnixio AI";
+    return () => { document.title = "Learnixio AI"; };
   }, [timeLeft, running]);
 
   return (

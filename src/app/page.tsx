@@ -94,7 +94,7 @@ const plans = [
 ];
 
 const testimonials = [
-  { name: "Aarav Mehta", role: "Engineering student", quote: "StudyBuddy turns my late lecture notes into clean revision blocks before lab days. The quiz flow is the reason I revise consistently now." },
+  { name: "Aarav Mehta", role: "Engineering student", quote: "Learnixio turns my late lecture notes into clean revision blocks before lab days. The quiz flow is the reason I revise consistently now." },
   { name: "Nisha Rao", role: "Medical aspirant", quote: "I use it after biology lectures to summarize diagrams and make quick MCQs. It saves me from drowning in scattered notes." },
   { name: "Kabir Singh", role: "UPSC learner", quote: "The planner keeps polity, history, and current affairs balanced. It feels like a disciplined study mentor without the pressure." },
   { name: "Meera Iyer", role: "College topper", quote: "The dashboard made my weekly study pattern obvious. I started fixing weak subjects before tests instead of after them." },
@@ -102,16 +102,16 @@ const testimonials = [
   { name: "Sara Khan", role: "Productivity-focused student", quote: "Tasks, streaks, and focus sessions finally live in one place. It feels premium but still simple enough to use daily." },
   { name: "Devansh Shah", role: "Computer science student", quote: "I generate flashcards from coding notes and revise on the bus. The AI answers are fast, but the verification reminder is useful." },
   { name: "Ananya Das", role: "NEET student", quote: "The spaced revision rhythm helps me stay calm. I can see what needs attention instead of guessing every morning." },
-  { name: "Vikram Joshi", role: "Exam comeback student", quote: "I had messy habits before finals. StudyBuddy made my backlog visible and gave me a plan I could actually follow." },
+  { name: "Vikram Joshi", role: "Exam comeback student", quote: "I had messy habits before finals. Learnixio made my backlog visible and gave me a plan I could actually follow." },
 ];
 
 const studentTypes = ["Engineering", "Medical", "UPSC", "Productivity", "Late-night learner", "College topper", "Other"];
 
 const faqs = [
-  { q: "Is StudyBuddy AI free?", a: "Yes. You can start with the free plan, then upgrade when you need unlimited AI tools, uploads, and advanced analytics." },
+  { q: "Is Learnixio AI free?", a: "Yes. You can start with the free plan, then upgrade when you need unlimited AI tools, uploads, and advanced analytics." },
   { q: "Can I upload PDFs?", a: "Yes. PDF upload is designed for converting study material into notes, quizzes, flashcards, and revision flows." },
   { q: "Does it work on mobile?", a: "Yes. The interface is responsive and built to work smoothly on mobile, tablet, and desktop screens." },
-  { q: "Is my data secure?", a: "StudyBuddy AI is built with authenticated access and privacy-first product patterns so your study data stays protected." },
+  { q: "Is my data secure?", a: "Learnixio AI is built with authenticated access and privacy-first product patterns so your study data stays protected." },
   { q: "How does AI help studying?", a: "AI helps summarize content, solve doubts, generate quizzes, recommend study actions, and keep learning personalized." },
 ];
 
@@ -326,9 +326,9 @@ export default function HomePage() {
 
       <nav className="sticky top-0 z-40 border-b border-white/10 bg-[#030711]/65 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <button onClick={() => router.push("/")} className="group flex items-center gap-3" aria-label="StudyBuddy AI home">
-            <img src="/icon-192.png" alt="StudyBuddy AI Logo" className="h-9 w-9 rounded-xl shadow-[0_0_24px_rgba(79,142,247,0.25)]" />
-            <span className="text-sm font-extrabold tracking-normal text-white sm:text-base">StudyBuddy AI</span>
+          <button onClick={() => router.push("/")} className="group flex items-center gap-3" aria-label="Learnixio AI home">
+            <img src="/icon-192.png" alt="Learnixio AI Logo" className="h-9 w-9 rounded-xl shadow-[0_0_24px_rgba(79,142,247,0.25)]" />
+            <span className="text-sm font-extrabold tracking-normal text-white sm:text-base">Learnixio AI</span>
           </button>
 
           <div className="hidden items-center gap-8 md:flex">
@@ -653,9 +653,9 @@ export default function HomePage() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <SectionHeading
-          eyebrow="Why StudyBuddy AI"
+          eyebrow="Why Learnixio AI"
           title="Built for students who want focus, speed, and clarity"
-          desc="StudyBuddy AI combines the intelligence of AI tools with the discipline of a productivity system."
+          desc="Learnixio AI combines the intelligence of AI tools with the discipline of a productivity system."
         />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {reasons.map((reason, index) => (
@@ -750,7 +750,7 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="Student stories"
             title="Built with feedback from ambitious learners"
-            desc="From engineering labs to medical prep and UPSC revision, students use StudyBuddy AI to stay clear, consistent, and calm."
+            desc="From engineering labs to medical prep and UPSC revision, students use Learnixio AI to stay clear, consistent, and calm."
           />
           <div className="mb-8 flex justify-center">
             <button onClick={() => setFeedbackModalOpen(true)} className="rounded-full border border-cyan-200/20 bg-white/10 px-5 py-3 text-sm font-black text-white shadow-[0_0_35px_rgba(56,189,248,.12)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-white/15">
@@ -793,7 +793,7 @@ export default function HomePage() {
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase text-cyan-100">Submit your feedback</p>
-                  <h3 className="mt-1 text-xl font-black text-white">Help shape StudyBuddy AI</h3>
+                  <h3 className="mt-1 text-xl font-black text-white">Help shape Learnixio AI</h3>
                 </div>
                 <button type="button" onClick={() => setFeedbackModalOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/10 text-white"><X size={18} /></button>
               </div>
@@ -851,15 +851,15 @@ export default function HomePage() {
         <SectionHeading
           eyebrow="Contact"
           title="Share feedback, ideas, or partnership notes"
-          desc="StudyBuddy AI is built around student workflows, so feedback directly shapes the product."
+          desc="Learnixio AI is built around student workflows, so feedback directly shapes the product."
         />
         <div className="grid gap-5 lg:grid-cols-[0.8fr_1fr]">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {[
-              { icon: Mail, label: "Email", value: "studybuddyaisupport@gmail.com" },
-              { icon: Instagram, label: "Instagram", value: "@studybuddy.ai" },
-              { icon: Github, label: "GitHub", value: "StudyBuddy-AI" },
-              { icon: Linkedin, label: "LinkedIn", value: "StudyBuddy AI" },
+              { icon: Mail, label: "Email", value: "learnixioai@gmail.com" },
+              { icon: Instagram, label: "Instagram", value: "@learnixioai" },
+              { icon: Github, label: "GitHub", value: "Learnixio-AI" },
+              { icon: Linkedin, label: "LinkedIn", value: "Learnixio AI" },
             ].map((contact) => {
               const Icon = contact.icon;
               return (
@@ -892,7 +892,7 @@ export default function HomePage() {
             </div>
             <label className="mt-4 grid gap-2 text-sm font-bold text-slate-300">
               Feedback
-              <textarea name="message" required rows={5} className="resize-none rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Tell us what you want StudyBuddy AI to improve next." />
+              <textarea name="message" required rows={5} className="resize-none rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-200/50" placeholder="Tell us what you want Learnixio AI to improve next." />
             </label>
             <button disabled={contactLoading} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 via-violet-500 to-cyan-400 px-6 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60">
               {contactLoading ? "Sending..." : "Send Feedback"} <ArrowRight size={16} />
@@ -928,8 +928,8 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1fr_auto] lg:px-8">
           <div>
             <div className="flex items-center gap-3">
-              <img src="/icon-192.png" alt="StudyBuddy AI logo" className="h-10 w-10 rounded-xl" />
-              <p className="text-base font-black text-white">StudyBuddy AI</p>
+              <img src="/icon-192.png" alt="Learnixio AI logo" className="h-10 w-10 rounded-xl" />
+              <p className="text-base font-black text-white">Learnixio AI</p>
             </div>
             <p className="mt-4 max-w-lg text-sm leading-7 text-slate-500">
               AI-powered student productivity for notes, planning, quizzes, doubts, reminders, analytics, and focused study.
@@ -945,7 +945,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mx-auto flex max-w-7xl flex-col gap-3 border-t border-white/10 px-4 py-5 text-xs font-semibold text-slate-600 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <p>Copyright 2026 StudyBuddy AI. All rights reserved.</p>
+          <p>Copyright 2026 Learnixio AI. All rights reserved.</p>
           <div className="flex gap-4">
             <Github size={17} />
             <Instagram size={17} />

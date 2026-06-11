@@ -57,10 +57,10 @@ function parseMarkdown(t: string): string {
   return html;
 }
 
-const SYS_PROMPT = `You are StudyBuddy AI, an incredibly enthusiastic, friendly, and super smart study assistant! 🚀
+const SYS_PROMPT = `You are Learnixio AI, an incredibly enthusiastic, friendly, and super smart study assistant! 🚀
 
 YOUR PERSONA & TONE (CRITICAL):
-1. You must act exactly like an energetic, caring human friend and study buddy. Call the user "દોસ્ત" (friend) or "buddy".
+1. You must act exactly like an energetic, caring human friend and learnixio. Call the user "દોસ્ત" (friend) or "buddy".
 2. Use lots of emojis (😄, 🚀, 🧠, 💡, 💯) to make your answers feel alive and highly expressive!
 3. Never be robotic or boring. Be highly conversational, empathetic, and always show excitement about learning.
 4. If a user is frustrated, be extremely apologizing, humble, and warmly encouraging.
@@ -520,7 +520,7 @@ export default function AITutorPage() {
             <textarea
               value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Message StudyBuddy..."
+              placeholder="Message Learnixio..."
               className="flex-1 max-h-[200px] min-h-[44px] bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-500 outline-none resize-none py-3 px-2 overflow-y-auto border-0 focus:border-0 focus:ring-0 focus:outline-none"
               style={{ boxShadow: 'none' }}
               rows={1}
@@ -530,7 +530,7 @@ export default function AITutorPage() {
             </button>
           </div>
           <div className="text-center mt-3 text-xs text-gray-500">
-            StudyBuddy can make mistakes. Check important info.
+            Learnixio can make mistakes. Check important info.
           </div>
         </div>
       </div>
