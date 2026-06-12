@@ -123,7 +123,11 @@ export default function SettingsPage() {
         supabase.from("subjects").delete().eq("user_id", user.id),
         supabase.from("flashcards").delete().eq("user_id", user.id),
         supabase.from("ai_threads").delete().eq("user_id", user.id),
-        supabase.from("xp_logs").delete().eq("user_id", user.id)
+        supabase.from("xp_logs").delete().eq("user_id", user.id),
+        supabase.from("user_xp").delete().eq("user_id", user.id),
+        supabase.from("profiles").delete().eq("user_id", user.id),
+        supabase.from("study_sessions").delete().eq("user_id", user.id),
+        supabase.from("timetable").delete().eq("user_id", user.id)
       ]);
       
       toast.dismiss();
