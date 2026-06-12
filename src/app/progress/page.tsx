@@ -131,7 +131,7 @@ export default function ProgressPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
                 <XAxis dataKey="day" stroke="var(--muted)" tick={{ fontSize:11 }}/>
                 <YAxis stroke="var(--muted)" tick={{ fontSize:11 }}/>
-                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} formatter={(v:any) => [`${v}h`, "Hours"]}/>
+                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} formatter={(v:any) => [`${v}h`, "Hours"]} itemStyle={{ color: "var(--text)" }} labelStyle={{ color: "var(--muted)" }}/>
                 <Bar dataKey="hours" fill="#4F8EF7" radius={[6,6,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
@@ -151,7 +151,7 @@ export default function ProgressPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)"/>
                 <XAxis dataKey="day" stroke="var(--muted)" tick={{ fontSize:11 }}/>
                 <YAxis stroke="var(--muted)" tick={{ fontSize:11 }}/>
-                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} formatter={(v:any) => [v, "Tasks"]}/>
+                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} formatter={(v:any) => [v, "Tasks"]} itemStyle={{ color: "var(--text)" }} labelStyle={{ color: "var(--muted)" }}/>
                 <Area type="monotone" dataKey="tasks" stroke="#34D399" fill="#34D39922"/>
               </AreaChart>
             </ResponsiveContainer>
