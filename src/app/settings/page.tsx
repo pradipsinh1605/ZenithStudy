@@ -148,19 +148,16 @@ export default function SettingsPage() {
                 <div style={{ fontSize:12, color:"var(--muted)" }}>25 minutes</div>
               </div>
             </div>
-            <button onClick={() => toast("Timer settings opening...")} style={{ padding:"6px 12px", borderRadius:8, background:"var(--border)", color:"var(--text)", border:"none", fontSize:12, cursor:"pointer", fontWeight:600 }}>Change</button>
-          </div>
+            <button onClick={() => router.push("/timer")} style={{ padding:"6px 12px", borderRadius:8, background:"var(--border)", color:"var(--text)", border:"none", fontSize:12, cursor:"pointer", fontWeight:600 }}>Change</button>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--bg)", borderRadius:12 }}>
             <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-              <Volume2 size={20} style={{ color:"var(--muted)" }}/>
+              <Clock size={20} style={{ color:"var(--muted)" }}/>
               <div>
-                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Timer Ticking Sound</div>
-                <div style={{ fontSize:12, color:"var(--muted)" }}>Play a ticking sound during focus</div>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Default Session Length</div>
+                <div style={{ fontSize:12, color:"var(--muted)" }}>Customize in the Focus Timer page</div>
               </div>
             </div>
-            <div style={{ width:38, height:22, borderRadius:11, background:"#34D399", cursor:"pointer", position:"relative" }} onClick={() => toast("Sound settings saved!")}>
-              <div style={{ width:18, height:18, borderRadius:"50%", background:"#fff", position:"absolute", top:2, left:18 }}/>
-            </div>
+            <button onClick={() => router.push("/timer")} style={{ padding:"6px 12px", borderRadius:8, background:"var(--border)", color:"var(--text)", border:"none", fontSize:12, cursor:"pointer", fontWeight:600 }}>Open Timer</button>
           </div>
         </div>
       </div>
@@ -265,11 +262,11 @@ export default function SettingsPage() {
       <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
         <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Help & Support</h3>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-          <button onClick={() => toast("Opening mail client...")} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
+          <button onClick={() => window.location.href = "mailto:support@learnixio.ai"} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
             <LifeBuoy size={18} style={{ color:"#4F8EF7" }}/>
             <span style={{ fontSize:13, fontWeight:600 }}>Contact Us</span>
           </button>
-          <button onClick={() => toast("Opening Terms & Policies...")} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
+          <button onClick={() => window.open("/terms", "_blank")} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
             <ExternalLink size={18} style={{ color:"#A78BFA" }}/>
             <span style={{ fontSize:13, fontWeight:600 }}>Terms & Policy</span>
           </button>
