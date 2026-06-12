@@ -490,7 +490,7 @@ export default function HomePage() {
                   <div className="rounded-xl border border-white/10 bg-gradient-to-br from-blue-500/20 to-violet-500/10 p-4">
                     <p className="text-xs font-bold uppercase text-slate-300">AI Assistant</p>
                     <div className="mt-4 space-y-3">
-                      <p className="rounded-xl bg-white/10 p-3 text-xs leading-5 text-slate-200">Explain Newton's laws with a simple exam answer.</p>
+                      <p className="rounded-xl bg-white/10 p-3 text-xs leading-5 text-slate-200">Explain Newton&apos;s laws with a simple exam answer.</p>
                       <p className="rounded-xl bg-cyan-300/15 p-3 text-xs leading-5 text-cyan-100">Here is a short answer, diagram idea, and 3 revision questions.</p>
                     </div>
                   </div>

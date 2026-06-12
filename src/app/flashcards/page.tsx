@@ -293,7 +293,7 @@ export default function FlashcardsPage() {
               </div>
 
               <div style={{padding:"10px 14px",borderRadius:10,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:"var(--muted)",lineHeight:1.6}}>
-                🤖 AI will generate <strong style={{color:"#A78BFA"}}>{aiCount} {aiType==="flashcard"?"flashcards":"quiz MCQ questions"}</strong> for <strong style={{color:"#A78BFA"}}>"{aiPrompt||"your topic"}"</strong>.
+                🤖 AI will generate <strong style={{color:"#A78BFA"}}>{aiCount} {aiType==="flashcard"?"flashcards":"quiz MCQ questions"}</strong> for <strong style={{color:"#A78BFA"}}>&quot;{aiPrompt||"your topic"}&quot;</strong>.
                 {aiType==="quiz"&&" Each Q has 4 options — click to answer!"}
               </div>
 
@@ -396,7 +396,7 @@ export default function FlashcardsPage() {
         <div style={{textAlign:"center",padding:60,color:"var(--muted)"}}>
           <Layers size={48} style={{margin:"0 auto 14px",opacity:.2}}/>
           <p style={{fontSize:15,fontWeight:600}}>No {activeTab==="flashcard"?"flashcards":"quiz questions"} yet</p>
-          <p style={{fontSize:13,marginTop:6}}>Click "AI Generate" to create with AI 🤖</p>
+          <p style={{fontSize:13,marginTop:6}}>Click &quot;AI Generate&quot; to create with AI 🤖</p>
         </div>
       ):(
         <>

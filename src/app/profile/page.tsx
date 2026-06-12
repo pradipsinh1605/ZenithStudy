@@ -298,7 +298,7 @@ export default function ProfilePage() {
             <p style={{ color: "rgba(255,255,255,.6)", fontSize: 14, marginTop: 4 }}>
               {eduLevel || "Student"}{institution ? ` · ${institution}` : ""}
             </p>
-            {bio && <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13, marginTop: 6, fontStyle: "italic" }}>"{bio}"</p>}
+            {bio && <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13, marginTop: 6, fontStyle: "italic" }}>&quot;{bio}&quot;</p>}
           </div>
           <div style={{ marginLeft: "auto" }}>
             {edit ? (
@@ -371,7 +371,7 @@ export default function ProfilePage() {
                 <InfoRow label="Country"       value={country} />
                 {bio && (
                   <div style={{ padding: "10px 14px", background: "var(--bg)", borderRadius: 10, fontStyle: "italic", color: "var(--muted)", fontSize: 13 }}>
-                    "{bio}"
+                    &quot;{bio}&quot;
                   </div>
                 )}
               </>

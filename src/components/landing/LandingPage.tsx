@@ -736,7 +736,7 @@ export default function LandingPage() {
               {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
                 <div key={i} className="testi-card">
                   <div className="stars">{"★".repeat(t.stars)}</div>
-                  <p className="testi-text">"{t.text}"</p>
+                  <p className="testi-text">&quot;{t.text}&quot;</p>
                   <div className="testi-author">
                     <div className="testi-avatar" style={{ background:`${t.color}33` }}>
                       <span style={{ color:t.color }}>{t.name[0]}</span>

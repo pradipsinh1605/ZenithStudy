@@ -159,16 +159,16 @@ export default function PlannerPage() {
               onFocus={e=>e.target.style.borderColor="#4F8EF7"} onBlur={e=>e.target.style.borderColor="rgba(79,142,247,.25)"}/>
             <div className="grid-form">
               {[
-                ["Subject", <select value={formSubject} onChange={e=>setFormSubject(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit" }}>
+                ["Subject", <select key="subject" value={formSubject} onChange={e=>setFormSubject(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit" }}>
                   <option value="">No subject</option>
                   {subjects.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>],
-                ["Priority", <select value={formPriority} onChange={e=>setFormPriority(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit" }}>
+                ["Priority", <select key="priority" value={formPriority} onChange={e=>setFormPriority(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit" }}>
                   <option value="high">🔴 High</option>
                   <option value="medium">🟡 Medium</option>
                   <option value="low">🟢 Low</option>
                 </select>],
-                ["Deadline", <input type="date" value={formDeadline} onChange={e=>setFormDeadline(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit" }}/>],
+                ["Deadline", <input key="deadline" type="date" value={formDeadline} onChange={e=>setFormDeadline(e.target.value)} style={{ width:"100%",borderRadius:10,padding:"9px 12px",fontSize:13,border:"1px solid var(--border)",background:"var(--bg)",color:"var(--text)",outline:"none",fontFamily:"inherit" }}/>],
               ].map(([lbl, inp]) => (
                 <div key={lbl as string}>
                   <label style={{ display:"block",fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:5 }}>{lbl}</label>
