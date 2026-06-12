@@ -568,14 +568,6 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             .student-strip {
               justify-content: flex-start;
             }
-            
-            .bottom-nav {
-              display: none;
-            }
-
-            .hamburger-btn {
-              display: inline-flex;
-            }
           }
 
           @media (max-width: 560px) {
@@ -584,7 +576,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }
 
             .page-wrap {
-              padding: 16px 12px calc(40px + env(safe-area-inset-bottom));
+              padding: 16px 12px calc(110px + env(safe-area-inset-bottom));
             }
 
             .brand-copy p {
@@ -592,8 +584,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             }
 
             .student-strip { gap: 6px; }
-            
-            .bottom-nav { display: none; }
+
+            .bottom-nav {
+              width: calc(100% - 24px);
+              bottom: max(12px, env(safe-area-inset-bottom));
+            }
             
             .notification-dropdown {
               position: fixed !important;
