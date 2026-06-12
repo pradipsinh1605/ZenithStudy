@@ -1,4 +1,4 @@
-// Input validation utilities for Learnixio AI
+// Input validation utilities for ZenithStudy AI
 
 export const validate = {
   // Email

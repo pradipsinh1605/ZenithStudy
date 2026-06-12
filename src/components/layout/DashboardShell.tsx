@@ -640,7 +640,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                   background: "linear-gradient(90deg, #4F8EF7, #A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                   filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.1))"
                 }}>
-                  Learnixio AI
+                  ZenithStudy AI
                 </div>
                 <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, fontWeight: 700, letterSpacing: "0.5px" }}>
                   Learn, plan, revise
@@ -995,7 +995,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       <ConfirmModal
         isOpen={showLogoutConfirm}
         title="Sign Out"
-        message="Are you sure you want to sign out of Learnixio AI?"
+        message="Are you sure you want to sign out of ZenithStudy AI?"
         onConfirm={() => { setShowLogoutConfirm(false); logout(); }}
         onCancel={() => setShowLogoutConfirm(false)}
         confirmText="Sign Out"

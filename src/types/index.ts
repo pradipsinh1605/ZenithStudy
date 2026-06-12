@@ -1,5 +1,5 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Learnixio AI — TypeScript Types
+// ZenithStudy AI — TypeScript Types
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // ── User & Profile ──

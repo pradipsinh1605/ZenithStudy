@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   if (process.env.RESEND_API_KEY) {
     try {
       await resend.emails.send({
-        from: "Learnixio Feedback <onboarding@resend.dev>",
+        from: "ZenithStudy Feedback <onboarding@resend.dev>",
         to: process.env.OWNER_EMAIL || "your-email@example.com", // Replace with owner email in env
         subject: `New Feedback from ${name.trim()}`,
         replyTo: email.trim(),

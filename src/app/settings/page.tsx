@@ -42,7 +42,7 @@ export default function SettingsPage() {
       setNotifPerm(result);
       if (result === "granted") {
         toast.success("Notifications enabled! 🔔");
-        new Notification("Learnixio AI", { body: "Notifications are now active! 🎉" });
+        new Notification("ZenithStudy AI", { body: "Notifications are now active! 🎉" });
       } else {
         toast.error("Please allow notifications in browser settings");
       }
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     toast.success("🔔 Test notification sent!");
     try {
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        new Notification("⏰ Test Reminder", { body: "Learnixio AI notification is working!" });
+        new Notification("⏰ Test Reminder", { body: "ZenithStudy AI notification is working!" });
       }
     } catch {}
   };
@@ -94,14 +94,14 @@ export default function SettingsPage() {
         subjects: subjects.data || [],
         flashcards: flashcards.data || [],
         ai_threads: ai_threads.data || [],
-        localStorageReminders: JSON.parse(localStorage.getItem("learnixio-reminders-v1") || "[]")
+        localStorageReminders: JSON.parse(localStorage.getItem("zenithstudy-reminders-v1") || "[]")
       };
 
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Learnixio_Data_${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `ZenithStudy_Data_${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
       
@@ -267,7 +267,7 @@ export default function SettingsPage() {
       <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
         <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Help & Support</h3>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-          <button onClick={() => window.location.href = "mailto:support@learnixio.ai"} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
+          <button onClick={() => window.location.href = "mailto:support@zenithstudy.ai"} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
             <LifeBuoy size={18} style={{ color:"#4F8EF7" }}/>
             <span style={{ fontSize:13, fontWeight:600 }}>Contact Us</span>
           </button>
@@ -282,7 +282,7 @@ export default function SettingsPage() {
       <div style={{ textAlign:"center", padding:"20px 0 40px", color:"var(--muted)" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:8 }}>
           <Info size={16}/>
-          <span style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>Learnixio AI</span>
+          <span style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>ZenithStudy AI</span>
         </div>
         <p style={{ fontSize:12 }}>Version 1.0.0</p>
         <p style={{ fontSize:12, marginTop:4 }}>Made with ❤️ for students</p>

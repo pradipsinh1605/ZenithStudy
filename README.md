@@ -1,4 +1,4 @@
-# 📚 Learnixio AI
+# 📚 ZenithStudy AI
 
 **Production-grade student productivity platform**
 

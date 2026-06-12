@@ -1,5 +1,5 @@
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- Learnixio AI — Complete Database Schema
+-- ZenithStudy AI — Complete Database Schema
 -- Supabase માં આ SQL run કરો (SQL Editor માં)
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

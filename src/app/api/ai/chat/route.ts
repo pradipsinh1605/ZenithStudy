@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   const formattedHistory: any[] = [];
   
   // SYSTEM PROMPT (Allow client override for specialized tasks like Flashcards/JSON)
-  const finalSystemPrompt = system || `You are Learnixio AI, a helpful, encouraging, and highly knowledgeable educational tutor. 
+  const finalSystemPrompt = system || `You are ZenithStudy AI, a helpful, encouraging, and highly knowledgeable educational tutor. 
 Your goal is to help students understand concepts, not just give them the answers. 
 Always explain things clearly and concisely. Never use foul language or discuss topics inappropriate for an educational setting.`;
   formattedHistory.push({ role: "system", content: finalSystemPrompt });

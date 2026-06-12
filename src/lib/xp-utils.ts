@@ -1,8 +1,8 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Learnixio AI — XP, Streak & Badge System
+// ZenithStudy AI — XP, Streak & Badge System
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-export const XP_EVENT = "learnixio:xp-updated";
+export const XP_EVENT = "zenithstudy:xp-updated";
 
 export function fireXPUpdate(newXp?: number, newStreak?: number) {
   if (typeof window !== "undefined") {

@@ -5,14 +5,11 @@ search_dir = r"d:\AI-Projects\studybuddy-ai\studybuddy-ai"
 
 def replace_func(match):
     word = match.group(0)
-    if word == "StudyBuddy": return "Learnixio"
-    if word == "studybuddy": return "learnixio"
-    if word == "STUDYBUDDY": return "LEARNIXIO"
-    if word == "Study Buddy": return "Learnixio"
-    if word == "study buddy": return "learnixio"
-    if word == "Studybuddy": return "Learnixio"
-    if word[0].islower(): return "learnixio"
-    return "Learnixio"
+    if word == "Learnixio": return "ZenithStudy"
+    if word == "learnixio": return "zenithstudy"
+    if word == "LEARNIXIO": return "ZENITHSTUDY"
+    if word[0].islower(): return "zenithstudy"
+    return "ZenithStudy"
 
 ignored_dirs = {".git", "node_modules", ".next"}
 ignored_files = {"package-lock.json"}
@@ -29,7 +26,7 @@ for root, dirs, files in os.walk(search_dir):
                 with open(filepath, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
-                new_content = re.sub(r"(?i)study\s*buddy", replace_func, content)
+                new_content = re.sub(r"(?i)learnixio", replace_func, content)
                 
                 if new_content != content:
                     with open(filepath, 'w', encoding='utf-8') as f:
