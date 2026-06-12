@@ -151,6 +151,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <button onClick={() => router.push("/timer")} style={{ padding:"6px 12px", borderRadius:8, background:"var(--border)", color:"var(--text)", border:"none", fontSize:12, cursor:"pointer", fontWeight:600 }}>Change</button>
+          </div>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--bg)", borderRadius:12 }}>
             <div style={{ display:"flex", gap:10, alignItems:"center" }}>
               <Clock size={20} style={{ color:"var(--muted)" }}/>
