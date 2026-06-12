@@ -2,11 +2,13 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import { Bell, Moon, Sun, CheckCircle2, Trash2, Loader2, Download, ShieldAlert, LifeBuoy, Info, ExternalLink, Timer, Volume2 } from "lucide-react";
+import { Bell, Moon, Sun, CheckCircle2, Trash2, Loader2, Download, ShieldAlert, LifeBuoy, Info, ExternalLink, Timer, Volume2, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const supabase = createClient();
   const { theme, setTheme } = useTheme();
   const [mounted,   setMounted]   = useState(false);
