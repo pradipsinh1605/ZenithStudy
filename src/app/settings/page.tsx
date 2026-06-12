@@ -69,32 +69,6 @@ export default function SettingsPage() {
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
 
-      {/* AI Bot Status */}
-      <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:18 }}>
-          <div style={{ width:44, height:44, borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#4F8EF7,#A78BFA)" }}>
-            <Brain size={22} color="#fff"/>
-          </div>
-          <div>
-            <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>AI Study Tutor — OpenAI (GPT-4o)</h3>
-            <p style={{ fontSize:12, color:"var(--muted)", marginTop:2 }}>Powered by OpenAI — GPT-4o Model</p>
-          </div>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {[["🤖","Bot Status","OpenAI · GPT-4o Active","#34D399"],["📄","File Support","Images and Text","var(--muted)"],["💬","Memory","Persistent conversation","var(--muted)"],["🎓","Capabilities","Explain, Quiz, Plan, Summarise","var(--muted)"]].map(([ico,lbl,val,color]) => (
-            <div key={lbl as string} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", background:"var(--bg)", borderRadius:12 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ fontSize:18 }}>{ico}</span>
-                <span style={{ fontSize:13, color:"var(--muted)" }}>{lbl}</span>
-              </div>
-              <span style={{ fontSize:13, fontWeight:600, color: color as string }}>{val}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop:14, display:"flex", alignItems:"center", gap:7, fontSize:13, color:"#34D399" }}>
-          <CheckCircle2 size={15}/> Your OpenAI bot is configured and ready
-        </div>
-      </div>
 
       {/* Notifications */}
       <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
