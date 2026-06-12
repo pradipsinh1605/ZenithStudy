@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
-import { Brain, Bell, Moon, Sun, CheckCircle2, AlertCircle, Trash2, Loader2 } from "lucide-react";
+import { Bell, Moon, Sun, CheckCircle2, Trash2, Loader2, Download, ShieldAlert, LifeBuoy, Info, ExternalLink, Timer, Volume2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function SettingsPage() {
@@ -68,6 +68,34 @@ export default function SettingsPage() {
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Focus & Study Settings */}
+      <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
+        <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Focus Timer Settings</h3>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--bg)", borderRadius:12 }}>
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+              <Timer size={20} style={{ color:"var(--muted)" }}/>
+              <div>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Default Focus Time</div>
+                <div style={{ fontSize:12, color:"var(--muted)" }}>25 minutes</div>
+              </div>
+            </div>
+            <button onClick={() => toast("Timer settings opening...")} style={{ padding:"6px 12px", borderRadius:8, background:"var(--border)", color:"var(--text)", border:"none", fontSize:12, cursor:"pointer", fontWeight:600 }}>Change</button>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--bg)", borderRadius:12 }}>
+            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+              <Volume2 size={20} style={{ color:"var(--muted)" }}/>
+              <div>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Timer Ticking Sound</div>
+                <div style={{ fontSize:12, color:"var(--muted)" }}>Play a ticking sound during focus</div>
+              </div>
+            </div>
+            <div style={{ width:38, height:22, borderRadius:11, background:"#34D399", cursor:"pointer", position:"relative" }} onClick={() => toast("Sound settings saved!")}>
+              <div style={{ width:18, height:18, borderRadius:"50%", background:"#fff", position:"absolute", top:2, left:18 }}/>
+            </div>
+          </div>
+        </div>
+      </div>
 
 
       {/* Notifications */}
@@ -141,6 +169,53 @@ export default function SettingsPage() {
           style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 18px", borderRadius:12, border:"1px solid #F8717144", background:"#F8717111", color:"#F87171", cursor:"pointer", fontWeight:600, fontSize:13, fontFamily:"inherit", opacity: loggingOut ? 0.6 : 1 }}>
           {loggingOut ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Trash2 size={15}/>} {loggingOut ? "Signing Out..." : "Sign Out"}
         </button>
+      </div>
+
+      {/* Data & Privacy */}
+      <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
+        <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Data & Privacy</h3>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <button onClick={() => toast.success("Preparing data for download...")} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", cursor:"pointer", color:"var(--text)" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <Download size={18} />
+              <span style={{ fontSize:13, fontWeight:600 }}>Download My Data</span>
+            </div>
+            <span style={{ fontSize:12, color:"var(--muted)" }}>Export JSON</span>
+          </button>
+          
+          <button onClick={() => toast.error("Please contact support to delete your account permanently.")} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:"#F8717111", borderRadius:12, border:"1px solid #F8717144", cursor:"pointer", color:"#F87171" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <ShieldAlert size={18} />
+              <span style={{ fontSize:13, fontWeight:600 }}>Delete Account</span>
+            </div>
+            <span style={{ fontSize:12, opacity:0.8 }}>Permanent Action</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Help & Support */}
+      <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
+        <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Help & Support</h3>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <button onClick={() => toast("Opening mail client...")} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
+            <LifeBuoy size={18} style={{ color:"#4F8EF7" }}/>
+            <span style={{ fontSize:13, fontWeight:600 }}>Contact Us</span>
+          </button>
+          <button onClick={() => toast("Opening Terms & Policies...")} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
+            <ExternalLink size={18} style={{ color:"#A78BFA" }}/>
+            <span style={{ fontSize:13, fontWeight:600 }}>Terms & Policy</span>
+          </button>
+        </div>
+      </div>
+
+      {/* About */}
+      <div style={{ textAlign:"center", padding:"20px 0 40px", color:"var(--muted)" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:8 }}>
+          <Info size={16}/>
+          <span style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>Learnixio AI</span>
+        </div>
+        <p style={{ fontSize:12 }}>Version 1.0.0</p>
+        <p style={{ fontSize:12, marginTop:4 }}>Made with ❤️ for students</p>
       </div>
     </div>
   );
