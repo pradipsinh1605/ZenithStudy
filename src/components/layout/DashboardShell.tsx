@@ -635,7 +635,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               <div className="brand-copy" style={{ minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div style={{ 
                   fontSize: 22, fontWeight: 700, lineHeight: 1.1,
-                  background: "linear-gradient(90deg, #4F8EF7, #A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  background: "linear-gradient(90deg, #4F8EF7, #A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+                }}>
                   ZenithStudy
                 </div>
                 <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, fontWeight: 700, letterSpacing: "0.5px" }}>
