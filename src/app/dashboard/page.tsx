@@ -46,6 +46,8 @@ export default function DashboardPage() {
   const [loading,  setLoading]  = useState(true);
   const [userId,   setUserId]   = useState("");
   const [visible,  setVisible]  = useState(false);
+  const [newSub,   setNewSub]   = useState("");
+  const [addingSub,setAddingSub] = useState(false);
 
   const animXp     = useCountUp(xp,     500);
   const animStreak = useCountUp(streak, 400);
@@ -62,6 +64,22 @@ export default function DashboardPage() {
       if (data) { setXp(data.total_xp || 0); setStreak(data.streak || 0); }
     });
   }, [userId]);
+
+  const addSubject = async () => {
+    if (!newSub.trim() || addingSub) return;
+    setAddingSub(true);
+    try {
+      const colors = ["#4F8EF7","#A78BFA","#34D399","#F5A623","#F87171","#22D3EE"];
+      const color = colors[subjects.length % colors.length];
+      const { data, error } = await supabase.from("subjects").insert({ user_id: userId, name: newSub.trim(), color }).select().single();
+      if (!error && data) {
+        setSubjects([...subjects, data]);
+        setNewSub("");
+      }
+    } finally {
+      setAddingSub(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -305,7 +323,6 @@ export default function DashboardPage() {
 
         {/* ── Subjects + Notes ── */}
         <div className="grid-sub">
-          {subjects.length > 0 && (
             <div style={{
               ...fadeUp(440),
               borderRadius:20, padding:20,
@@ -314,27 +331,46 @@ export default function DashboardPage() {
               backdropFilter:"blur(12px)",
             }}>
               <h3 style={{ fontFamily:"var(--font-lora),serif", fontSize:16, color:"var(--text)", marginBottom:14 }}>Subjects</h3>
-              <ResponsiveContainer width="100%" height={150}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={38} outerRadius={65} paddingAngle={3} dataKey="value">
-                    {pieData.map((e, i) => <Cell key={i} fill={e.color}/>)}
-                  </Pie>
-                  <Tooltip formatter={v=>[`${v}%`]} contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} itemStyle={{ color: "var(--text)" }} labelStyle={{ color: "var(--muted)" }}/>
-                </PieChart>
-              </ResponsiveContainer>
-              <div style={{ display:"flex", flexDirection:"column", gap:5, marginTop:8 }}>
-                {pieData.slice(0,4).map(s => (
-                  <div key={s.name} style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                      <div style={{ width:7, height:7, borderRadius:"50%", background:s.color, boxShadow:`0 0 6px ${s.color}` }}/>
-                      <span style={{ fontSize:11, color:"var(--muted)" }}>{s.name}</span>
-                    </div>
-                    <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{s.value}%</span>
+              {subjects.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={150}>
+                    <PieChart>
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={38} outerRadius={65} paddingAngle={3} dataKey="value">
+                        {pieData.map((e, i) => <Cell key={i} fill={e.color}/>)}
+                      </Pie>
+                      <Tooltip formatter={v=>[`${v}%`]} contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} itemStyle={{ color: "var(--text)" }} labelStyle={{ color: "var(--muted)" }}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{ display:"flex", flexDirection:"column", gap:5, marginTop:8 }}>
+                    {pieData.slice(0,4).map(s => (
+                      <div key={s.name} style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                          <div style={{ width:7, height:7, borderRadius:"50%", background:s.color, boxShadow:`0 0 6px ${s.color}` }}/>
+                          <span style={{ fontSize:11, color:"var(--muted)" }}>{s.name}</span>
+                        </div>
+                        <span style={{ fontSize:11, fontWeight:700, color:s.color }}>{s.value}%</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              ) : (
+                <div style={{ textAlign:"center", padding:"10px 0", color:"var(--muted)" }}>
+                  <p style={{ fontSize:13, marginBottom:16 }}>No subjects yet.</p>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <input
+                      value={newSub}
+                      onChange={e => setNewSub(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && addSubject()}
+                      placeholder="e.g. Science"
+                      style={{ flex:1, minWidth:0, borderRadius:10, padding:"8px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none" }}
+                    />
+                    <button onClick={addSubject} disabled={addingSub} style={{ padding:"8px 16px", borderRadius:10, background:"#4F8EF7", color:"#fff", border:"none", fontWeight:700, fontSize:13, cursor:addingSub?"not-allowed":"pointer" }}>
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
           <div style={{
             ...fadeUp(500),
