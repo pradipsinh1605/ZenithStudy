@@ -253,7 +253,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(79,142,247,.08)"/>
                 <XAxis dataKey="day" stroke="#5A7A9E" tick={{ fontSize:11 }}/>
                 <YAxis stroke="#5A7A9E" tick={{ fontSize:11 }}/>
-                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:12, fontSize:12, backdropFilter:"blur(10px)" }}/>
+                <Tooltip contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:12, fontSize:12, backdropFilter:"blur(10px)" }} itemStyle={{ color: "var(--text)" }} labelStyle={{ color: "var(--muted)" }}/>
                 <Area type="monotone" dataKey="hours" stroke="#4F8EF7" strokeWidth={2.5} fill="url(#g1)" dot={{ fill:"#4F8EF7", r:4, strokeWidth:0 }}/>
               </AreaChart>
             </ResponsiveContainer>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={38} outerRadius={65} paddingAngle={3} dataKey="value">
                     {pieData.map((e, i) => <Cell key={i} fill={e.color}/>)}
                   </Pie>
-                  <Tooltip formatter={v=>[`${v}%`]} contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }}/>
+                  <Tooltip formatter={v=>[`${v}%`]} contentStyle={{ background:"var(--card)", border:"1px solid var(--border)", borderRadius:10, fontSize:12 }} itemStyle={{ color: "var(--text)" }} labelStyle={{ color: "var(--muted)" }}/>
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ display:"flex", flexDirection:"column", gap:5, marginTop:8 }}>
