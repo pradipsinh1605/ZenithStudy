@@ -327,8 +327,8 @@ export default function HomePage() {
       <nav className="sticky top-0 z-40 border-b border-white/10 bg-[#030711]/65 backdrop-blur-2xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <button onClick={() => router.push("/")} className="group flex items-center gap-3" aria-label="Learnixio AI home">
-            <img src="/icon-192.png" alt="Learnixio AI Logo" className="h-9 w-9 rounded-xl shadow-[0_0_24px_rgba(79,142,247,0.25)]" />
-            <span className="text-sm font-extrabold tracking-normal text-white sm:text-base">Learnixio AI</span>
+            <img src="/icon-192.png" alt="Learnixio AI Logo" className="h-12 w-12 drop-shadow-[0_0_15px_rgba(56,189,248,0.4)] transition group-hover:scale-105" />
+            <span className="text-sm font-extrabold tracking-normal text-white sm:text-xl">Learnixio AI</span>
           </button>
 
           <div className="hidden items-center gap-8 md:flex">

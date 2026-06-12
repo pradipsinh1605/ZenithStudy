@@ -627,11 +627,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           <header className="app-header">
             <div className="app-header-inner">
             <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-              <div className="brand-mark">
-                <Brain size={22} />
+              <div style={{ width: 44, height: 44, borderRadius: 12, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
+                <img src="/icon-192.png" alt="Logo" style={{ width: 32, height: 32, filter: "drop-shadow(0px 0px 8px rgba(79,142,247,0.5))" }} />
               </div>
               <div className="brand-copy" style={{ minWidth: 0 }}>
-                <div style={{ color: "var(--text)", fontSize: 16, fontWeight: 900, lineHeight: 1 }}>
+                <div style={{ color: "var(--text)", fontSize: 18, fontWeight: 900, lineHeight: 1 }}>
                   Learnixio AI
                 </div>
                 <p style={{ color: "var(--muted)", fontSize: 11, marginTop: 4, fontWeight: 700 }}>
