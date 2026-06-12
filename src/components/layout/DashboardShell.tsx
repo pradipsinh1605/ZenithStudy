@@ -628,11 +628,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             <div className="app-header-inner">
             <Link href="/dashboard" className="brand-link" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none" }}>
               <div style={{ 
-                width: 52, height: 52, borderRadius: 16, display: "grid", placeItems: "center", 
-                background: "linear-gradient(135deg, rgba(79,142,247,0.2), rgba(167,139,250,0.2))",
-                boxShadow: "0 4px 20px rgba(79,142,247,0.15)", border: "1px solid rgba(79,142,247,0.3)"
+                width: 44, height: 44, display: "grid", placeItems: "center"
               }}>
-                <img src="/icon-192.png" alt="Logo" style={{ width: 38, height: 38, filter: "drop-shadow(0px 0px 12px rgba(79,142,247,0.8))" }} />
+                <img src="/logo.svg" alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0px 0px 8px rgba(79,142,247,0.4))" }} />
               </div>
               <div className="brand-copy" style={{ minWidth: 0 }}>
                 <div style={{ 
@@ -643,7 +641,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                   ZenithStudy AI
                 </div>
                 <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, fontWeight: 700, letterSpacing: "0.5px" }}>
-                  Learn, plan, revise
+                  Learn Beyond Limits
                 </p>
               </div>
             </Link>

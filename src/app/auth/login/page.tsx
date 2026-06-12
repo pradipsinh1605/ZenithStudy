@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { validate } from "@/lib/validation";
 import toast from "react-hot-toast";
 
-const phrase = "Your AI Study Partner";
+const phrase = "Learn Beyond Limits";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -190,7 +190,7 @@ export default function LoginPage() {
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="hidden lg:block">
           <div className="relative mb-8 grid h-32 w-32 place-items-center rounded-[2rem] border border-cyan-200/20 bg-white/10 shadow-[0_0_80px_rgba(56,189,248,.28)] backdrop-blur-2xl">
             <div className="absolute inset-3 rounded-[1.5rem] border border-cyan-200/20" style={{ animation: reduceMotion ? undefined : "neuralPulse 3.8s ease-in-out infinite" }} />
-            <img src="/icon-192.png" alt="ZenithStudy AI" className="h-20 w-20 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]" />
+            <img src="/logo.svg" alt="ZenithStudy AI" className="h-20 w-20 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]" />
           </div>
           <p className="mb-4 inline-flex rounded-full border border-cyan-200/20 bg-cyan-300/10 px-4 py-2 text-xs font-black uppercase text-cyan-100">
             ZenithStudy AI
@@ -216,10 +216,10 @@ export default function LoginPage() {
           <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-slate-950/70 p-6 shadow-[0_28px_110px_rgba(0,0,0,.55)] backdrop-blur-2xl sm:p-8">
             <div className="mb-7 text-center">
               <div className="mx-auto mb-4 grid h-20 w-20 place-items-center rounded-2xl border border-cyan-200/20 bg-white/10 shadow-[0_0_40px_rgba(56,189,248,.22)]">
-                <img src="/icon-192.png" alt="ZenithStudy AI" className="h-14 w-14 drop-shadow-[0_0_15px_rgba(56,189,248,0.4)]" />
+                <img src="/logo.svg" alt="ZenithStudy AI" className="h-14 w-14 drop-shadow-[0_0_15px_rgba(56,189,248,0.4)]" />
               </div>
               <h2 className="font-lora text-3xl font-bold text-white">ZenithStudy AI</h2>
-              <p className="mt-2 text-sm font-semibold text-slate-400">Smarter Study. Better You.</p>
+              <p className="mt-2 text-sm font-semibold text-slate-400">Learn Beyond Limits</p>
             </div>
 
             {mode !== "forgot" && (

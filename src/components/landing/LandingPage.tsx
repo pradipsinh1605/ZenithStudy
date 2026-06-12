@@ -231,9 +231,8 @@ export default function LandingPage() {
         }
         .nav-logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; }
         .nav-logo-icon {
-          width:38px; height:38px; border-radius:11px;
-          background: linear-gradient(135deg,#4F8EF7,#A78BFA);
-          display:flex; align-items:center; justify-content:center; font-size:18px;
+          width: 44px; height: 44px;
+          display: flex; align-items: center; justify-content: center;
           transition: transform .35s cubic-bezier(.34,1.56,.64,1);
           cursor: pointer;
         }
@@ -565,7 +564,7 @@ export default function LandingPage() {
         <nav id="navbar">
           <div className="nav-logo">
             <div className="nav-logo-icon">
-              <img src="/logo.png" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", borderRadius:"11px", objectFit:"cover" }} />
+              <img src="/logo.svg" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
             </div>
             ZenithStudy AI
           </div>
@@ -601,7 +600,7 @@ export default function LandingPage() {
               AI-Powered · Free Forever to Start
             </div>
             <h1 className="reveal delay-1">
-              Your Academic<br/><em>Success Hub</em>
+              Learn Beyond<br/><em>Limits</em>
             </h1>
             <p className="hero-desc reveal delay-2">
               Organize your studies, track progress, get AI tutoring and level up — all in one beautiful, gamified platform.
@@ -812,8 +811,8 @@ export default function LandingPage() {
         {/* ── FOOTER ── */}
         <footer style={{ borderTop:"1px solid #1A2E4A", padding:"44px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:16, maxWidth:1100, margin:"0 auto" }}>
           <div className="nav-logo" style={{ fontSize:15 }}>
-            <div className="nav-logo-icon" style={{ width:32, height:32 }}>
-              <img src="/logo.png" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", borderRadius:"11px", objectFit:"cover" }} />
+            <div className="nav-logo-icon" style={{ width:32, height:32, background: "transparent" }}>
+              <img src="/logo.svg" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
             </div>
             ZenithStudy AI
           </div>

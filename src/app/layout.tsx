@@ -24,14 +24,20 @@ export const metadata: Metadata = {
     "study reminders",
   ],
   openGraph: {
-    title: "ZenithStudy AI - Study Smarter with AI",
+    title: "ZenithStudy AI - Learn Beyond Limits",
     description:
       "AI-powered notes, timetable planning, quizzes, doubt solving, productivity tracking, and gamified studying in one intelligent platform.",
     siteName: "ZenithStudy AI",
     type: "website",
   },
   manifest: "/manifest.json",
-  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" }
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -57,10 +63,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="dark">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/icon-192.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="ZenithStudy AI" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body
