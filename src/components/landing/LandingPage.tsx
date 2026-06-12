@@ -564,7 +564,9 @@ export default function LandingPage() {
         {/* ── NAVBAR ── */}
         <nav id="navbar">
           <div className="nav-logo">
-            <div className="nav-logo-icon">📚</div>
+            <div className="nav-logo-icon">
+              <img src="/logo.png" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", borderRadius:"11px", objectFit:"cover" }} />
+            </div>
             ZenithStudy AI
           </div>
           <ul className="nav-links">
@@ -810,7 +812,9 @@ export default function LandingPage() {
         {/* ── FOOTER ── */}
         <footer style={{ borderTop:"1px solid #1A2E4A", padding:"44px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:16, maxWidth:1100, margin:"0 auto" }}>
           <div className="nav-logo" style={{ fontSize:15 }}>
-            <div className="nav-logo-icon" style={{ width:32, height:32, fontSize:15 }}>📚</div>
+            <div className="nav-logo-icon" style={{ width:32, height:32 }}>
+              <img src="/logo.png" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", borderRadius:"11px", objectFit:"cover" }} />
+            </div>
             ZenithStudy AI
           </div>
           <div style={{ fontSize:12, color:"#5A7A9E" }}>© 2026 ZenithStudy AI · Built with ❤️ for students</div>
