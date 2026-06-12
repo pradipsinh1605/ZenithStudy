@@ -5,6 +5,7 @@ import { addXP } from "@/lib/xp-utils";
 import toast from "react-hot-toast";
 import Loader from "@/components/ui/Loader";
 import { sanitizeFilename, validateFile } from "@/lib/validateFile";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 // ── Icons (inline SVG to avoid import issues) ──
 const Icon = {
@@ -64,6 +65,7 @@ export default function NotesPage() {
 
   // Search
   const [search, setSearch] = useState("");
+  const [noteToDelete, setNoteToDelete] = useState<any>(null);
 
   useEffect(()=>{ fetchData(); },[]);
 
@@ -183,7 +185,6 @@ export default function NotesPage() {
 
   // ── Delete note ──
   const deleteNote = async (note:any) => {
-    if(!confirm(`Are you sure you want to delete "${note.title}"?`)) return;
     // Remove from storage if PDF
     if(note.pdf_url&&note.pdf_url.startsWith("http")&&!note.pdf_url.startsWith("data:")) {
       const path = note.pdf_url.split("/note-pdfs/")[1];
@@ -341,7 +342,7 @@ export default function NotesPage() {
 
           {/* Note actions */}
           {(view==="note-view"||view==="note-edit")&&(
-            <button onClick={()=>deleteNote(activeNote)}
+            <button onClick={()=>setNoteToDelete(activeNote)}
               style={{display:"flex",alignItems:"center",gap:5,padding:"9px 14px",borderRadius:12,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.1)",color:"#F87171",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
               <Icon.Trash/> Delete
             </button>
@@ -445,7 +446,7 @@ export default function NotesPage() {
                       Open
                     </button>
                   )}
-                  <button onClick={(e)=>{e.stopPropagation();deleteNote(note);}}
+                  <button onClick={(e)=>{e.stopPropagation();setNoteToDelete(note);}}
                     style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                     <Icon.Trash/> Delete
                   </button>
@@ -614,6 +615,14 @@ export default function NotesPage() {
           📝 {notes.filter(n=>n.note_type!=="pdf").length} text notes · 📄 {notes.filter(n=>n.note_type==="pdf").length} PDFs · +10 XP each note
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={noteToDelete !== null}
+        title="Delete Note"
+        message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
+        onConfirm={() => noteToDelete && deleteNote(noteToDelete)}
+        onCancel={() => setNoteToDelete(null)}
+      />
     </div>
   );
 }

@@ -32,6 +32,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "next-themes";
 import { onXPUpdate } from "@/lib/xp-utils";
 import PageTransition from "@/components/ui/PageTransition";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const USER_CACHE_KEY = "sb-user-cache";
 const CACHE_TTL = 5 * 60 * 1000;
@@ -97,6 +98,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const lastScrollY = useRef(0);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const current = useMemo(
     () => NAV.find((item) => isActive(pathname, item.href)) ?? NAV[0],
@@ -626,15 +628,23 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         {!isAIPage && (
           <header className="app-header">
             <div className="app-header-inner">
-            <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, display: "grid", placeItems: "center", background: "color-mix(in srgb, var(--primary) 15%, transparent)" }}>
-                <img src="/icon-192.png" alt="Logo" style={{ width: 32, height: 32, filter: "drop-shadow(0px 0px 8px rgba(79,142,247,0.5))" }} />
+            <Link href="/dashboard" className="brand-link" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none" }}>
+              <div style={{ 
+                width: 52, height: 52, borderRadius: 16, display: "grid", placeItems: "center", 
+                background: "linear-gradient(135deg, rgba(79,142,247,0.2), rgba(167,139,250,0.2))",
+                boxShadow: "0 4px 20px rgba(79,142,247,0.15)", border: "1px solid rgba(79,142,247,0.3)"
+              }}>
+                <img src="/icon-192.png" alt="Logo" style={{ width: 38, height: 38, filter: "drop-shadow(0px 0px 12px rgba(79,142,247,0.8))" }} />
               </div>
               <div className="brand-copy" style={{ minWidth: 0 }}>
-                <div style={{ color: "var(--text)", fontSize: 18, fontWeight: 900, lineHeight: 1 }}>
+                <div style={{ 
+                  fontSize: 22, fontWeight: 900, lineHeight: 1.1,
+                  background: "linear-gradient(90deg, #4F8EF7, #A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.1))"
+                }}>
                   Learnixio AI
                 </div>
-                <p style={{ color: "var(--muted)", fontSize: 11, marginTop: 4, fontWeight: 700 }}>
+                <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, fontWeight: 700, letterSpacing: "0.5px" }}>
                   Learn, plan, revise
                 </p>
               </div>
@@ -819,7 +829,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               <button 
                 className="icon-btn" 
                 style={{ width: 44, height: 44, borderRadius: 22, background: "transparent", border: "none", opacity: loggingOut ? 0.5 : 1 }} 
-                onClick={logout} 
+                onClick={() => setShowLogoutConfirm(true)} 
                 aria-label="Sign out" 
                 disabled={loggingOut}
                 type="button"
@@ -983,6 +993,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         </div>
 
       </div>
+
+      <ConfirmModal
+        isOpen={showLogoutConfirm}
+        title="Sign Out"
+        message="Are you sure you want to sign out of Learnixio AI?"
+        onConfirm={() => { setShowLogoutConfirm(false); logout(); }}
+        onCancel={() => setShowLogoutConfirm(false)}
+        confirmText="Sign Out"
+      />
     </TimerProvider>
   );
 }

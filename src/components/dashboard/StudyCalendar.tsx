@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 type Reminder = {
   id: string;
@@ -29,6 +30,7 @@ export default function StudyCalendar() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("18:00");
+  const [reminderToDelete, setReminderToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -393,7 +395,7 @@ export default function StudyCalendar() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => deleteReminder(reminder.id)}
+                  onClick={() => setReminderToDelete(reminder.id)}
                   style={{
                     width: 44,
                     height: 44,
@@ -414,6 +416,14 @@ export default function StudyCalendar() {
           )}
         </div>
       </aside>
+
+      <ConfirmModal
+        isOpen={reminderToDelete !== null}
+        title="Delete Reminder"
+        message="Are you sure you want to delete this reminder?"
+        onConfirm={() => reminderToDelete && deleteReminder(reminderToDelete)}
+        onCancel={() => setReminderToDelete(null)}
+      />
     </section>
   );
 }

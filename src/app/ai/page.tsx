@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Send, Brain, Paperclip, ChevronDown, Copy, Check, FileText, Image as ImageIcon, Search, X, History, Trash2, Plus, Mic, Volume2, Square, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 type Message = {
   id: string;
@@ -111,6 +112,7 @@ export default function AITutorPage() {
   const [attachment, setAttachment] = useState<{type:"pdf"|"image";name:string;data:string;}|null>(null);
   const [isListening, setIsListening] = useState(false);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [threadToDelete, setThreadToDelete] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
@@ -219,8 +221,7 @@ export default function AITutorPage() {
     if (t) { setMsgs(t.messages); setCurrentThreadId(t.id); setShowHistory(false); }
   };
 
-  const deleteThread = async (e: any, id: string) => {
-    e.stopPropagation();
+  const deleteThread = async (id: string) => {
     const filtered = threads.filter(t => t.id !== id);
     setThreads(filtered);
     if (userId) {
@@ -413,7 +414,7 @@ export default function AITutorPage() {
                 threads.map(t => (
                   <div key={t.id} onClick={() => loadThread(t.id)} className={`group cursor-pointer p-3 rounded-xl flex items-center justify-between border transition-all ${currentThreadId === t.id ? 'bg-blue-50 border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/20 shadow-sm' : 'border-transparent hover:bg-gray-50 dark:hover:bg-[#2A2A2A]'}`}>
                     <div className="truncate text-sm font-medium flex-1 mr-2 text-gray-800 dark:text-gray-200">{t.title || 'New Chat'}</div>
-                    <button onClick={(e) => deleteThread(e, t.id)} className="opacity-0 group-hover:opacity-100 w-11 h-11 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-md transition-all"><Trash2 size={18}/></button>
+                    <button onClick={(e) => { e.stopPropagation(); setThreadToDelete(t.id); }} className="opacity-0 group-hover:opacity-100 w-11 h-11 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-md transition-all"><Trash2 size={18}/></button>
                   </div>
                 ))
               )}
@@ -534,6 +535,13 @@ export default function AITutorPage() {
           </div>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={threadToDelete !== null}
+        title="Delete Chat"
+        message="Are you sure you want to delete this chat history? This action cannot be undone."
+        onConfirm={() => threadToDelete && deleteThread(threadToDelete)}
+        onCancel={() => setThreadToDelete(null)}
+      />
     </div>
   );
 }

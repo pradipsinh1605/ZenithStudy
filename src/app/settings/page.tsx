@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, Moon, Sun, CheckCircle2, Trash2, Loader2, Download, ShieldAlert, LifeBuoy, Info, ExternalLink, Timer, Volume2 } from "lucide-react";
 import toast from "react-hot-toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -12,6 +13,7 @@ export default function SettingsPage() {
   const [notifPerm, setNotifPerm] = useState("default");
   const [email,     setEmail]     = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -63,6 +65,72 @@ export default function SettingsPage() {
       localStorage.clear();
       sessionStorage.clear();
       window.location.replace("/auth/login");
+    }
+  };
+
+  const downloadData = async () => {
+    toast.loading("Gathering your data...");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.dismiss(); toast.error("Not logged in"); return; }
+      
+      const [notes, tasks, subjects, flashcards, ai_threads] = await Promise.all([
+        supabase.from("notes").select("*").eq("user_id", user.id),
+        supabase.from("tasks").select("*").eq("user_id", user.id),
+        supabase.from("subjects").select("*").eq("user_id", user.id),
+        supabase.from("flashcards").select("*").eq("user_id", user.id),
+        supabase.from("ai_threads").select("*").eq("user_id", user.id)
+      ]);
+
+      const data = {
+        user: { email: user.email, id: user.id },
+        exportDate: new Date().toISOString(),
+        notes: notes.data || [],
+        tasks: tasks.data || [],
+        subjects: subjects.data || [],
+        flashcards: flashcards.data || [],
+        ai_threads: ai_threads.data || [],
+        localStorageReminders: JSON.parse(localStorage.getItem("learnixio-reminders-v1") || "[]")
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Learnixio_Data_${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast.dismiss();
+      toast.success("Data downloaded successfully! 📁");
+    } catch (e: any) {
+      toast.dismiss();
+      toast.error("Failed to download data");
+    }
+  };
+
+  const deleteAccountData = async () => {
+    toast.loading("Deleting your data...");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      await Promise.all([
+        supabase.from("notes").delete().eq("user_id", user.id),
+        supabase.from("tasks").delete().eq("user_id", user.id),
+        supabase.from("subjects").delete().eq("user_id", user.id),
+        supabase.from("flashcards").delete().eq("user_id", user.id),
+        supabase.from("ai_threads").delete().eq("user_id", user.id),
+        supabase.from("xp_logs").delete().eq("user_id", user.id)
+      ]);
+      
+      toast.dismiss();
+      toast.success("Account data securely deleted!");
+      setShowDeleteConfirm(false);
+      logout();
+    } catch {
+      toast.dismiss();
+      toast.error("Failed to delete account data");
     }
   };
 
@@ -175,7 +243,7 @@ export default function SettingsPage() {
       <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
         <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Data & Privacy</h3>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <button onClick={() => toast.success("Preparing data for download...")} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", cursor:"pointer", color:"var(--text)" }}>
+          <button onClick={downloadData} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", cursor:"pointer", color:"var(--text)" }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <Download size={18} />
               <span style={{ fontSize:13, fontWeight:600 }}>Download My Data</span>
@@ -183,7 +251,7 @@ export default function SettingsPage() {
             <span style={{ fontSize:12, color:"var(--muted)" }}>Export JSON</span>
           </button>
           
-          <button onClick={() => toast.error("Please contact support to delete your account permanently.")} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:"#F8717111", borderRadius:12, border:"1px solid #F8717144", cursor:"pointer", color:"#F87171" }}>
+          <button onClick={() => setShowDeleteConfirm(true)} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 16px", background:"#F8717111", borderRadius:12, border:"1px solid #F8717144", cursor:"pointer", color:"#F87171" }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <ShieldAlert size={18} />
               <span style={{ fontSize:13, fontWeight:600 }}>Delete Account</span>
@@ -217,6 +285,15 @@ export default function SettingsPage() {
         <p style={{ fontSize:12 }}>Version 1.0.0</p>
         <p style={{ fontSize:12, marginTop:4 }}>Made with ❤️ for students</p>
       </div>
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Account"
+        message="Are you absolutely sure you want to delete your account? This action is permanent and cannot be undone."
+        onConfirm={deleteAccountData}
+        onCancel={() => setShowDeleteConfirm(false)}
+        confirmText="Delete Account"
+      />
     </div>
   );
 }

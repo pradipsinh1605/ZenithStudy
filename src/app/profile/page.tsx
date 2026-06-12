@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Edit3, Save, Plus, Trash2, User, GraduationCap, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const COLOR_PALETTE = [
   "#4F8EF7","#A78BFA","#34D399","#F5A623","#F87171",
@@ -133,6 +134,7 @@ export default function ProfilePage() {
   const [subjects,setSubjects]= useState<any[]>([]);
   const [newSub,  setNewSub]  = useState("");
   const [newColor,setNewColor]= useState(COLOR_PALETTE[0]);
+  const [subjectToDelete, setSubjectToDelete] = useState<string | null>(null);
 
   // ── Separate state for each field to prevent focus loss ──
   const [name,        setName]        = useState("");
@@ -537,7 +539,7 @@ export default function ProfilePage() {
                       }}/>
                   ))}
                 </div>
-                <button onClick={() => delSubject(s.id)}
+                <button onClick={() => setSubjectToDelete(s.id)}
                   style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", display: "flex", opacity: .6 }}>
                   <Trash2 size={16}/>
                 </button>
@@ -546,6 +548,15 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      {/* My Subjects ends */}
+
+      <ConfirmModal
+        isOpen={subjectToDelete !== null}
+        title="Delete Subject"
+        message="Are you sure you want to delete this subject? It will be removed from your profile."
+        onConfirm={() => subjectToDelete && delSubject(subjectToDelete)}
+        onCancel={() => setSubjectToDelete(null)}
+      />
     </div>
   );
 }

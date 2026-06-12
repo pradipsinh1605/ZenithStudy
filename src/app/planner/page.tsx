@@ -4,6 +4,7 @@ import { Plus, Trash2, Check, CheckSquare } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { validate } from "@/lib/validation";
 import toast from "react-hot-toast";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import Loader from "@/components/ui/Loader";
 import { addXP } from "@/lib/xp-utils";
 
@@ -22,6 +23,7 @@ export default function PlannerPage() {
   const [loading,  setLoading]  = useState(true);
   const [visible,  setVisible]  = useState(false);
   const [curUser,  setCurUser]  = useState<any>(null);
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [formTitle,    setFormTitle]    = useState("");
   const [formSubject,  setFormSubject]  = useState("");
   const [formDeadline, setFormDeadline] = useState("");
@@ -231,7 +233,7 @@ export default function PlannerPage() {
                   </div>
 
                   {/* Delete */}
-                  <button className="del-btn lg:opacity-0 lg:group-hover:opacity-100" onClick={() => deleteTask(task.id)} style={{
+                  <button className="del-btn lg:opacity-0 lg:group-hover:opacity-100" onClick={() => setTaskToDelete(task.id)} style={{
                     background:"none", border:"none", cursor:"pointer", color:"#F87171",
                     display:"flex", padding:12, transition:"opacity .2s, transform .2s", borderRadius:8,
                   }}
@@ -259,6 +261,14 @@ export default function PlannerPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={taskToDelete !== null}
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        onConfirm={() => taskToDelete && deleteTask(taskToDelete)}
+        onCancel={() => setTaskToDelete(null)}
+      />
     </>
   );
 }
