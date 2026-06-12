@@ -6,8 +6,10 @@ import { Bell, Moon, Sun, CheckCircle2, Trash2, Loader2, Download, ShieldAlert, 
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import { useTimer } from "@/lib/TimerContext";
 
 export default function SettingsPage() {
+  const { tickSound, setTickSound } = useTimer();
   const router = useRouter();
   const supabase = createClient();
   const { theme, setTheme } = useTheme();
@@ -158,13 +160,18 @@ export default function SettingsPage() {
           </div>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--bg)", borderRadius:12 }}>
             <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-              <Clock size={20} style={{ color:"var(--muted)" }}/>
+              <Volume2 size={20} style={{ color:"var(--muted)" }}/>
               <div>
-                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Default Session Length</div>
-                <div style={{ fontSize:12, color:"var(--muted)" }}>Customize in the Focus Timer page</div>
+                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Timer Ticking Sound</div>
+                <div style={{ fontSize:12, color:"var(--muted)" }}>Play a ticking sound during focus</div>
               </div>
             </div>
-            <button onClick={() => router.push("/timer")} style={{ padding:"6px 12px", borderRadius:8, background:"var(--border)", color:"var(--text)", border:"none", fontSize:12, cursor:"pointer", fontWeight:600 }}>Open Timer</button>
+            <div style={{ width:38, height:22, borderRadius:11, background:tickSound ? "#34D399" : "var(--border)", cursor:"pointer", position:"relative", transition:"background .2s" }} onClick={() => {
+              setTickSound(!tickSound);
+              toast.success(tickSound ? "Ticking sound disabled" : "Ticking sound enabled");
+            }}>
+              <div style={{ width:18, height:18, borderRadius:"50%", background:"#fff", position:"absolute", top:2, left:tickSound ? 18 : 2, transition:"left .2s" }}/>
+            </div>
           </div>
         </div>
       </div>

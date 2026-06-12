@@ -18,6 +18,7 @@ export interface PersistedTimerState {
   xpEarned: number;
   custom: number;
   selSub: string;
+  tickSound: boolean;
 }
 
 const STORAGE_KEY = "sb-timer-state";
@@ -31,6 +32,7 @@ const DEFAULT_STATE: PersistedTimerState = {
   xpEarned: 0,
   custom: 25,
   selSub: "",
+  tickSound: false,
 };
 
 function readPersistedState(): PersistedTimerState {

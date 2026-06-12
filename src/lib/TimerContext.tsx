@@ -10,6 +10,7 @@ interface TimerContextType extends TimerState {
   setMode: (m: ModeKey) => void;
   setCustom: (n: number) => void;
   setSelSub: (s: string) => void;
+  setTickSound: (b: boolean) => void;
   toggle: () => void;
   reset: () => void;
   skip: () => void;
@@ -57,6 +58,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   // Timer tick
   useEffect(() => {
+    let audioCtx: AudioContext | null = null;
+    
     if (state.running) {
       intervalRef.current = setInterval(() => {
         setState(prev => {
@@ -65,13 +68,40 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
             handleComplete(prev);
             return { ...prev, timeLeft: 0, running: false };
           }
+          
+          // Play tick sound if enabled and in work mode
+          if (prev.tickSound && prev.mode === "work") {
+            try {
+              if (!audioCtx) audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+              if (audioCtx.state === "suspended") audioCtx.resume();
+              
+              const osc = audioCtx.createOscillator();
+              const gain = audioCtx.createGain();
+              osc.connect(gain);
+              gain.connect(audioCtx.destination);
+              
+              osc.type = "sine";
+              osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+              gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+              
+              osc.start();
+              osc.stop(audioCtx.currentTime + 0.05);
+            } catch (e) {
+              console.error("Audio playback failed", e);
+            }
+          }
+          
           return { ...prev, timeLeft: prev.timeLeft - 1 };
         });
       }, 1000);
     } else {
       clearInterval(intervalRef.current);
     }
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      clearInterval(intervalRef.current);
+      if (audioCtx) audioCtx.close();
+    };
   }, [state.running]);
 
   const handleComplete = async (prev: TimerState) => {
@@ -144,10 +174,14 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   const setSelSub = useCallback((s: string) => {
     setState(prev => ({ ...prev, selSub: s }));
-  }, []);
+  }, [setState]);
+
+  const setTickSound = useCallback((b: boolean) => {
+    setState(prev => ({ ...prev, tickSound: b }));
+  }, [setState]);
 
   return (
-    <TimerContext.Provider value={{ ...state, setMode, setCustom, setSelSub, toggle, reset, skip }}>
+    <TimerContext.Provider value={{ ...state, setMode, setCustom, setSelSub, setTickSound, toggle, reset, skip }}>
       {children}
     </TimerContext.Provider>
   );
