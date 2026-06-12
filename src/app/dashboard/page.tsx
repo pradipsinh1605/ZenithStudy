@@ -356,20 +356,21 @@ export default function DashboardPage() {
               ) : (
                 <div style={{ textAlign:"center", padding:"10px 0", color:"var(--muted)" }}>
                   <p style={{ fontSize:13, marginBottom:16 }}>No subjects yet.</p>
-                  <div style={{ display:"flex", gap:8 }}>
-                    <input
-                      value={newSub}
-                      onChange={e => setNewSub(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && addSubject()}
-                      placeholder="e.g. Science"
-                      style={{ flex:1, minWidth:0, borderRadius:10, padding:"8px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none" }}
-                    />
-                    <button onClick={addSubject} disabled={addingSub} style={{ padding:"8px 16px", borderRadius:10, background:"#4F8EF7", color:"#fff", border:"none", fontWeight:700, fontSize:13, cursor:addingSub?"not-allowed":"pointer" }}>
-                      Add
-                    </button>
-                  </div>
                 </div>
               )}
+              
+              <div style={{ display:"flex", gap:8, marginTop: subjects.length > 0 ? 16 : 0 }}>
+                <input
+                  value={newSub}
+                  onChange={e => setNewSub(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && addSubject()}
+                  placeholder={subjects.length > 0 ? "Add another..." : "e.g. Science"}
+                  style={{ flex:1, minWidth:0, borderRadius:10, padding:"8px 12px", fontSize:13, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", outline:"none" }}
+                />
+                <button onClick={addSubject} disabled={addingSub} style={{ padding:"8px 16px", borderRadius:10, background:subjects.length > 0 ? "var(--bg)" : "#4F8EF7", color:subjects.length > 0 ? "var(--text)" : "#fff", border:subjects.length > 0 ? "1px solid var(--border)" : "none", fontWeight:700, fontSize:13, cursor:addingSub?"not-allowed":"pointer" }}>
+                  {subjects.length > 0 ? "+" : "Add"}
+                </button>
+              </div>
             </div>
 
           <div style={{
