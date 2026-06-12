@@ -148,16 +148,7 @@ export default function SettingsPage() {
       <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
         <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Focus Timer Settings</h3>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--bg)", borderRadius:12 }}>
-            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-              <Timer size={20} style={{ color:"var(--muted)" }}/>
-              <div>
-                <div style={{ fontSize:13, fontWeight:600, color:"var(--text)" }}>Default Focus Time</div>
-                <div style={{ fontSize:12, color:"var(--muted)" }}>25 minutes</div>
-              </div>
-            </div>
-            <button onClick={() => router.push("/timer")} style={{ padding:"6px 12px", borderRadius:8, background:"var(--border)", color:"var(--text)", border:"none", fontSize:12, cursor:"pointer", fontWeight:600 }}>Change</button>
-          </div>
+
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", background:"var(--bg)", borderRadius:12 }}>
             <div style={{ display:"flex", gap:10, alignItems:"center" }}>
               <Volume2 size={20} style={{ color:"var(--muted)" }}/>
