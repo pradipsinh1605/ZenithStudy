@@ -439,12 +439,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             display: flex;
             align-items: center;
             gap: 2px;
-            padding: 8px;
+            padding: 8px 14px 8px 8px;
             overflow-x: auto;
             scrollbar-width: none;
             -webkit-overflow-scrolling: touch;
-            mask-image: linear-gradient(to right, black 85%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
           }
 
           .bottom-nav-scroll::-webkit-scrollbar {
