@@ -1,4 +1,4 @@
-# 📚 ZenithStudy AI
+# 📚 ZenithStudy
 
 **Production-grade student productivity platform**
 

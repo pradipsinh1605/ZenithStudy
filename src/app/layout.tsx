@@ -11,11 +11,11 @@ const dmSerif = DM_Serif_Display({ subsets: ["latin"], variable: "--font-dm-seri
 const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "ZenithStudy AI", template: "%s | ZenithStudy AI" },
+  title: { default: "ZenithStudy", template: "%s | ZenithStudy" },
   description:
-    "ZenithStudy AI is an AI-powered student productivity platform for smart notes, timetable planning, quizzes, doubt solving, reminders, analytics, and gamified studying.",
+    "ZenithStudy is an AI-powered student productivity platform for smart notes, timetable planning, quizzes, doubt solving, reminders, analytics, and gamified studying.",
   keywords: [
-    "ZenithStudy AI",
+    "ZenithStudy",
     "AI study assistant",
     "student productivity",
     "AI notes",
@@ -24,24 +24,21 @@ export const metadata: Metadata = {
     "study reminders",
   ],
   openGraph: {
-    title: "ZenithStudy AI - Learn Beyond Limits",
+    title: "ZenithStudy - Learn Beyond Limits",
     description:
       "AI-powered notes, timetable planning, quizzes, doubt solving, productivity tracking, and gamified studying in one intelligent platform.",
-    siteName: "ZenithStudy AI",
+    siteName: "ZenithStudy",
     type: "website",
   },
   manifest: "/manifest.json",
   icons: {
-    icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" }
-    ],
+    icon: "/favicon.svg",
     apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ZenithStudy AI",
+    title: "ZenithStudy",
   },
 };
 
@@ -63,10 +60,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="dark">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="ZenithStudy AI" />
+        <meta name="apple-mobile-web-app-title" content="ZenithStudy" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>

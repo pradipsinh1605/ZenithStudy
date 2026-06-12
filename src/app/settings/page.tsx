@@ -42,7 +42,7 @@ export default function SettingsPage() {
       setNotifPerm(result);
       if (result === "granted") {
         toast.success("Notifications enabled! 🔔");
-        new Notification("ZenithStudy AI", { body: "Notifications are now active! 🎉" });
+        new Notification("ZenithStudy", { body: "Notifications are now active! 🎉" });
       } else {
         toast.error("Please allow notifications in browser settings");
       }
@@ -55,7 +55,7 @@ export default function SettingsPage() {
     toast.success("🔔 Test notification sent!");
     try {
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        new Notification("⏰ Test Reminder", { body: "ZenithStudy AI notification is working!" });
+        new Notification("⏰ Test Reminder", { body: "ZenithStudy notification is working!" });
       }
     } catch {}
   };
@@ -282,7 +282,7 @@ export default function SettingsPage() {
       <div style={{ textAlign:"center", padding:"20px 0 40px", color:"var(--muted)" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6, marginBottom:8 }}>
           <Info size={16}/>
-          <span style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>ZenithStudy AI</span>
+          <span style={{ fontSize:14, fontWeight:700, color:"var(--text)" }}>ZenithStudy</span>
         </div>
         <p style={{ fontSize:12 }}>Version 1.0.0</p>
         <p style={{ fontSize:12, marginTop:4 }}>Made with ❤️ for students</p>

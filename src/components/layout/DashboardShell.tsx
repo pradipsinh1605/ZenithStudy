@@ -626,19 +626,17 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         {!isAIPage && (
           <header className="app-header">
             <div className="app-header-inner">
-            <Link href="/dashboard" className="brand-link" style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none" }}>
+            <Link href="/dashboard" className="brand-link" style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none" }}>
               <div style={{ 
-                width: 44, height: 44, display: "grid", placeItems: "center"
+                width: 40, height: 40, display: "grid", placeItems: "center"
               }}>
-                <img src="/logo.svg" alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0px 0px 8px rgba(79,142,247,0.4))" }} />
+                <img src="/logo.svg" alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain", filter: "drop-shadow(0px 0px 4px rgba(79,142,247,0.3))" }} />
               </div>
-              <div className="brand-copy" style={{ minWidth: 0 }}>
+              <div className="brand-copy" style={{ minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
                 <div style={{ 
-                  fontSize: 22, fontWeight: 900, lineHeight: 1.1,
+                  fontSize: 22, fontWeight: 700, lineHeight: 1.1,
                   background: "linear-gradient(90deg, #4F8EF7, #A78BFA)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.1))"
-                }}>
-                  ZenithStudy AI
+                  ZenithStudy
                 </div>
                 <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, fontWeight: 700, letterSpacing: "0.5px" }}>
                   Learn Beyond Limits
@@ -993,7 +991,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       <ConfirmModal
         isOpen={showLogoutConfirm}
         title="Sign Out"
-        message="Are you sure you want to sign out of ZenithStudy AI?"
+        message="Are you sure you want to sign out of ZenithStudy?"
         onConfirm={() => { setShowLogoutConfirm(false); logout(); }}
         onCancel={() => setShowLogoutConfirm(false)}
         confirmText="Sign Out"

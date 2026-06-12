@@ -1,5 +1,5 @@
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- ZenithStudy AI — Complete Database Schema
+-- ZenithStudy — Complete Database Schema
 -- Supabase માં આ SQL run કરો (SQL Editor માં)
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

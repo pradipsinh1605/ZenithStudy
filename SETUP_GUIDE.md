@@ -1,4 +1,4 @@
-# 🚀 ZenithStudy AI — Complete Setup Guide
+# 🚀 ZenithStudy — Complete Setup Guide
 
 ### (Step-by-step — Coding knowledge વગર!)
 

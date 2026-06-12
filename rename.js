@@ -6,10 +6,6 @@ const ignoredDirs = new Set(['.git', 'node_modules', '.next']);
 const ignoredFiles = new Set(['package-lock.json', 'rename.js', 'rename.py']);
 
 function replaceFunc(match) {
-    if (match === "Learnixio") return "ZenithStudy";
-    if (match === "learnixio") return "zenithstudy";
-    if (match === "LEARNIXIO") return "ZENITHSTUDY";
-    if (match[0] === match[0].toLowerCase()) return "zenithstudy";
     return "ZenithStudy";
 }
 
@@ -36,7 +32,7 @@ const files = walk(searchDir);
 files.forEach(filePath => {
     try {
         const content = fs.readFileSync(filePath, 'utf-8');
-        const regex = /learnixio/gi;
+        const regex = /ZenithStudy\s*AI/gi;
         if (content.match(regex)) {
             const newContent = content.replace(regex, replaceFunc);
             fs.writeFileSync(filePath, newContent, 'utf-8');

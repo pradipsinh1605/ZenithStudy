@@ -1,4 +1,4 @@
-// Input validation utilities for ZenithStudy AI
+// Input validation utilities for ZenithStudy
 
 export const validate = {
   // Email

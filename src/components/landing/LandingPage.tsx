@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ZenithStudy AI — 3D Animated Landing Page
+// ZenithStudy — 3D Animated Landing Page
 // Frontend only — no backend changes
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -169,7 +169,7 @@ export default function LandingPage() {
     { name:"Riya Patel",     role:"B.Tech CSE · SVNIT",       text:"My GPA jumped from 6.8 to 8.9 in one semester. The AI tutor explains concepts better than my professors!", stars:5, color:"#4F8EF7" },
     { name:"Arjun Sharma",   role:"NEET Aspirant",             text:"The timetable and focus timer combo is insane. I'm studying 6 hours a day without burnout!", stars:5, color:"#A78BFA" },
     { name:"Priya Mehta",    role:"CA Student · Mumbai",       text:"Notes + flashcards together saved my exam prep. Earned 2000 XP in my first week!", stars:5, color:"#34D399" },
-    { name:"Dev Kothari",    role:"Class 12 · JEE",            text:"ZenithStudy AI is the only app that actually made me consistent. 30-day streak and counting 🔥", stars:5, color:"#F5A623" },
+    { name:"Dev Kothari",    role:"Class 12 · JEE",            text:"ZenithStudy is the only app that actually made me consistent. 30-day streak and counting 🔥", stars:5, color:"#F5A623" },
     { name:"Sneha Joshi",    role:"MBA · IIM Ahmedabad",       text:"Organized my entire MBA prep in one place. The AI tutor handles even case study questions!", stars:5, color:"#F87171" },
     { name:"Kiran Patel",    role:"Undergraduate · Gujarat",   text:"Went from failing to top of class. The gamification keeps me motivated every single day.", stars:5, color:"#22D3EE" },
   ];
@@ -229,9 +229,9 @@ export default function LandingPage() {
           border-bottom: 1px solid rgba(79,142,247,.12);
           transition: all .3s;
         }
-        .nav-logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; }
+        .nav-logo { display:flex; align-items:center; gap:16px; font-weight:700; font-size:18px; }
         .nav-logo-icon {
-          width: 44px; height: 44px;
+          width: 40px; height: 40px;
           display: flex; align-items: center; justify-content: center;
           transition: transform .35s cubic-bezier(.34,1.56,.64,1);
           cursor: pointer;
@@ -564,9 +564,9 @@ export default function LandingPage() {
         <nav id="navbar">
           <div className="nav-logo">
             <div className="nav-logo-icon">
-              <img src="/logo.svg" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
+              <img src="/logo.svg" alt="ZenithStudy" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
             </div>
-            ZenithStudy AI
+            ZenithStudy
           </div>
           <ul className="nav-links">
             {["Features","Stats","Testimonials","Pricing"].map(l => (
@@ -603,7 +603,7 @@ export default function LandingPage() {
               Learn Beyond<br/><em>Limits</em>
             </h1>
             <p className="hero-desc reveal delay-2">
-              Organize your studies, track progress, get AI tutoring and level up — all in one beautiful, gamified platform.
+              AI-powered notes, quizzes, study planning, tutoring, flashcards, focus sessions and progress tracking in one intelligent learning platform.
             </p>
             <div className="hero-btns reveal delay-3">
               <a href="/auth/signup"><button className="btn-primary">🚀 Start for Free</button></a>
@@ -634,7 +634,7 @@ export default function LandingPage() {
           <div className="reveal from-left">
             <div className="sec-label">Features</div>
             <h2 className="sec-title">Everything you need<br/>to excel academically</h2>
-            <p className="sec-desc">From smart notes to AI tutoring — ZenithStudy AI has every tool modern students need.</p>
+            <p className="sec-desc">From smart notes to AI tutoring — ZenithStudy has every tool modern students need.</p>
           </div>
           <div className="feat-grid">
             {FEATURES.map((f, i) => (
@@ -728,7 +728,7 @@ export default function LandingPage() {
           <div className="sec" style={{ paddingBottom:0 }}>
             <div style={{ textAlign:"center" }}>
               <div className="sec-label reveal from-scale">Testimonials</div>
-              <h2 className="sec-title reveal from-scale delay-1">Students love ZenithStudy AI</h2>
+              <h2 className="sec-title reveal from-scale delay-1">Students love ZenithStudy</h2>
             </div>
           </div>
           <div className="testi-outer reveal">
@@ -796,7 +796,7 @@ export default function LandingPage() {
           <div className="sec-label reveal from-scale">Get Started Today</div>
           <h2 className="sec-title reveal from-scale delay-1">Ready to transform<br/>your academic life?</h2>
           <p className="sec-desc reveal from-scale delay-2" style={{ margin:"0 auto 44px" }}>
-            Join 50,000+ students already using ZenithStudy AI. Free forever.
+            Join 50,000+ students already using ZenithStudy. Free forever.
           </p>
           <a href="/auth/signup">
             <button className="cta-btn reveal from-scale delay-3">
@@ -812,11 +812,11 @@ export default function LandingPage() {
         <footer style={{ borderTop:"1px solid #1A2E4A", padding:"44px 48px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:16, maxWidth:1100, margin:"0 auto" }}>
           <div className="nav-logo" style={{ fontSize:15 }}>
             <div className="nav-logo-icon" style={{ width:32, height:32, background: "transparent" }}>
-              <img src="/logo.svg" alt="ZenithStudy AI" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
+              <img src="/logo.svg" alt="ZenithStudy" style={{ width:"100%", height:"100%", objectFit:"contain" }} />
             </div>
-            ZenithStudy AI
+            ZenithStudy
           </div>
-          <div style={{ fontSize:12, color:"#5A7A9E" }}>© 2026 ZenithStudy AI · Built with ❤️ for students</div>
+          <div style={{ fontSize:12, color:"#5A7A9E" }}>© 2026 ZenithStudy · Built with ❤️ for students</div>
           <div style={{ display:"flex", gap:24 }}>
             {["Privacy","Terms","Contact"].map(l => (
               <a key={l} href="#" style={{ fontSize:12, color:"#5A7A9E", textDecoration:"none", transition:"color .2s" }}

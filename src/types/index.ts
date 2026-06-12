@@ -1,5 +1,5 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ZenithStudy AI — TypeScript Types
+// ZenithStudy — TypeScript Types
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 // ── User & Profile ──

@@ -1,5 +1,5 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ZenithStudy AI — XP, Streak & Badge System
+// ZenithStudy — XP, Streak & Badge System
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const XP_EVENT = "zenithstudy:xp-updated";
