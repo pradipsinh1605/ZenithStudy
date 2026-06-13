@@ -856,7 +856,7 @@ export default function HomePage() {
         <div className="grid gap-5 lg:grid-cols-[0.8fr_1fr]">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {[
-              { icon: Mail, label: "Email", value: "ZenithStudy@gmail.com" },
+              { icon: Mail, label: "Email", value: "hello.zenithstudy@gmail.com" },
               { icon: Instagram, label: "Instagram", value: "@ZenithStudy" },
               { icon: Github, label: "GitHub", value: "ZenithStudy-AI" },
               { icon: Linkedin, label: "LinkedIn", value: "ZenithStudy" },

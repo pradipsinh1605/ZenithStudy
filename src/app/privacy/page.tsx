@@ -9,7 +9,7 @@ export default function PrivacyPage() {
           <p>ZenithStudy uses account, study, and product interaction data to provide notes, planning, AI tutoring, reminders, analytics, and related student productivity features.</p>
           <p>We use Supabase for authentication and app data storage. AI requests may be processed by our configured AI provider through server-side routes so private provider keys are not exposed to your browser.</p>
           <p>We do not sell personal information. We may use necessary service providers to operate the app, secure accounts, diagnose issues, and improve reliability.</p>
-          <p>You can contact us at ZenithStudy@gmail.com for privacy questions or account data requests.</p>
+          <p>You can contact us at hello.zenithstudy@gmail.com for privacy questions or account data requests.</p>
         </div>
       </div>
     </main>
