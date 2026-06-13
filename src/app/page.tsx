@@ -857,7 +857,7 @@ export default function HomePage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {[
               { icon: Mail, label: "Email", value: "hello.zenithstudy@gmail.com" },
-              { icon: Instagram, label: "Instagram", value: "@ZenithStudy" },
+              { icon: Instagram, label: "Instagram", value: "@_zenithstudy" },
               { icon: Github, label: "GitHub", value: "ZenithStudy-AI" },
               { icon: Linkedin, label: "LinkedIn", value: "ZenithStudy" },
             ].map((contact) => {
