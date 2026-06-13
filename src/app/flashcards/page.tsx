@@ -112,7 +112,7 @@ export default function FlashcardsPage() {
   };
 
   const deleteCard = async (id:string) => {
-    await supabase.from("flashcards").delete().eq("id",id);
+    await supabase.from("flashcards").delete().eq("id",id).eq("user_id",userId);
     setAllCards(p=>p.filter(c=>c.id!==id));
     setIdx(0); setFlipped(false); setSelectedOpt(null); setAnswerShown(false);
     toast.success("Deleted");

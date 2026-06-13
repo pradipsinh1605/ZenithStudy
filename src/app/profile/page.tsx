@@ -135,6 +135,7 @@ export default function ProfilePage() {
   const [newSub,  setNewSub]  = useState("");
   const [newColor,setNewColor]= useState(COLOR_PALETTE[0]);
   const [subjectToDelete, setSubjectToDelete] = useState<string | null>(null);
+  const [userId, setUserId] = useState("");
 
   // ── Separate state for each field to prevent focus loss ──
   const [name,        setName]        = useState("");
@@ -159,6 +160,7 @@ export default function ProfilePage() {
   const fetchData = async () => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser().catch(() => ({ data: { user: null }, error: new Error("auth") }));
     if (authErr || !user) return;
+    setUserId(user.id);
     const [{ data: p }, { data: s }] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", user.id).single(),
       supabase.from("subjects").select("*").eq("user_id", user.id),
@@ -229,13 +231,15 @@ export default function ProfilePage() {
   };
 
   const delSubject = async (id: string) => {
-    await supabase.from("subjects").delete().eq("id", id);
+    const uid = userId || (await supabase.auth.getUser()).data.user?.id;
+    await supabase.from("subjects").delete().eq("id", id).eq("user_id", uid);
     setSubjects(prev => prev.filter(s => s.id !== id));
     toast.success("Subject removed");
   };
 
   const updateSubjectColor = async (id: string, color: string) => {
-    await supabase.from("subjects").update({ color }).eq("id", id);
+    const uid = userId || (await supabase.auth.getUser()).data.user?.id;
+    await supabase.from("subjects").update({ color }).eq("id", id).eq("user_id", uid);
     setSubjects(prev => prev.map(s => s.id === id ? { ...s, color } : s));
   };
 

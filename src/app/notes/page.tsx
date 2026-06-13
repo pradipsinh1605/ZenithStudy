@@ -163,11 +163,11 @@ export default function NotesPage() {
         setUploading(false);
         return;
       }
-      const {data:urlData} = supabase.storage.from("note-pdfs").getPublicUrl(path);
+      // Store the storage path (not public URL) since bucket is private
       const {data,error} = await supabase.from("notes").insert({
         user_id:userId, title:pdfTitle.trim(),
         subject:pdfSubject||null, content:"",
-        pdf_name:safeName, pdf_url:urlData.publicUrl,
+        pdf_name:safeName, pdf_url:path,
         note_type:"pdf", starred:false,
       }).select().single();
       if(error){toast.error("Save failed");setUploading(false);return;}
@@ -186,11 +186,14 @@ export default function NotesPage() {
   // ── Delete note ──
   const deleteNote = async (note:any) => {
     // Remove from storage if PDF
-    if(note.pdf_url&&note.pdf_url.startsWith("http")&&!note.pdf_url.startsWith("data:")) {
-      const path = note.pdf_url.split("/note-pdfs/")[1];
-      if(path) await supabase.storage.from("note-pdfs").remove([path]);
+    if(note.pdf_url) {
+      // Handle both old full-URL format and new path-only format
+      const storagePath = note.pdf_url.includes("/note-pdfs/") 
+        ? note.pdf_url.split("/note-pdfs/")[1]?.split("?")[0]
+        : note.pdf_url;
+      if(storagePath) await supabase.storage.from("note-pdfs").remove([storagePath]);
     }
-    await supabase.from("notes").delete().eq("id",note.id);
+    await supabase.from("notes").delete().eq("id",note.id).eq("user_id",userId);
     setNotes(p=>p.filter(n=>n.id!==note.id));
     if(activeNote?.id===note.id) setView("folder-notes");
     toast.success("Deleted");
@@ -428,13 +431,15 @@ export default function NotesPage() {
                   {isPdf&&(
                     <button onClick={async(e)=>{
                       e.stopPropagation();
-                      // Refresh signed URL before opening
-                      if(note.pdf_url && note.pdf_url.includes("supabase")) {
-                        const path = `${userId}/${note.pdf_url.split(`${userId}/`)[1]?.split("?")[0]}`;
-                        const {data} = await supabase.storage.from("note-pdfs").createSignedUrl(path, 3600);
+                      // Generate signed URL for private bucket
+                      const storagePath = note.pdf_url.includes("/note-pdfs/") 
+                        ? note.pdf_url.split("/note-pdfs/")[1]?.split("?")[0]
+                        : note.pdf_url;
+                      if(storagePath) {
+                        const {data} = await supabase.storage.from("note-pdfs").createSignedUrl(storagePath, 3600);
                         if(data?.signedUrl) { window.open(data.signedUrl,"_blank"); return; }
                       }
-                      window.open(note.pdf_url,"_blank");
+                      toast.error("Could not open PDF");
                     }}
                     style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px", minHeight: 44, borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                     <Icon.External/> Open
@@ -475,12 +480,15 @@ export default function NotesPage() {
                 <div style={{fontSize:48,marginBottom:16}}>📄</div>
                 <p style={{fontSize:16,fontWeight:700,color:"var(--text)",marginBottom:8}}>{activeNote.pdf_name}</p>
                 <button onClick={async()=>{
-                  if(activeNote.pdf_url && activeNote.pdf_url.includes("supabase")) {
-                    const path = `${userId}/${activeNote.pdf_url.split(`${userId}/`)[1]?.split("?")[0]}`;
-                    const {data} = await supabase.storage.from("note-pdfs").createSignedUrl(path, 3600);
+                  // Generate signed URL for private bucket
+                  const storagePath = activeNote.pdf_url.includes("/note-pdfs/") 
+                    ? activeNote.pdf_url.split("/note-pdfs/")[1]?.split("?")[0]
+                    : activeNote.pdf_url;
+                  if(storagePath) {
+                    const {data} = await supabase.storage.from("note-pdfs").createSignedUrl(storagePath, 3600);
                     if(data?.signedUrl) { window.open(data.signedUrl,"_blank"); return; }
                   }
-                  window.open(activeNote.pdf_url,"_blank");
+                  toast.error("Could not open PDF");
                 }}
                 style={{display:"inline-flex",alignItems:"center",gap:8,padding:"12px 24px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#4F8EF7,#6366F1)",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                   <Icon.External/> Open PDF

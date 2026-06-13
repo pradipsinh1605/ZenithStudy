@@ -4,6 +4,7 @@ import { Send, Brain, Paperclip, ChevronDown, Copy, Check, FileText, Image as Im
 import { createClient } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import DOMPurify from "isomorphic-dompurify";
 
 type Message = {
   id: string;
@@ -226,7 +227,7 @@ export default function AITutorPage() {
     const filtered = threads.filter(t => t.id !== id);
     setThreads(filtered);
     if (userId) {
-      await supabase.from("ai_threads").delete().eq("id", id);
+      await supabase.from("ai_threads").delete().eq("id", id).eq("user_id", userId);
     }
     if (currentThreadId === id) startNewChat();
   };
@@ -476,7 +477,7 @@ export default function AITutorPage() {
                   ) : (
                     m.role === "assistant" ? (
                       <div className="space-y-4">
-                        <div dangerouslySetInnerHTML={{ __html: parseMarkdown(m.content) }} className="leading-relaxed" />
+                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(parseMarkdown(m.content), { ADD_TAGS: ['iframe'], ADD_ATTR: ['target', 'class', 'style'] }) }} className="leading-relaxed" />
                         
                         {m.mermaid && renderIsolatedMermaid(m.mermaid, m.id)}
 

@@ -21,6 +21,7 @@ export default function TimetablePage() {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading,  setLoading]  = useState(true);
+  const [userId,   setUserId]   = useState("");
   const [form, setForm] = useState({
     subject: "", day: "Mon", start_time: "09:00",
     end_time: "10:30", room: "", type: "class",
@@ -38,6 +39,7 @@ export default function TimetablePage() {
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error || !user) { setLoading(false); return; }
+      setUserId(user.id);
       const [{ data: e }, { data: s }] = await Promise.all([
         supabase.from("timetable").select("*").eq("user_id", user.id).order("start_time"),
         supabase.from("subjects").select("*").eq("user_id", user.id),
@@ -64,7 +66,8 @@ export default function TimetablePage() {
   };
 
   const deleteEntry = async (id: string) => {
-    await supabase.from("timetable").delete().eq("id", id);
+    const uid = userId || (await supabase.auth.getUser()).data.user?.id;
+    await supabase.from("timetable").delete().eq("id", id).eq("user_id", uid);
     setEntries(prev => prev.filter(e => e.id !== id));
     toast.success("Removed from timetable");
   };

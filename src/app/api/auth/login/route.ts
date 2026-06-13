@@ -3,7 +3,22 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
-  const { email, password } = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { email, password } = body;
+
+  // Input Validation
+  if (!email || typeof email !== "string" || !email.includes("@") || email.length > 255) {
+    return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+  }
+  if (!password || typeof password !== "string" || password.length < 1 || password.length > 128) {
+    return NextResponse.json({ error: "Invalid password" }, { status: 400 });
+  }
   
   const cookieStore = await cookies();
   

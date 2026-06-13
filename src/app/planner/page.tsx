@@ -87,7 +87,7 @@ export default function PlannerPage() {
     // Optimistic Update
     setTasks(prev => prev.filter(t => t.id!==id));
 
-    const { error } = await supabase.from("tasks").delete().eq("id",id);
+    const { error } = await supabase.from("tasks").delete().eq("id",id).eq("user_id",curUser.id);
     if (error) {
       toast.error("Failed to delete task. Reverting...");
       setTasks(prev => {
