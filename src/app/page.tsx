@@ -856,14 +856,14 @@ export default function HomePage() {
         <div className="grid gap-5 lg:grid-cols-[0.8fr_1fr]">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {[
-              { icon: Mail, label: "Email", value: "hello.zenithstudy@gmail.com" },
-              { icon: Instagram, label: "Instagram", value: "@_zenithstudy" },
-              { icon: Github, label: "GitHub", value: "ZenithStudy-AI" },
-              { icon: Linkedin, label: "LinkedIn", value: "ZenithStudy" },
+              { icon: Mail, label: "Email", value: "hello.zenithstudy@gmail.com", href: "mailto:hello.zenithstudy@gmail.com" },
+              { icon: Instagram, label: "Instagram", value: "@_zenithstudy", href: "https://instagram.com/_zenithstudy" },
+              { icon: Github, label: "GitHub", value: "ZenithStudy", href: "https://github.com/pradipsinh1605/ZenithStudy" },
+              { icon: Linkedin, label: "LinkedIn", value: "ZenithStudy", href: "https://linkedin.com/company/zenithstudy" },
             ].map((contact) => {
               const Icon = contact.icon;
               return (
-                <div key={contact.label} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl">
+                <a key={contact.label} href={contact.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.065] p-5 backdrop-blur-xl transition hover:-translate-y-1 hover:bg-white/10 hover:border-cyan-200/30">
                   <span className="grid h-11 w-11 place-items-center rounded-xl bg-cyan-300/15 text-cyan-100">
                     <Icon size={19} />
                   </span>
@@ -871,7 +871,7 @@ export default function HomePage() {
                     <p className="text-xs font-bold uppercase text-slate-500">{contact.label}</p>
                     <p className="mt-1 font-bold text-white">{contact.value}</p>
                   </div>
-                </div>
+                </a>
               );
             })}
           </div>
