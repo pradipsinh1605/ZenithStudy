@@ -10,7 +10,7 @@ export type FileValidationResult =
   | { ok: true; sanitizedName: string }
   | { ok: false; code: FileValidationErrorCode; message: string };
 
-export const MAX_PDF_BYTES = 10 * 1024 * 1024;
+export const MAX_PDF_BYTES = 4 * 1024 * 1024;
 
 export function sanitizeFilename(name: string): string {
   const cleaned = name
@@ -37,7 +37,7 @@ export function validateFile(file: FileValidationInput): FileValidationResult {
   }
 
   if (file.size > MAX_PDF_BYTES) {
-    return { ok: false, code: "FILE_TOO_LARGE", message: "PDF must be 10MB or smaller." };
+    return { ok: false, code: "FILE_TOO_LARGE", message: "PDF must be 4MB or smaller due to server limits." };
   }
 
   return { ok: true, sanitizedName };

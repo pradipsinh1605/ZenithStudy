@@ -78,7 +78,7 @@ export default function FlashcardsPage() {
       if(error||!user){setLoading(false);return;}
       setUserId(user.id);
       const [{data:c},{data:s}] = await Promise.all([
-        supabase.from("flashcards").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),
+        supabase.from("flashcards").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(300),
         supabase.from("subjects").select("*").eq("user_id",user.id),
       ]);
       setAllCards(c||[]);
@@ -121,6 +121,7 @@ export default function FlashcardsPage() {
   // AI Generate
   const generateAI = async () => {
     if(!aiPrompt.trim()){toast.error("Topic prompt enter karo!");return;}
+    if(aiPrompt.trim().length < 20){toast.error("Please provide at least 20 characters of context for the AI to generate accurate questions.");return;}
     setAiLoading(true);
     try{
       const isQuiz = aiType==="quiz";
@@ -511,17 +512,17 @@ export default function FlashcardsPage() {
               )}
 
               <div style={{display:"flex",justifyContent:"center",gap:12,marginBottom:20}}>
-                <button onClick={goPrev} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 20px",borderRadius:12,border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",cursor:"pointer",fontWeight:600,fontSize:13,fontFamily:"inherit"}}>
+                <button onClick={goPrev} style={{display:"flex",alignItems:"center",gap:6,padding:"10px 20px", minHeight:44, borderRadius:12,border:"1px solid var(--border)",background:"var(--card)",color:"var(--text)",cursor:"pointer",fontWeight:600,fontSize:13,fontFamily:"inherit"}}>
                   <ChevronLeft size={18}/> Prev
                 </button>
                 <button onClick={()=>goNext()} disabled={!answerShown}
-                  style={{display:"flex",alignItems:"center",gap:6,padding:"10px 22px",borderRadius:12,border:"none",background:answerShown?"#4F8EF7":"var(--border)",color:answerShown?"#fff":"var(--muted)",cursor:answerShown?"pointer":"not-allowed",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
+                  style={{display:"flex",alignItems:"center",gap:6,padding:"10px 22px", minHeight:44, borderRadius:12,border:"none",background:answerShown?"#4F8EF7":"var(--border)",color:answerShown?"#fff":"var(--muted)",cursor:answerShown?"pointer":"not-allowed",fontWeight:700,fontSize:13,fontFamily:"inherit"}}>
                   Next Question <ChevronRight size={18}/>
                 </button>
-                <button onClick={()=>reportQuizError(card)} style={{padding:"10px 14px",borderRadius:12,border:"1px solid rgba(245,166,35,.35)",background:"rgba(245,166,35,.08)",color:"#F5A623",cursor:"pointer",display:"flex",alignItems:"center",fontSize:13,fontFamily:"inherit",fontWeight:700}}>
+                <button onClick={()=>reportQuizError(card)} style={{padding:"10px 14px", minHeight:44, borderRadius:12,border:"1px solid rgba(245,166,35,.35)",background:"rgba(245,166,35,.08)",color:"#F5A623",cursor:"pointer",display:"flex",alignItems:"center",fontSize:13,fontFamily:"inherit",fontWeight:700}}>
                   Report error
                 </button>
-                <button onClick={()=>deleteCard(card?.id)} style={{padding:"10px 14px",borderRadius:12,border:"1px solid #F8717144",background:"#F8717111",color:"#F87171",cursor:"pointer",display:"flex",alignItems:"center",fontSize:13,fontFamily:"inherit"}}>
+                <button onClick={()=>deleteCard(card?.id)} style={{padding:"10px 14px", minHeight:44, borderRadius:12,border:"1px solid #F8717144",background:"#F8717111",color:"#F87171",cursor:"pointer",display:"flex",alignItems:"center",fontSize:13,fontFamily:"inherit"}}>
                   <Trash2 size={15}/>
                 </button>
               </div>

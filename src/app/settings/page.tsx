@@ -266,7 +266,7 @@ export default function SettingsPage() {
       {/* Help & Support */}
       <div style={{ borderRadius:20, padding:24, border:"1px solid var(--border)", background:"var(--card)" }}>
         <h3 style={{ fontSize:16, fontWeight:700, color:"var(--text)", marginBottom:16 }}>Help & Support</h3>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", gap:12 }}>
           <button onClick={() => window.location.href = "mailto:support@zenithstudy.ai"} style={{ display:"flex", alignItems:"center", gap:8, padding:"12px", background:"var(--bg)", borderRadius:12, border:"1px solid var(--border)", color:"var(--text)", cursor:"pointer", justifyContent:"center" }}>
             <LifeBuoy size={18} style={{ color:"#4F8EF7" }}/>
             <span style={{ fontSize:13, fontWeight:600 }}>Contact Us</span>

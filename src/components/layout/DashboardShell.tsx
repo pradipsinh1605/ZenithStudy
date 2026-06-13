@@ -509,6 +509,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             display: none;
           }
 
+          @media (max-width: 900px) {
+            .hamburger-btn {
+              display: inline-flex;
+            }
+          }
+
           .mobile-drawer-overlay {
             position: fixed;
             inset: 0;
@@ -564,9 +570,16 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             .profile-chip {
               display: none;
             }
+
+            .page-heading {
+              grid-template-columns: 1fr;
+              align-items: flex-start;
+              gap: 12px;
+            }
             
             .student-strip {
               justify-content: flex-start;
+              width: 100%;
             }
           }
 
@@ -593,10 +606,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             .notification-dropdown {
               position: fixed !important;
               top: 60px !important;
-              right: 10px !important;
-              left: 10px !important;
+              right: 14px !important;
+              left: 14px !important;
               width: auto !important;
               max-width: none !important;
+              z-index: 999;
             }
           }
 
@@ -841,7 +855,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           {!isAIPage && (
             <section className="page-heading">
               <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 7 }}>
                 <div
                   style={{
                     width: 34,
@@ -851,6 +865,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     placeItems: "center",
                     background: "var(--primary-soft)",
                     color: "var(--primary)",
+                    marginTop: 4,
+                    flexShrink: 0
                   }}
                 >
                   <CurrentIcon size={18} />
@@ -868,7 +884,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                   >
                     {current.full}
                   </h1>
-                  <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, fontWeight: 700 }}>
+                  <p style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {new Date().toLocaleDateString("en-IN", {
                       weekday: "long",
                       year: "numeric",

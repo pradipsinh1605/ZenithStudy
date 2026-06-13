@@ -183,12 +183,13 @@ export default function AITutorPage() {
            updated = [{ id: currentThreadId, title, messages: msgs, updatedAt: Date.now() }, ...prev];
         }
         
-        // Upsert to Supabase asynchronously
+        // Upsert to Supabase asynchronously (truncate to last 40 messages to prevent huge payloads)
+        const dbMsgs = msgs.length > 40 ? msgs.slice(-40) : msgs;
         supabase.from("ai_threads").upsert({
           id: currentThreadId,
           user_id: userId,
           title: title,
-          messages: msgs,
+          messages: dbMsgs,
           updated_at: Date.now()
         }).then();
 

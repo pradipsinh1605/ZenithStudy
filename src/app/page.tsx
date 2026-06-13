@@ -383,10 +383,10 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-white/10 px-4 py-2 text-xs font-bold text-cyan-100 shadow-[0_0_40px_rgba(56,189,248,0.16)] backdrop-blur-xl"
+          className="mb-6 inline-flex flex-wrap text-center justify-center items-center gap-2 rounded-3xl border border-cyan-200/20 bg-white/10 px-4 py-3 sm:py-2 text-xs font-bold text-cyan-100 shadow-[0_0_40px_rgba(56,189,248,0.16)] backdrop-blur-xl"
         >
           <Sparkles size={15} />
-          AI notes, timetable, quizzes, doubts, reminders and progress in one platform
+          <span>AI notes, timetable, quizzes, doubts, reminders and progress in one platform</span>
         </motion.div>
 
         <div className="grid w-full items-center gap-12 lg:grid-cols-[1fr_0.95fr]">
@@ -709,12 +709,12 @@ export default function HomePage() {
               }`}
             >
               {billing === "yearly" && plan.monthly > 0 && (
-                <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute left-5 top-5 rounded-full border border-emerald-200/30 bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-100">
+                <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="absolute left-5 top-5 max-sm:left-3 max-sm:top-4 rounded-full border border-emerald-200/30 bg-emerald-300/15 px-3 py-1 text-xs font-black text-emerald-100">
                   Save {Math.round((1 - plan.yearly / (plan.monthly * 12)) * 100)}%
                 </motion.span>
               )}
               {plan.popular && (
-                <span className="absolute right-5 top-5 rounded-full bg-gradient-to-r from-cyan-300 to-violet-300 px-3 py-1 text-xs font-black text-slate-950 max-sm:top-10">
+                <span className="absolute right-5 top-5 max-sm:right-3 max-sm:top-12 rounded-full bg-gradient-to-r from-cyan-300 to-violet-300 px-3 py-1 text-xs font-black text-slate-950">
                   Most Popular
                 </span>
               )}

@@ -75,7 +75,7 @@ export default function NotesPage() {
       if(error||!user){setLoading(false);return;}
       setUserId(user.id);
       const [{data:n},{data:s}] = await Promise.all([
-        supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false}),
+        supabase.from("notes").select("*").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
         supabase.from("subjects").select("*").eq("user_id",user.id).order("name"),
       ]);
       setNotes(n||[]);
@@ -408,7 +408,7 @@ export default function NotesPage() {
             const c = col(activeFolder?.name||"");
             return(
               <div key={note.id} className="note-row"
-                style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",borderRadius:16,border:"1px solid var(--border)",background:"var(--card)",cursor:"pointer",transition:"all .2s",animation:`slideIn .25s ease ${i*40}ms both`}}>
+                style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",borderRadius:16,border:"1px solid var(--border)",background:"var(--card)",cursor:"pointer",transition:"all .2s",animation:`slideIn .25s ease ${i*40}ms both`, flexWrap: "wrap"}}>
                 {/* Icon */}
                 <div style={{width:40,height:40,borderRadius:12,background:isPdf?"rgba(248,113,113,.12)":`${c}12`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:isPdf?"#F87171":c}}>
                   {isPdf?<Icon.PDF/>:<Icon.File/>}
@@ -436,18 +436,18 @@ export default function NotesPage() {
                       }
                       window.open(note.pdf_url,"_blank");
                     }}
-                    style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px", minHeight: 44, borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                     <Icon.External/> Open
                   </button>
                   )}
                   {!isPdf&&(
                     <button onClick={(e)=>{e.stopPropagation();setActiveNote(note);setView("note-view");}}
-                      style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                      style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px", minHeight: 44, borderRadius:10,border:"1px solid rgba(79,142,247,.3)",background:"rgba(79,142,247,.1)",color:"#4F8EF7",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                       Open
                     </button>
                   )}
                   <button onClick={(e)=>{e.stopPropagation();setNoteToDelete(note);}}
-                    style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px",borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"7px 12px", minHeight: 44, borderRadius:10,border:"1px solid rgba(248,113,113,.3)",background:"rgba(248,113,113,.08)",color:"#F87171",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                     <Icon.Trash/> Delete
                   </button>
                 </div>
@@ -462,14 +462,14 @@ export default function NotesPage() {
       ══════════════════════════════════════ */}
       {view==="note-view"&&activeNote&&(
         <div style={{borderRadius:20,border:"1px solid var(--border)",background:"var(--card)",overflow:"hidden"}}>
-          <div style={{padding:"20px 28px",borderBottom:"1px solid var(--border)",background:"rgba(79,142,247,.04)"}}>
+          <div style={{padding:"20px clamp(16px, 4vw, 28px)",borderBottom:"1px solid var(--border)",background:"rgba(79,142,247,.04)"}}>
             <div style={{display:"flex",gap:8,marginBottom:10,flexWrap:"wrap"}}>
               {activeNote.subject&&<span style={{fontSize:11,padding:"3px 12px",borderRadius:20,fontWeight:700,background:`${col(activeNote.subject)}22`,color:col(activeNote.subject)}}>{activeNote.subject}</span>}
               <span style={{fontSize:11,padding:"3px 12px",borderRadius:20,fontWeight:700,background:"var(--bg)",color:"var(--muted)"}}>{new Date(activeNote.created_at).toLocaleDateString("en-IN",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</span>
             </div>
             <h2 style={{fontFamily:"var(--font-lora),serif",fontSize:24,color:"var(--text)",fontWeight:700}}>{activeNote.title}</h2>
           </div>
-          <div style={{padding:"24px 28px",minHeight:300}}>
+          <div style={{padding:"24px clamp(16px, 4vw, 28px)",minHeight:300}}>
             {activeNote.note_type==="pdf"?(
               <div style={{textAlign:"center",padding:40}}>
                 <div style={{fontSize:48,marginBottom:16}}>📄</div>

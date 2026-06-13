@@ -88,7 +88,7 @@ export default function DashboardPage() {
       setUserId(user.id);
       const [{ data:p },{ data:t },{ data:n },{ data:x },{ data:s }] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-        supabase.from("tasks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("tasks").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
         supabase.from("notes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(4),
         supabase.from("user_xp").select("*").eq("user_id", user.id).single(),
         supabase.from("subjects").select("*").eq("user_id", user.id),
@@ -148,7 +148,7 @@ export default function DashboardPage() {
       <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
 
         {/* ── Hero Banner ── */}
-        <div style={{ ...fadeUp(0), borderRadius:22, padding:"28px 32px", position:"relative", overflow:"hidden",
+        <div style={{ ...fadeUp(0), borderRadius:22, padding:"clamp(20px, 4vw, 28px) clamp(20px, 5vw, 32px)", position:"relative", overflow:"hidden",
           background:"var(--hero-bg, linear-gradient(135deg,var(--card) 0%,var(--surface) 100%))",
           border:"1px solid rgba(79,142,247,.15)",
           boxShadow:"0 4px 24px rgba(0,0,0,.12)"
@@ -160,7 +160,7 @@ export default function DashboardPage() {
           <div className="hero-layout">
             <div>
               <p style={{ color:"var(--hero-text-muted)", fontSize:13, marginBottom:6 }}>{greeting} 👋</p>
-              <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:36, color:"var(--hero-text)", marginBottom:8, fontWeight:700, textShadow:"0 2px 20px rgba(79,142,247,.3)" }}>
+              <h2 style={{ fontFamily:"var(--font-lora),serif", fontSize:"clamp(24px, 5vw, 36px)", color:"var(--hero-text)", marginBottom:8, fontWeight:700, textShadow:"0 2px 20px rgba(79,142,247,.3)" }}>
                 {name}
               </h2>
               {profile?.institution && (

@@ -281,3 +281,6 @@ main > div, main section, main [style*="var(--card)"] { animation: slidePop .32s
 .mermaid .node:nth-of-type(6n+0) rect, .mermaid .node:nth-of-type(6n+0) circle, .mermaid .node:nth-of-type(6n+0) polygon { fill: #E8BAFF !important; stroke: #cc99ee !important; }
 .mermaid .node * { color: #111 !important; font-weight: 600 !important; }
 svg[id^="d3-error"], .error-icon, #d3-error-box { display: none !important; opacity: 0 !important; }
+@media (hover: none) {
+  .hv-card:hover, .task-item:hover, .note-row:hover, .folder-card:hover { transform: none !important; box-shadow: none !important; background: inherit; border-color: inherit; }
+}
